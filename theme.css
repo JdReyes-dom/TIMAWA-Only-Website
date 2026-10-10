@@ -16,6 +16,11 @@
    - Now: every theme has an explicit [data-timawa-mode="light"] background
      gradient, plus light-mode color overrides for its decorative shapes.
    - Fixed: forest, sunset, crimson, maroon, moonlit, aurora, nebula, ember.
+   - v4: sakura = "Torii at Dawn", forest = "Canopy Window", aurora = "Arctic Cabin".
+     (3 animated elements each; all colours adapt to light/dark via --theme-* and
+     per-mode custom properties on .theme-bg-shapes.)
+   - v3: light-mode COLOUR VARIABLES moved into theme.js palettes (inline styles
+     from applyTheme() beat any stylesheet rule). CSS keeps backgrounds/shapes.
 
    ★ EMBER PERF FIX ★
    - Removed animated heat shimmer on the huge 55%-tall element.
@@ -37,7 +42,7 @@
 
 /* ----- STARRY ----- */
 [data-timawa-theme="starry"] .theme-bg-base {
-    background: linear-gradient(180deg, #2a1a5e 0%, #4a3a8e 50%, #6a5ab0 100%);
+    background: linear-gradient(180deg, #2a1a5e 0%, #3f3180 50%, #54449a 100%);
 }
 [data-timawa-theme="starry"][data-timawa-mode="dark"] .theme-bg-base {
     background: linear-gradient(180deg, #06040e 0%, #100828 50%, #06040e 100%);
@@ -175,58 +180,8 @@
     backface-visibility: hidden;
 }
 
-/* ================================================================
-   ===== ★ TEXT COLOR OVERRIDES FOR LIGHT MODE =====
-   Dark text on light backgrounds for readability.
-   ================================================================ */
-[data-timawa-theme="sunset"][data-timawa-mode="light"] {
-    --theme-text: #3a1418;
-    --theme-text-muted: #6b3038;
-    --theme-text-dim: #8a5560;
-    --theme-text-faint: #b08890;
-}
-[data-timawa-theme="forest"][data-timawa-mode="light"] {
-    --theme-text: #0a2418;
-    --theme-text-muted: #2a5040;
-    --theme-text-dim: #4a7a60;
-    --theme-text-faint: #7aa890;
-}
-[data-timawa-theme="crimson"][data-timawa-mode="light"] {
-    --theme-text: #3a1018;
-    --theme-text-muted: #6b2530;
-    --theme-text-dim: #8a4550;
-    --theme-text-faint: #b0808a;
-}
-[data-timawa-theme="maroon"][data-timawa-mode="light"] {
-    --theme-text: #3a1010;
-    --theme-text-muted: #6b2525;
-    --theme-text-dim: #8a4545;
-    --theme-text-faint: #b08080;
-}
-[data-timawa-theme="nebula"][data-timawa-mode="light"] {
-    --theme-text: #1e1030;
-    --theme-text-muted: #4a2a66;
-    --theme-text-dim: #6a4a86;
-    --theme-text-faint: #9a80b0;
-}
-[data-timawa-theme="moonlit"][data-timawa-mode="light"] {
-    --theme-text: #0f172a;
-    --theme-text-muted: #3a4759;
-    --theme-text-dim: #64748b;
-    --theme-text-faint: #94a3b8;
-}
-[data-timawa-theme="aurora"][data-timawa-mode="light"] {
-    --theme-text: #0a2420;
-    --theme-text-muted: #2a4a45;
-    --theme-text-dim: #4a6b62;
-    --theme-text-faint: #7a9a90;
-}
-[data-timawa-theme="ember"][data-timawa-mode="light"] {
-    --theme-text: #3a1f0f;
-    --theme-text-muted: #6b4a30;
-    --theme-text-dim: #a57852;
-    --theme-text-faint: #d4b096;
-}
+/* Light-mode text colours now live in theme.js (light palettes).
+   CSS variable rules here could never win against applyTheme() inline styles. */
 
 /* ================================================================
    ===== ★ BACKGROUND SHAPE COLOR OVERRIDES FOR LIGHT MODE =====
@@ -234,29 +189,6 @@
    Now they switch to a lighter, softer tone so text stays readable.
    ================================================================ */
 
-/* FOREST pines/hill/ground in light mode */
-[data-timawa-theme="forest"][data-timawa-mode="light"] .forest-hill {
-    background: linear-gradient(180deg,
-        color-mix(in srgb, #15803d 25%, transparent) 0%,
-        color-mix(in srgb, #15803d 45%, transparent) 100%);
-    opacity: 0.4;
-}
-[data-timawa-theme="forest"][data-timawa-mode="light"] .forest-pines {
-    opacity: 0.45;
-}
-[data-timawa-theme="forest"][data-timawa-mode="light"] .forest-pines::after {
-    opacity: 0.35;
-}
-[data-timawa-theme="forest"][data-timawa-mode="light"] .forest-ground {
-    background: linear-gradient(to top,
-        color-mix(in srgb, #15803d 40%, transparent) 0%,
-        color-mix(in srgb, #15803d 18%, transparent) 60%,
-        transparent 100%);
-    opacity: 0.7;
-}
-[data-timawa-theme="forest"][data-timawa-mode="light"] .forest-fog {
-    opacity: 0.7;
-}
 
 /* SUNSET mountains/horizon/ground in light mode */
 [data-timawa-theme="sunset"][data-timawa-mode="light"] .sunset-mountain {
@@ -314,14 +246,6 @@
     opacity: 0.35;
 }
 
-/* AURORA mountains in light mode */
-[data-timawa-theme="aurora"][data-timawa-mode="light"] .aurora-mountain {
-    border-bottom-color: #5a7a78;
-    opacity: 0.7;
-}
-[data-timawa-theme="aurora"][data-timawa-mode="light"] .aurora-curtain {
-    opacity: 0.5;
-}
 
 /* NEBULA planet/core adjustments in light mode */
 [data-timawa-theme="nebula"][data-timawa-mode="light"] .nebula-wormhole {
@@ -485,100 +409,213 @@
 }
 
 /* ================================================================
-   -------- ★ SAKURA --------
+   -------- ★ SAKURA — "Torii at Dawn" --------
+   A vermilion shrine gate standing in still water, a Fuji-style peak,
+   a dawn sun behind the gate, and a blossom bough framing the corner.
+   Animated (3): .sakura-ripples, .sakura-petal.p1, .sakura-petal.p2
    ================================================================ */
+[data-timawa-theme="sakura"] .theme-bg-shapes {
+    --sk-tw: clamp(150px, 17vw, 250px);
+    --sk-sun: clamp(200px, 25vw, 360px);
+    --sk-water: 22%;
+    --sk-left: min(64%, calc(100% - var(--sk-tw) * 1.15));
+    --sk-torii: #d8432b;
+    --sk-torii-dk: #a62e1d;
+    --sk-kasagi: #2a1a1a;
+    --sk-bark: #4a2e22;
+    --sk-sun-core: color-mix(in srgb, var(--theme-primary) 62%, #fff);
+    --sk-mount: color-mix(in srgb, var(--theme-primary) 58%, transparent);
+    --sk-snow: rgba(255, 255, 255, 0.92);
+    --sk-mist: rgba(255, 255, 255, 0.65);
+    --sk-ripple: rgba(255, 255, 255, 0.7);
+    --sk-water-a: color-mix(in srgb, var(--theme-accent) 60%, transparent);
+    --sk-water-b: color-mix(in srgb, var(--theme-primary) 38%, transparent);
+    --sk-bloom: 0.95;
+}
+[data-timawa-theme="sakura"][data-timawa-mode="dark"] .theme-bg-shapes {
+    --sk-torii: #c23a2c;
+    --sk-torii-dk: #7d2119;
+    --sk-kasagi: #120a0c;
+    --sk-bark: #1d1014;
+    --sk-sun-core: color-mix(in srgb, var(--theme-accent) 72%, #fff);
+    --sk-mount: color-mix(in srgb, var(--theme-primary) 22%, #1a0e14);
+    --sk-snow: rgba(255, 214, 228, 0.38);
+    --sk-mist: rgba(255, 150, 190, 0.14);
+    --sk-ripple: rgba(255, 190, 215, 0.34);
+    --sk-water-a: color-mix(in srgb, var(--theme-accent) 16%, transparent);
+    --sk-water-b: color-mix(in srgb, var(--theme-primary) 8%, transparent);
+    --sk-bloom: 0.8;
+}
 .sakura-sun {
     position: absolute;
-    top: 10%; right: 12%;
-    width: 260px; height: 260px;
+    width: var(--sk-sun); height: var(--sk-sun);
+    left: calc(var(--sk-left) + var(--sk-tw) / 2 - var(--sk-sun) / 2);
+    bottom: calc(var(--sk-water) + var(--sk-tw) * 0.735 - var(--sk-sun) / 2);
     border-radius: 50%;
     background: radial-gradient(circle,
-        color-mix(in srgb, var(--theme-accent) 55%, transparent) 0%,
-        color-mix(in srgb, var(--theme-primary) 22%, transparent) 45%,
-        transparent 75%);
-    opacity: 0.7;
+        var(--sk-sun-core) 0%, var(--sk-sun-core) 33%,
+        color-mix(in srgb, var(--theme-accent) 60%, transparent) 36%,
+        color-mix(in srgb, var(--theme-accent) 30%, transparent) 48%,
+        color-mix(in srgb, var(--theme-accent) 12%, transparent) 60%,
+        transparent 74%);
 }
-.sakura-ground {
+.sakura-mount {
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 12%;
-    background: linear-gradient(to top,
-        color-mix(in srgb, var(--theme-primary-dark) 30%, transparent) 0%,
-        color-mix(in srgb, var(--theme-primary) 15%, transparent) 60%,
-        transparent 100%);
-    border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+    left: 4%; bottom: var(--sk-water);
+    width: 58vw; height: min(30vh, 36vw);
+    background:
+        linear-gradient(180deg, var(--sk-snow) 0%, var(--sk-snow) 20%, transparent 38%),
+        linear-gradient(180deg, var(--sk-mount) 0%, color-mix(in srgb, var(--sk-mount) 35%, transparent) 100%);
+    clip-path: polygon(0% 100%, 0% 100%, 2% 97.7%, 3.9% 95.4%, 5.9% 93%, 7.8% 90.6%, 9.8% 88.1%, 11.8% 85.6%, 13.7% 83.1%, 15.7% 80.4%, 17.6% 77.8%, 19.6% 75%, 21.5% 72.2%, 23.5% 69.3%, 25.5% 66.3%, 27.4% 63.1%, 29.4% 59.9%, 31.3% 56.5%, 33.3% 53%, 35.2% 49.3%, 37.2% 45.3%, 39.2% 41%, 41.1% 36.2%, 43.1% 30.9%, 45% 24.3%, 47% 12%, 49% 10.5%, 51% 10.5%, 53% 12%, 55% 24.3%, 56.9% 30.9%, 58.9% 36.2%, 60.8% 41%, 62.8% 45.3%, 64.8% 49.3%, 66.7% 53%, 68.7% 56.5%, 70.6% 59.9%, 72.6% 63.1%, 74.5% 66.3%, 76.5% 69.3%, 78.5% 72.2%, 80.4% 75%, 82.4% 77.8%, 84.3% 80.4%, 86.3% 83.1%, 88.2% 85.6%, 90.2% 88.1%, 92.2% 90.6%, 94.1% 93%, 96.1% 95.4%, 98% 97.7%, 100% 100%, 100% 100%);
 }
-.sakura-branch {
+.sakura-mist {
     position: absolute;
-    top: 8%;
-    left: -5%;
-    width: 110%;
-    height: 8px;
-    background: linear-gradient(90deg,
-        transparent 0%,
-        #3a2418 8%,
-        #5a3a20 40%,
-        #5a3a20 60%,
-        #3a2418 92%,
-        transparent 100%);
-    border-radius: 50% 50% 50% 50% / 100% 100% 100% 100%;
-    transform-origin: 0% 50%;
-    transform: rotate(6deg);
-    opacity: 0.9;
+    left: 0; right: 0;
+    bottom: calc(var(--sk-water) - 2%);
+    height: 16%;
+    background: linear-gradient(to top, var(--sk-mist), transparent);
 }
-.sakura-twig {
+.sakura-water {
     position: absolute;
-    top: 16%;
-    left: 58%;
-    width: 140px;
-    height: 6px;
-    background: linear-gradient(90deg, #5a3a20 0%, #3a2418 100%);
-    border-radius: 6px;
-    transform-origin: 0% 50%;
-    transform: rotate(28deg);
+    left: 0; right: 0; bottom: 0;
+    height: var(--sk-water);
+    background: linear-gradient(180deg, var(--sk-water-a) 0%, var(--sk-water-b) 100%);
+    box-shadow: inset 0 1px 0 var(--sk-ripple);
+}
+.sakura-sunpath {
+    position: absolute;
+    width: calc(var(--sk-sun) * 0.45); height: var(--sk-water);
+    left: calc(var(--sk-left) + var(--sk-tw) / 2 - var(--sk-sun) * 0.225);
+    bottom: 0;
+    background: repeating-linear-gradient(180deg,
+        color-mix(in srgb, var(--theme-accent) 70%, #fff) 0 3px, transparent 3px 10px);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 95%);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 95%);
+    clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+    opacity: 0.55;
+}
+.sakura-torii,
+.sakura-torii-ref {
+    position: absolute;
+    left: var(--sk-left);
+    width: var(--sk-tw); height: calc(var(--sk-tw) * 1.05);
+    background:
+        linear-gradient(90deg, var(--sk-torii-dk) 0%, var(--sk-torii) 42%, var(--sk-torii-dk) 100%) 13% 100% / 7% 91% no-repeat,
+        linear-gradient(90deg, var(--sk-torii-dk) 0%, var(--sk-torii) 42%, var(--sk-torii-dk) 100%) 87% 100% / 7% 91% no-repeat;
+}
+.sakura-torii { bottom: var(--sk-water); }
+.theme-bg-shapes .sakura-torii-ref {
+    top: calc(100% - var(--sk-water));
+    transform: scaleY(-1);
+    opacity: 0.3;
+    -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 82%);
+    mask-image: linear-gradient(to top, #000 0%, transparent 82%);
+}
+.sakura-torii::before,
+.sakura-torii-ref::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -7%; right: -7%;
+    height: 14%;
+    background: linear-gradient(180deg, var(--sk-kasagi) 0%, var(--sk-kasagi) 55%, var(--sk-torii) 55%, var(--sk-torii) 100%);
+    clip-path: polygon(0% 0%, 7% 38%, 93% 38%, 100% 0%, 98% 100%, 2% 100%);
+}
+.sakura-torii::after,
+.sakura-torii-ref::after {
+    content: '';
+    position: absolute;
+    top: 31%; left: 7%; right: 7%;
+    height: 6.5%;
+    background: var(--sk-torii);
+}
+.sakura-ripples {
+    position: absolute;
+    left: -8%; width: 116%;
+    bottom: 0; height: var(--sk-water);
+    background: repeating-linear-gradient(180deg,
+        transparent 0 11px, var(--sk-ripple) 11px 12px, transparent 12px 27px);
+    -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 70px, transparent 70px 130px);
+    mask-image: repeating-linear-gradient(90deg, #000 0 70px, transparent 70px 130px);
+    opacity: 0.5;
+    animation: sakuraRippleDrift 14s ease-in-out infinite alternate;
+    will-change: transform;
+}
+.sakura-floaters {
+    position: absolute;
+    left: 0; right: 0; bottom: 3%;
+    height: 36px;
+    background:
+        radial-gradient(ellipse 8px 3px at 6% 56%, var(--theme-primary) 0 55%, transparent 100%),
+        radial-gradient(ellipse 6px 3px at 18% 40%, var(--theme-primary) 0 55%, transparent 100%),
+        radial-gradient(ellipse 6px 3px at 28% 22%, var(--theme-primary) 0 55%, transparent 100%),
+        radial-gradient(ellipse 8px 3px at 37% 25%, var(--theme-primary) 0 55%, transparent 100%),
+        radial-gradient(ellipse 8px 3px at 50% 27%, var(--theme-primary) 0 55%, transparent 100%),
+        radial-gradient(ellipse 7px 3px at 60% 72%, var(--theme-primary) 0 55%, transparent 100%),
+        radial-gradient(ellipse 9px 3px at 70% 74%, var(--theme-primary) 0 55%, transparent 100%),
+        radial-gradient(ellipse 6px 3px at 82% 36%, var(--theme-primary) 0 55%, transparent 100%),
+        radial-gradient(ellipse 7px 3px at 89% 37%, var(--theme-primary) 0 55%, transparent 100%);
     opacity: 0.85;
 }
-.sakura-twig.t2 {
-    top: 10%;
-    left: 30%;
-    width: 110px;
-    height: 5px;
-    transform: rotate(-22deg);
+.theme-bg-shapes .sakura-bough {
+    top: 2%; right: -3%;
+    width: 50vw; max-width: 780px; height: 15px;
+    transform: rotate(-9deg);
+    transform-origin: 100% 50%;
 }
-.sakura-cluster {
+.sakura-bough .sk-wood {
     position: absolute;
-    width: 130px; height: 130px;
+    inset: 0;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--sk-bark) 80%, #fff) 0%, var(--sk-bark) 100%);
+    clip-path: polygon(0 42%, 100% 0, 100% 100%, 0 58%);
+}
+.sakura-bough::before,
+.sakura-bough::after {
+    content: '';
+    position: absolute;
+    height: 5px;
+    background: var(--sk-bark);
+    border-radius: 5px;
+    transform-origin: 0 50%;
+}
+.sakura-bough::before { left: 30%; top: 5px; width: 22%; transform: rotate(32deg); }
+.sakura-bough::after  { left: 62%; top: 4px; width: 18%; transform: rotate(-38deg); }
+.sakura-bough .sk-bl {
+    position: absolute;
+    width: clamp(80px, 9vw, 140px); height: clamp(80px, 9vw, 140px);
+    transform: translate(-50%, -50%);
     border-radius: 50%;
     background:
-        radial-gradient(circle 28px at 32% 38%, var(--theme-primary) 0%, transparent 65%),
-        radial-gradient(circle 32px at 62% 30%, var(--theme-accent)  0%, transparent 65%),
-        radial-gradient(circle 26px at 46% 58%, var(--theme-primary) 0%, transparent 65%),
-        radial-gradient(circle 24px at 72% 60%, var(--theme-accent)  0%, transparent 65%),
-        radial-gradient(circle 22px at 22% 68%, var(--theme-accent)  0%, transparent 65%);
-    opacity: 0.92;
+        radial-gradient(circle at 30% 36%, var(--theme-primary) 0 18%, transparent 36%),
+        radial-gradient(circle at 62% 28%, var(--theme-accent)  0 20%, transparent 38%),
+        radial-gradient(circle at 48% 60%, var(--theme-primary) 0 18%, transparent 36%),
+        radial-gradient(circle at 74% 62%, var(--theme-accent)  0 16%, transparent 34%),
+        radial-gradient(circle at 24% 70%, var(--theme-accent)  0 15%, transparent 33%),
+        radial-gradient(circle at 52% 40%, rgba(255, 255, 255, 0.6) 0 8%, transparent 20%);
+    opacity: var(--sk-bloom);
 }
-.sakura-cluster.c1 { top: 4%;  left: 8%;  animation: sakuraClusterBreathe 9s ease-in-out infinite; will-change: transform, opacity; }
-.sakura-cluster.c2 { top: 0%;  left: 24%; width: 150px; height: 150px; }
-.sakura-cluster.c3 { top: 8%;  left: 42%; }
-.sakura-cluster.c4 { top: 3%;  left: 58%; width: 140px; height: 140px; }
-.sakura-cluster.c5 { top: 10%; left: 74%; width: 120px; height: 120px; }
-.sakura-cluster.c6 { top: 22%; left: 84%; width: 110px; height: 110px; }
+.sakura-bough .sk-bl.b1 { left: 2%;  top: 6px; }
+.sakura-bough .sk-bl.b2 { left: 14%; top: -8px; }
+.sakura-bough .sk-bl.b3 { left: 26%; top: 10px; }
+.sakura-bough .sk-bl.b4 { left: 39%; top: 0; }
+.sakura-bough .sk-bl.b5 { left: 49%; top: 86px; width: clamp(60px, 7vw, 104px); height: clamp(60px, 7vw, 104px); }
+.sakura-bough .sk-bl.b6 { left: 58%; top: 10px; }
+.sakura-bough .sk-bl.b7 { left: 76%; top: -70px; }
+.sakura-bough .sk-bl.b8 { left: 88%; top: 14px; }
 .sakura-petal {
     position: absolute;
     width: 12px; height: 12px;
     background: var(--theme-primary);
     border-radius: 50% 0 50% 0;
     opacity: 0.75;
-    top: 20%;
-    animation: sakuraPetalFall 14s linear infinite;
+    top: 10%;
+    animation: sakuraPetalFall 15s linear infinite;
     will-change: transform, opacity;
 }
-.sakura-petal.p1 { left: 38%; }
-.sakura-petal.p2 { left: 62%; top: 12%; animation-delay: 5s; width: 10px; height: 10px; }
-.sakura-petal.p3 { left: 50%; top: 18%; animation-delay: 9s; width: 14px; height: 14px; }
-@keyframes sakuraClusterBreathe {
-    0%, 100% { opacity: 0.85; transform: scale(1); }
-    50%      { opacity: 1;    transform: scale(1.04); }
+.sakura-petal.p1 { left: 70%; }
+.sakura-petal.p2 { left: 86%; top: 6%; animation-delay: 6s; width: 10px; height: 10px; }
+@keyframes sakuraRippleDrift {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-60px); }
 }
 @keyframes sakuraPetalFall {
     0%   { transform: translate(0, 0) rotate(45deg); opacity: 0; }
@@ -586,6 +623,12 @@
     50%  { transform: translate(20px, 45vh) rotate(220deg); opacity: 0.85; }
     90%  { transform: translate(-15px, 90vh) rotate(380deg); opacity: 0.5; }
     100% { transform: translate(15px, 105vh) rotate(440deg); opacity: 0; }
+}
+@media (max-width: 700px) {
+    .theme-bg-shapes .sakura-bough { width: 56vw; }
+    .sakura-bough .sk-bl.b1,
+    .sakura-bough .sk-bl.b2 { display: none; }
+    .sakura-bough .sk-bl { width: 72px; height: 72px; }
 }
 
 /* ================================================================
@@ -735,132 +778,174 @@
 }
 
 /* ================================================================
-   -------- FOREST --------
+   -------- ★ FOREST — "Canopy Window" --------
+   Looking out from under the canopy: leaf cover and trunks frame the
+   view, three layers of misty conifer ridges, shafts of light.
+   Animated (3): .forest-mist, .forest-rays, .forest-firefly
    ================================================================ */
-.forest-moon {
+[data-timawa-theme="forest"] .theme-bg-shapes {
+    --fo-glow: rgba(255, 246, 196, 0.9);
+    --fo-r1: #98d3b2;
+    --fo-r2: #6dbb91;
+    --fo-r3: #3f9a68;
+    --fo-fg: #2b8452;
+    --fo-fg2: #58b07f;
+    --fo-trunk-a: #2f4d3a;
+    --fo-trunk-b: #4f7b5e;
+    --fo-leaf-a: 0.95;
+    --fo-mist: rgba(255, 255, 255, 0.6);
+    --fo-ray: rgba(255, 250, 200, 0.6);
+    --fo-fly: #f5c542;
+}
+[data-timawa-theme="forest"][data-timawa-mode="dark"] .theme-bg-shapes {
+    --fo-glow: rgba(150, 215, 255, 0.34);
+    --fo-r1: #14382a;
+    --fo-r2: #0e2a1f;
+    --fo-r3: #0a2017;
+    --fo-fg: #050f0a;
+    --fo-fg2: #0a1d14;
+    --fo-leaf-a: 0.95;
+    --fo-trunk-a: #060f09;
+    --fo-trunk-b: #12291b;
+    --fo-mist: rgba(120, 190, 160, 0.16);
+    --fo-ray: rgba(170, 225, 255, 0.24);
+    --fo-fly: #fde047;
+}
+.forest-glow {
     position: absolute;
-    top: 10%; right: 16%;
-    width: 130px; height: 130px;
+    top: -22%; right: -8%;
+    width: 70vw; height: 70vw; max-height: 100vh;
     border-radius: 50%;
-    background: radial-gradient(circle at 40% 40%,
-        #f8fafc 0%, #e2e8f0 55%, #cbd5e1 100%);
-    box-shadow:
-        inset -14px -8px 22px rgba(148, 163, 184, 0.5),
-        0 0 100px 40px color-mix(in srgb, #e2e8f0 22%, transparent);
-    opacity: 0.9;
+    background: radial-gradient(circle, var(--fo-glow) 0%, transparent 62%);
 }
-.forest-hill {
-    position: absolute;
-    bottom: 0;
-    left: -10%;
-    right: -10%;
-    height: 45%;
-    background: linear-gradient(180deg,
-        color-mix(in srgb, var(--theme-primary-dark) 30%, transparent) 0%,
-        color-mix(in srgb, var(--theme-primary-dark) 55%, transparent) 100%);
-    border-radius: 50% 50% 0 0 / 80% 80% 0 0;
-    opacity: 0.6;
-}
-.forest-pines {
-    position: absolute;
-    bottom: 20%;
-    left: -5%;
-    right: -5%;
-    height: 42%;
-    background:
-        repeating-linear-gradient(90deg,
-            transparent 0px,
-            transparent 30px,
-            color-mix(in srgb, var(--theme-primary-dark) 70%, transparent) 30px,
-            color-mix(in srgb, var(--theme-primary-dark) 70%, transparent) 48px,
-            transparent 48px,
-            transparent 78px);
-    background-size: 100% 100%;
-    background-repeat: repeat-x;
-    -webkit-mask-image: repeating-linear-gradient(90deg,
-        transparent 0px, transparent 30px,
-        black 30px, black 48px,
-        transparent 48px, transparent 78px);
-    -webkit-mask-size: 100% 100%;
-    -webkit-mask-repeat: repeat-x;
-    mask-image: repeating-linear-gradient(90deg,
-        transparent 0px, transparent 30px,
-        black 30px, black 48px,
-        transparent 48px, transparent 78px);
-    mask-size: 100% 100%;
-    mask-repeat: repeat-x;
-    opacity: 0.9;
-}
-.forest-pines::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(90deg,
-        transparent 0px, transparent 38px,
-        color-mix(in srgb, var(--theme-primary-dark) 50%, transparent) 38px,
-        color-mix(in srgb, var(--theme-primary-dark) 50%, transparent) 52px,
-        transparent 52px, transparent 90px);
-    -webkit-mask-image: repeating-linear-gradient(90deg,
-        transparent 0px, transparent 38px,
-        black 38px, black 52px,
-        transparent 52px, transparent 90px);
-    -webkit-mask-size: 100% 70%;
-    -webkit-mask-position: 0 100%;
-    -webkit-mask-repeat: repeat-x;
-    mask-image: repeating-linear-gradient(90deg,
-        transparent 0px, transparent 38px,
-        black 38px, black 52px,
-        transparent 52px, transparent 90px);
-    mask-size: 100% 70%;
-    mask-position: 0 100%;
-    mask-repeat: repeat-x;
-    opacity: 0.7;
-}
-.forest-ground {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 22%;
-    background: linear-gradient(to top,
-        color-mix(in srgb, var(--theme-primary) 55%, #000) 0%,
-        color-mix(in srgb, var(--theme-primary) 25%, transparent) 60%,
-        transparent 100%);
-    opacity: 0.9;
-}
-.forest-fog {
+.forest-ridge { position: absolute; left: -2%; right: -2%; }
+.forest-ridge.r1 { bottom: 30%; height: 34%; background: var(--fo-r1); clip-path: polygon(0% 100%, 0% 49.6%, 1.7% 41.6%, 3.3% 50.4%, 4.4% 36.3%, 5.5% 48.7%, 6.7% 37.2%, 8% 47.7%, 9.6% 34.7%, 11.2% 45.2%, 12.1% 37.6%, 12.9% 46.8%, 14.2% 32%, 15.5% 46.8%, 16.3% 32.7%, 17.1% 46.4%, 18.7% 35.3%, 20.2% 46.5%, 22% 37.6%, 23.7% 48.2%, 24.6% 32.8%, 25.4% 45.5%, 26.8% 38.6%, 28.2% 46.3%, 29.4% 30.5%, 30.6% 42.6%, 31.8% 33.9%, 33.1% 40.1%, 34.1% 33.2%, 35.2% 39.7%, 36.5% 28.8%, 37.8% 38.1%, 38.9% 29.2%, 39.9% 38%, 41.2% 29.2%, 42.5% 39%, 43.3% 29.5%, 44.2% 41.4%, 45.6% 26.5%, 47% 42.8%, 48% 29.9%, 49% 45.1%, 50.7% 28.7%, 52.3% 44.4%, 53.5% 36.6%, 54.6% 46.3%, 56.2% 32.6%, 57.7% 46.6%, 58.9% 30.8%, 60.2% 45.9%, 61.7% 31.1%, 63.1% 44.3%, 64.6% 34.6%, 66% 46.2%, 67.6% 30.9%, 69.3% 46.8%, 70.7% 35.2%, 72.1% 47.4%, 73.1% 40.4%, 74.2% 50.7%, 75.5% 36.2%, 76.7% 50.1%, 78.1% 41.8%, 79.4% 51.6%, 80.9% 38.1%, 82.4% 49.7%, 83.7% 39.3%, 84.9% 48.2%, 86.5% 36.6%, 88.1% 45.5%, 89.3% 33.8%, 90.5% 43.6%, 91.4% 32.2%, 92.3% 41.6%, 93.8% 34.5%, 95.3% 43.3%, 96.7% 27%, 98.1% 42.1%, 99.1% 31.6%, 100% 42%, 100% 100%); }
+.forest-ridge.r2 { bottom: 19%; height: 36%; background: var(--fo-r2); clip-path: polygon(0% 100%, 0% 51.3%, 2% 31.8%, 4.1% 46.9%, 5.2% 38%, 6.2% 49.2%, 8% 31.1%, 9.8% 49.4%, 11.2% 33.3%, 12.5% 49.8%, 14.2% 34.4%, 15.8% 49.4%, 17% 34.3%, 18.1% 47.8%, 19.5% 34.5%, 21% 46.4%, 23.1% 29.7%, 25.2% 43.2%, 26.7% 23.8%, 28.3% 39.8%, 29.6% 26.3%, 30.9% 38.3%, 31.9% 29.7%, 32.9% 40.4%, 34.3% 26.7%, 35.6% 42.1%, 37.6% 29.4%, 39.5% 46.3%, 41.2% 31.9%, 42.8% 47.9%, 43.8% 36.9%, 44.8% 49%, 45.9% 36.9%, 47% 49.7%, 49.1% 35.5%, 51.2% 49.4%, 52.4% 33.2%, 53.6% 49.6%, 55.5% 30.8%, 57.4% 49.4%, 59.3% 32.5%, 61.3% 51.6%, 63.2% 34.4%, 65.1% 53%, 67.2% 40.7%, 69.2% 56.5%, 70.4% 36.9%, 71.6% 55.3%, 73.3% 38.2%, 75.1% 51.8%, 76.7% 38.2%, 78.3% 48.5%, 80.3% 34.5%, 82.3% 44.6%, 84.2% 30.5%, 86.1% 42.6%, 88.1% 30.2%, 90.1% 44.9%, 91.5% 26%, 93% 45%, 95.1% 30.1%, 97.1% 46.4%, 98.6% 29.6%, 100% 44%, 100% 100%); }
+.forest-ridge.r3 { bottom: 0;  height: 46%; background: linear-gradient(180deg, var(--fo-r3) 0%, color-mix(in srgb, var(--fo-r3) 62%, var(--fo-fg)) 100%); clip-path: polygon(0% 100%, 0% 49.5%, 1.9% 35.5%, 3.9% 51%, 5.9% 35%, 7.9% 51.5%, 9.2% 31.6%, 10.4% 47.4%, 12.8% 36.8%, 15.1% 43.7%, 16.6% 29.4%, 18.1% 44.1%, 19.9% 18.6%, 21.8% 42.6%, 23.6% 19.6%, 25.5% 44.1%, 26.8% 24%, 28.2% 47.3%, 30.6% 27.3%, 33% 52.3%, 35.2% 34%, 37.4% 55.1%, 38.7% 34.5%, 39.9% 55.2%, 41.9% 33.3%, 43.9% 52%, 45.2% 37.1%, 46.4% 53.7%, 48.2% 30.3%, 50.1% 53.9%, 52.4% 32.6%, 54.8% 57.1%, 57.3% 35.9%, 59.7% 58.4%, 62% 42%, 64.3% 56.9%, 66.7% 39.7%, 69.2% 52.6%, 70.5% 28.9%, 71.8% 46.2%, 73.3% 33.8%, 74.8% 46.7%, 76.6% 21.7%, 78.4% 44.5%, 80% 24.6%, 81.6% 45.1%, 83.3% 27%, 85% 46.4%, 87% 30.7%, 89% 48.6%, 91.4% 29.4%, 93.8% 47.8%, 96.3% 27.1%, 98.7% 46.4%, 101.3% 23.1%, 100% 46%, 100% 100%); }
+.forest-mist {
     position: absolute;
     left: -10%; right: -10%;
-    height: 90px;
-    background: linear-gradient(90deg,
-        transparent 0%,
-        color-mix(in srgb, var(--theme-accent) 28%, transparent) 25%,
-        color-mix(in srgb, var(--theme-accent) 38%, transparent) 50%,
-        color-mix(in srgb, var(--theme-accent) 28%, transparent) 75%,
-        transparent 100%);
-    opacity: 0.5;
-}
-.forest-fog.f1 { bottom: 26%; animation: forestFogDrift 44s ease-in-out infinite; will-change: transform, opacity; }
-.forest-spore {
-    position: absolute;
-    width: 5px; height: 5px;
-    background: #fef08a;
-    border-radius: 50%;
-    box-shadow:
-        0 0 10px 3px #fde047,
-        0 0 20px 6px rgba(253, 224, 71, 0.35);
-    opacity: 0;
-    animation: forestSporeFloat 20s ease-in-out infinite;
+    bottom: 17%; height: 22%;
+    background: linear-gradient(180deg, transparent 0%, var(--fo-mist) 50%, transparent 100%);
+    animation: forestMistDrift 40s ease-in-out infinite;
     will-change: transform, opacity;
 }
-.forest-spore.sp1 { top: 60%; left: 30%; }
-@keyframes forestFogDrift {
-    0%, 100% { transform: translateX(0); opacity: 0.4; }
-    50%      { transform: translateX(50px); opacity: 0.65; }
+.forest-rays {
+    position: absolute;
+    top: 0; right: -5%;
+    width: 78%; height: 92%;
+    background:
+        linear-gradient(112deg, transparent 38%, var(--fo-ray) 44%, transparent 52%),
+        linear-gradient(108deg, transparent 54%, var(--fo-ray) 58%, transparent 64%),
+        linear-gradient(115deg, transparent 22%, var(--fo-ray) 26%, transparent 31%),
+        linear-gradient(106deg, transparent 68%, var(--fo-ray) 71%, transparent 76%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 55%, transparent 92%);
+    mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 55%, transparent 92%);
+    animation: forestRayShimmer 12s ease-in-out infinite;
+    will-change: opacity;
 }
-@keyframes forestSporeFloat {
+.forest-canopy {
+    position: absolute;
+    top: -2%; left: -2%; right: -2%;
+    -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 22%, rgba(0, 0, 0, 0.22) 40%, rgba(0, 0, 0, 0.22) 60%, #000 78%, #000 100%);
+    mask-image: linear-gradient(90deg, #000 0%, #000 22%, rgba(0, 0, 0, 0.22) 40%, rgba(0, 0, 0, 0.22) 60%, #000 78%, #000 100%);
+}
+.forest-canopy.c2 { height: 26%; opacity: 0.85; background: radial-gradient(ellipse 5.6vw 5.4vh at -4.0% 14%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.1vw 5.4vh at 1.3% 13%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.2vw 8.0vh at 6.7% 15%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 7.9vw 6.8vh at 10.3% 14%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 5.9vw 5.1vh at 16.5% 17%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.4vw 6.3vh at 20.9% 14%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.4vw 5.9vh at 27.0% 15%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.8vw 8.4vh at 31.8% 14%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.3vw 9.0vh at 35.7% 12%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.4vw 7.6vh at 41.1% 13%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.8vw 5.8vh at 46.6% 15%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 5.7vw 6.3vh at 50.5% 14%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.4vw 8.3vh at 54.9% 17%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 10.0vw 8.2vh at 61.0% 14%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.3vw 7.2vh at 64.8% 15%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.4vw 8.7vh at 68.2% 15%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 5.9vw 6.6vh at 73.5% 17%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 10.0vw 5.8vh at 78.7% 14%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 7.5vw 8.2vh at 84.3% 15%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 5.9vw 8.9vh at 87.8% 13%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 7.0vw 7.9vh at 91.6% 16%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 7.7vw 8.2vh at 96.2% 13%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.3vw 7.5vh at 100.5% 12%, var(--fo-fg2) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.1vw 7.9vh at 104.1% 15%, var(--fo-fg2) 0 90%, transparent 100%),
+        linear-gradient(var(--fo-fg2), var(--fo-fg2)) 0 0 / 100% 7% no-repeat; }
+.forest-canopy.c1 { height: 19%; opacity: var(--fo-leaf-a); background: radial-gradient(ellipse 8.6vw 5.4vh at -4.0% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.3vw 7.1vh at 1.7% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 7.9vw 5.4vh at 6.0% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.8vw 6.5vh at 11.0% 11%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.8vw 8.9vh at 15.6% 11%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 5.8vw 6.2vh at 19.0% 9%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.2vw 7.3vh at 24.4% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 5.7vw 7.1vh at 29.3% 8%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 5.5vw 7.6vh at 33.7% 12%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.1vw 5.1vh at 37.1% 9%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.4vw 7.9vh at 40.8% 11%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.7vw 7.8vh at 44.7% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.3vw 6.1vh at 50.6% 11%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.5vw 7.5vh at 55.3% 7%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.0vw 5.0vh at 59.8% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.4vw 6.4vh at 63.3% 7%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 5.8vw 5.6vh at 69.5% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 7.9vw 6.9vh at 73.4% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.8vw 5.8vh at 78.2% 10%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 7.8vw 8.7vh at 82.7% 7%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 8.0vw 5.2vh at 86.7% 11%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 6.9vw 5.8vh at 91.2% 12%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.2vw 7.8vh at 94.5% 11%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 7.1vw 7.2vh at 99.8% 12%, var(--fo-fg) 0 90%, transparent 100%),
+        radial-gradient(ellipse 9.3vw 7.7vh at 103.1% 8%, var(--fo-fg) 0 90%, transparent 100%),
+        linear-gradient(var(--fo-fg), var(--fo-fg)) 0 0 / 100% 4% no-repeat; }
+.forest-trunk {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: linear-gradient(90deg, var(--fo-trunk-a) 0%, var(--fo-trunk-b) 45%, var(--fo-trunk-a) 100%);
+}
+.forest-trunk.t1 { left: 2%;  width: clamp(22px, 3.6vw, 56px); }
+.forest-trunk.t2 { right: 3%; width: clamp(16px, 2.6vw, 40px); }
+.forest-trunk.t3 { left: 12%; width: clamp(8px, 1.3vw, 20px); opacity: 0.4; }
+.forest-ferns {
+    position: absolute;
+    bottom: 0; left: -1%; right: -1%;
+    height: 14%;
+    background: linear-gradient(180deg, var(--fo-fg2) 0%, var(--fo-fg) 70%);
+    clip-path: polygon(0% 100%, 0% 95.2%, 1.2% 67.4%, 2.6% 95.2%, 3.5% 96.4%, 4.7% 72.4%, 6.1% 96.4%, 7% 65.5%, 8.2% 25.1%, 9.6% 65.5%, 10.9% 89.2%, 12.1% 68.2%, 13.5% 89.2%, 14.2% 95.8%, 15.4% 71.3%, 16.8% 95.8%, 17.5% 64.3%, 18.7% 24.5%, 20.1% 64.3%, 21.4% 87.4%, 22.6% 32.4%, 24% 87.4%, 24.8% 75.6%, 26% 43.1%, 27.4% 75.6%, 28.8% 89.9%, 30% 27.4%, 31.4% 89.9%, 32.6% 80.5%, 33.8% 40.4%, 35.2% 80.5%, 35.8% 93.4%, 37% 52.6%, 38.4% 93.4%, 39.9% 75.2%, 41.1% 28.3%, 42.5% 75.2%, 43.3% 73.4%, 44.5% 25.7%, 45.9% 73.4%, 47.3% 76.8%, 48.5% 29.4%, 49.9% 76.8%, 50.8% 83.8%, 52% 44.9%, 53.4% 83.8%, 54% 82.8%, 55.2% 63.1%, 56.6% 82.8%, 57.1% 92%, 58.3% 79.1%, 59.7% 92%, 60.4% 84%, 61.6% 48.9%, 63% 84%, 63.8% 85%, 65% 20.2%, 66.4% 85%, 67.3% 88.2%, 68.5% 69.4%, 69.9% 88.2%, 70.6% 82.5%, 71.8% 59.9%, 73.2% 82.5%, 74% 73.3%, 75.2% 47.4%, 76.6% 73.3%, 77.1% 95.6%, 78.3% 78.2%, 79.7% 95.6%, 81.1% 88.4%, 82.3% 43.8%, 83.7% 88.4%, 84.4% 91.1%, 85.6% 71%, 87% 91.1%, 87.5% 69.2%, 88.7% 38.8%, 90.1% 69.2%, 91.6% 66.2%, 92.8% 36.4%, 94.2% 66.2%, 94.7% 80.8%, 95.9% 64.1%, 97.3% 80.8%, 98.6% 77.2%, 99.8% 56.6%, 101.2% 77.2%, 100% 100%);
+}
+.forest-firefly {
+    position: absolute;
+    top: 62%; left: 30%;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--fo-fly);
+    box-shadow: 0 0 10px 3px var(--fo-fly), 0 0 20px 6px color-mix(in srgb, var(--fo-fly) 35%, transparent);
+    opacity: 0;
+    animation: forestFireflyFloat 20s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+@media (max-width: 700px) {
+    .forest-ridge.r1 { clip-path: polygon(0% 100%, 0% 49.6%, 4.5% 41.6%, 9% 47.6%, 11.9% 33.5%, 14.8% 46.1%, 18.3% 34.6%, 21.7% 47.7%, 26% 34.7%, 30.4% 42.5%, 32.7% 34.9%, 35.1% 40.8%, 38.5% 26%, 41.9% 39.9%, 44.2% 25.8%, 46.4% 41.9%, 50.6% 30.9%, 54.7% 45.1%, 59.5% 36.2%, 64.2% 45.8%, 66.6% 30.4%, 68.9% 45.4%, 72.6% 38.4%, 76.3% 51.9%, 79.5% 36.1%, 82.8% 49%, 86.2% 40.2%, 89.5% 43.1%, 92.4% 36.2%, 95.3% 41.9%, 98.8% 31%, 100% 42%, 100% 100%); }
+    .forest-ridge.r2 { clip-path: polygon(0% 100%, 0% 51.3%, 5.5% 31.8%, 10.9% 47.8%, 13.8% 39%, 16.7% 49.9%, 21.5% 31.8%, 26.4% 41.5%, 29.9% 25.4%, 33.5% 41.1%, 37.9% 25.8%, 42.4% 48.7%, 45.5% 33.6%, 48.6% 49.3%, 52.4% 36%, 56.2% 49.1%, 61.8% 32.3%, 67.4% 56.1%, 71.6% 36.6%, 75.9% 51%, 79.3% 37.5%, 82.8% 42.9%, 85.5% 34.3%, 88.2% 43%, 91.8% 29.3%, 95.3% 45.1%, 100.6% 32.5%, 100% 44%, 100% 100%); }
+    .forest-ridge.r3 { clip-path: polygon(0% 100%, 0% 49.5%, 5.1% 35.5%, 10.2% 49%, 15.5% 33%, 20.9% 41.7%, 24.3% 21.8%, 27.6% 44.1%, 33.8% 33.5%, 40% 53.2%, 44% 38.9%, 48% 54.3%, 52.8% 28.9%, 57.6% 59.4%, 62.5% 36.4%, 67.4% 54.1%, 71.1% 34.1%, 74.8% 45.5%, 81% 25.5%, 87.3% 48.1%, 93.1% 29.8%, 98.9% 45.7%, 102.3% 25.1%, 100% 46%, 100% 100%); }
+    .forest-ferns { clip-path: polygon(0% 100%, 0% 95.2%, 1.2% 67.4%, 2.6% 95.2%, 3.5% 96.4%, 4.7% 72.4%, 6.1% 96.4%, 7% 65.5%, 8.2% 25.1%, 9.6% 65.5%, 10.9% 89.2%, 12.1% 68.2%, 13.5% 89.2%, 14.2% 95.8%, 15.4% 71.3%, 16.8% 95.8%, 17.5% 64.3%, 18.7% 24.5%, 20.1% 64.3%, 21.4% 87.4%, 22.6% 32.4%, 24% 87.4%, 24.8% 75.6%, 26% 43.1%, 27.4% 75.6%, 28.8% 89.9%, 30% 27.4%, 31.4% 89.9%, 32.6% 80.5%, 33.8% 40.4%, 35.2% 80.5%, 35.8% 93.4%, 37% 52.6%, 38.4% 93.4%, 39.9% 75.2%, 41.1% 28.3%, 42.5% 75.2%, 43.3% 73.4%, 44.5% 25.7%, 45.9% 73.4%, 47.3% 76.8%, 48.5% 29.4%, 49.9% 76.8%, 50.8% 83.8%, 52% 44.9%, 53.4% 83.8%, 54% 82.8%, 55.2% 63.1%, 56.6% 82.8%, 57.1% 92%, 58.3% 79.1%, 59.7% 92%, 60.4% 84%, 61.6% 48.9%, 63% 84%, 63.8% 85%, 65% 20.2%, 66.4% 85%, 67.3% 88.2%, 68.5% 69.4%, 69.9% 88.2%, 70.6% 82.5%, 71.8% 59.9%, 73.2% 82.5%, 74% 73.3%, 75.2% 47.4%, 76.6% 73.3%, 77.1% 95.6%, 78.3% 78.2%, 79.7% 95.6%, 81.1% 88.4%, 82.3% 43.8%, 83.7% 88.4%, 84.4% 91.1%, 85.6% 71%, 87% 91.1%, 87.5% 69.2%, 88.7% 38.8%, 90.1% 69.2%, 91.6% 66.2%, 92.8% 36.4%, 94.2% 66.2%, 94.7% 80.8%, 95.9% 64.1%, 97.3% 80.8%, 98.6% 77.2%, 99.8% 56.6%, 101.2% 77.2%, 100% 100%); }
+}
+@keyframes forestMistDrift {
+    0%, 100% { transform: translateX(0); opacity: 0.55; }
+    50%      { transform: translateX(60px); opacity: 0.9; }
+}
+@keyframes forestRayShimmer {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
+}
+@keyframes forestFireflyFloat {
     0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
     15%  { opacity: 1; }
-    50%  { transform: translate(20px, -60px) scale(1.15); opacity: 1; }
-    100% { transform: translate(-10px, -140px) scale(0.7); opacity: 0; }
+    50%  { transform: translate(24px, -60px) scale(1.15); opacity: 1; }
+    100% { transform: translate(-12px, -140px) scale(0.7); opacity: 0; }
 }
 
 /* ================================================================
@@ -2072,84 +2157,194 @@
 }
 
 /* ================================================================
-   -------- AURORA --------
+   -------- ★ AURORA — "Arctic Cabin" --------
+   Ribbons of aurora over a frozen lake, a snowy ridge, a lit cabin
+   with a curl of chimney smoke, and pine silhouettes.
+   Animated (3): .aurora-ribbon.a1, .aurora-ribbon.a2, .au-smoke
    ================================================================ */
-.aurora-mountain {
-    position: absolute;
-    bottom: 22%;
-    width: 0; height: 0;
-    border-left: 300px solid transparent;
-    border-right: 300px solid transparent;
-    border-bottom: 320px solid #0a1f24;
-    opacity: 0.9;
+[data-timawa-theme="aurora"] .theme-bg-shapes {
+    --au-cw: clamp(84px, 7.4vw, 124px);
+    --au-pw: clamp(110px, 16vw, 240px);
+    --au-star: 0;
+    --au-viol: var(--theme-accent);
+    --au-rib: 0.4;
+    --au-ridge: #a3d0c4;
+    --au-snow-a: #ffffff;
+    --au-snow-b: #d3eee6;
+    --au-ice-a: rgba(196, 238, 228, 0.95);
+    --au-ice-b: rgba(150, 210, 196, 0.95);
+    --au-pine: #2a6657;
+    --au-wall: #8a5a38;
+    --au-roof: #5a3822;
+    --au-roofsnow: #ffffff;
+    --au-win: #ffcf70;
+    --au-glow: rgba(255, 190, 90, 0.5);
+    --au-smoke: rgba(110, 140, 140, 0.5);
 }
-.aurora-mountain.am1 { left: -120px; }
-.aurora-mountain.am2 { left: 30%; border-left-width: 360px; border-right-width: 360px; border-bottom-width: 380px; }
-.aurora-mountain.am3 { right: -120px; border-left-width: 320px; border-right-width: 320px; border-bottom-width: 340px; }
-.aurora-mountain::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -50%;
-    width: 0; height: 0;
-    border-left: 90px solid transparent;
-    border-right: 90px solid transparent;
-    border-bottom: 70px solid #e0fff4;
-    opacity: 0.85;
-    transform: translate(-160px, 250px) scale(0.9);
+[data-timawa-theme="aurora"][data-timawa-mode="dark"] .theme-bg-shapes {
+    --au-star: 0.95;
+    --au-viol: color-mix(in srgb, var(--theme-accent) 45%, #7c3aed);
+    --au-rib: 0.92;
+    --au-ridge: #0c262b;
+    --au-snow-a: #28494f;
+    --au-snow-b: #10282d;
+    --au-ice-a: rgba(16, 48, 54, 0.95);
+    --au-ice-b: rgba(8, 26, 30, 0.95);
+    --au-pine: #03100e;
+    --au-wall: #2b1a10;
+    --au-roof: #150d08;
+    --au-roofsnow: rgba(225, 250, 245, 0.88);
+    --au-win: #ffc866;
+    --au-glow: rgba(255, 170, 70, 0.55);
+    --au-smoke: rgba(220, 240, 240, 0.45);
 }
-.aurora-curtain {
+.aurora-stars {
     position: absolute;
-    top: 0;
-    width: 50px; height: 72vh;
-    background: linear-gradient(to bottom,
-        transparent 0%,
-        color-mix(in srgb, var(--theme-primary) 70%, transparent) 25%,
-        color-mix(in srgb, var(--theme-accent) 85%, transparent) 55%,
-        color-mix(in srgb, var(--theme-primary) 50%, transparent) 80%,
-        transparent 100%);
-    opacity: 0.55;
-    animation: auroraCurtainShift 16s ease-in-out infinite;
+    top: 0; left: 0; right: 0; height: 62%;
+    background:
+        radial-gradient(1.2px 1.2px at 69% 63%, #fff, transparent),
+        radial-gradient(1.6px 1.6px at 22% 79%, #fff, transparent),
+        radial-gradient(2.0px 2.0px at 51% 51%, #fff, transparent),
+        radial-gradient(1.3px 1.3px at 0% 37%, #fff, transparent),
+        radial-gradient(1.7px 1.7px at 7% 79%, #fff, transparent),
+        radial-gradient(1.3px 1.3px at 23% 4%, #fff, transparent),
+        radial-gradient(2.2px 2.2px at 74% 88%, #fff, transparent),
+        radial-gradient(1.7px 1.7px at 3% 33%, #fff, transparent),
+        radial-gradient(1.6px 1.6px at 12% 95%, #fff, transparent),
+        radial-gradient(1.4px 1.4px at 15% 82%, #fff, transparent),
+        radial-gradient(1.1px 1.1px at 93% 45%, #fff, transparent),
+        radial-gradient(1.7px 1.7px at 34% 48%, #fff, transparent),
+        radial-gradient(1.2px 1.2px at 4% 87%, #fff, transparent),
+        radial-gradient(1.3px 1.3px at 78% 21%, #fff, transparent),
+        radial-gradient(2.2px 2.2px at 89% 75%, #fff, transparent),
+        radial-gradient(1.9px 1.9px at 58% 73%, #fff, transparent),
+        radial-gradient(1.1px 1.1px at 48% 83%, #fff, transparent),
+        radial-gradient(1.2px 1.2px at 92% 89%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 37% 45%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 99% 39%, #fff, transparent),
+        radial-gradient(1.0px 1.0px at 9% 72%, #fff, transparent),
+        radial-gradient(2.2px 2.2px at 50% 49%, #fff, transparent),
+        radial-gradient(1.7px 1.7px at 75% 22%, #fff, transparent),
+        radial-gradient(1.7px 1.7px at 56% 62%, #fff, transparent),
+        radial-gradient(1.2px 1.2px at 17% 35%, #fff, transparent),
+        radial-gradient(2.1px 2.1px at 35% 60%, #fff, transparent);
+    background-size: 100% 100%;
+    opacity: var(--au-star);
+}
+.aurora-ribbon {
+    position: absolute;
+    background:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0 16px, rgba(255, 255, 255, 0.06) 16px 20px),
+        linear-gradient(90deg, transparent 0%, var(--theme-primary) 14%, var(--theme-primary) 38%, var(--au-viol) 62%, var(--theme-primary) 84%, transparent 100%);
+    -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    opacity: var(--au-rib);
     will-change: transform, opacity;
 }
-.aurora-curtain.ac1 { left: 12%; }
-.aurora-curtain.ac2 { left: 42%; width: 70px; animation-delay: 3s; }
-.aurora-curtain.ac3 { left: 72%; width: 60px; animation-delay: 6s; }
-.aurora-reflection-lake {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 22%;
-    background: linear-gradient(to bottom,
-        color-mix(in srgb, var(--theme-primary) 35%, transparent) 0%,
-        color-mix(in srgb, var(--theme-accent) 15%, transparent) 50%,
-        color-mix(in srgb, var(--theme-primary) 8%, transparent) 100%);
-    opacity: 0.8;
+.aurora-ribbon.a1 {
+    top: 3vh; left: -15vw; width: 130vw; height: 58vh;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 500' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='white' stop-opacity='0.95'/%3E%3Cstop offset='0.45' stop-color='white' stop-opacity='0.5'/%3E%3Cstop offset='1' stop-color='white' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 190 C150 80 300 260 450 160 S750 30 900 150 S1130 240 1200 110 L1200 500 L0 500 Z' fill='url(%23g)'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 500' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='white' stop-opacity='0.95'/%3E%3Cstop offset='0.45' stop-color='white' stop-opacity='0.5'/%3E%3Cstop offset='1' stop-color='white' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 190 C150 80 300 260 450 160 S750 30 900 150 S1130 240 1200 110 L1200 500 L0 500 Z' fill='url(%23g)'/%3E%3C/svg%3E");
+    animation: auroraRibbonSway 22s ease-in-out infinite alternate;
 }
-.aurora-reflection-lake::before {
+.aurora-ribbon.a2 {
+    top: 14vh; left: -8vw; width: 116vw; height: 42vh;
+    background:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0 12px, rgba(255, 255, 255, 0.05) 12px 15px),
+        linear-gradient(90deg, transparent 0%, var(--au-viol) 18%, var(--theme-primary) 46%, var(--theme-primary) 70%, var(--au-viol) 88%, transparent 100%);
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 500' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='white' stop-opacity='0.9'/%3E%3Cstop offset='0.4' stop-color='white' stop-opacity='0.45'/%3E%3Cstop offset='1' stop-color='white' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 120 C180 230 330 60 520 150 S820 250 1000 120 S1140 70 1200 150 L1200 500 L0 500 Z' fill='url(%23g)'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 500' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='white' stop-opacity='0.9'/%3E%3Cstop offset='0.4' stop-color='white' stop-opacity='0.45'/%3E%3Cstop offset='1' stop-color='white' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 120 C180 230 330 60 520 150 S820 250 1000 120 S1140 70 1200 150 L1200 500 L0 500 Z' fill='url(%23g)'/%3E%3C/svg%3E");
+    animation: auroraRibbonSway2 28s ease-in-out -9s infinite alternate;
+}
+.aurora-ridge {
+    position: absolute;
+    left: 0; right: 0; bottom: 24%; height: 22%;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--au-ridge) 70%, #fff) 0%, var(--au-ridge) 55%);
+    clip-path: polygon(0% 100%, 6.2% 41.2%, 12.4% 60.5%, 16.9% 61.3%, 21.4% 67.1%, 26.3% 62.9%, 31.1% 68%, 35.8% 48.8%, 40.5% 64.8%, 47% 53.2%, 53.6% 71.1%, 59.2% 25.9%, 64.7% 60%, 73.4% 43.3%, 82% 68.6%, 88.3% 56.7%, 94.5% 71.4%, 100% 23.1%, 100% 70.1%, 100% 100%);
+}
+.aurora-ice {
+    position: absolute;
+    left: 0; right: 0; bottom: 0; height: 26%;
+    background: linear-gradient(180deg, var(--au-ice-a) 0%, var(--au-ice-b) 100%);
+}
+.aurora-ice::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 100%;
-    background: repeating-linear-gradient(
-        to right,
-        transparent 0px, transparent 20px,
-        color-mix(in srgb, var(--theme-accent) 12%, transparent) 20px,
-        color-mix(in srgb, var(--theme-accent) 12%, transparent) 22px);
-    opacity: 0.6;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, var(--theme-primary) 25%, var(--theme-accent) 50%, var(--theme-primary) 75%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 80%);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 80%);
+    opacity: 0.32;
 }
-.aurora-snowcap {
+.aurora-snow {
     position: absolute;
-    width: 70px; height: 34px;
-    background: #e0fff4;
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-    opacity: 0.85;
+    background: linear-gradient(180deg, var(--au-snow-a) 0%, var(--au-snow-b) 100%);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
 }
-.aurora-snowcap.as1 { bottom: calc(22% + 280px); left: calc(30% + 240px); transform: scale(0.9); }
-.aurora-snowcap.as2 { bottom: calc(22% + 200px); right: 140px; transform: scale(0.7); }
-@keyframes auroraCurtainShift {
-    0%, 100% { transform: translateX(0) scaleX(1); opacity: 0.5; }
-    25%      { transform: translateX(20px) scaleX(1.12); opacity: 0.75; }
-    50%      { transform: translateX(-14px) scaleX(0.95); opacity: 0.6; }
-    75%      { transform: translateX(22px) scaleX(1.08); opacity: 0.7; }
+.aurora-snow.s1 { bottom: -8%;  left: -12%; width: 70%; height: 30%; }
+.aurora-snow.s2 { bottom: -10%; right: -14%; width: 74%; height: 34%; }
+.aurora-pines {
+    position: absolute;
+    bottom: 20%;
+    width: var(--au-pw); height: calc(var(--au-pw) * 1.4);
+    background: var(--au-pine);
+    clip-path: polygon(0% 100%, 5% 100%, 5% 100%, 13.7% 93.2%, 7.5% 90.1%, 14.7% 83.3%, 9.9% 80.2%, 15.8% 73.3%, 12.4% 70.2%, 16.8% 63.4%, 14.8% 60.3%, 17.8% 53.5%, 20% 38%, 25.2% 60.3%, 22.2% 53.5%, 27.6% 70.2%, 23.2% 63.4%, 30.1% 80.2%, 24.2% 73.3%, 32.5% 90.1%, 25.3% 83.3%, 35% 100%, 26.3% 93.2%, 35% 100%, 28% 100%, 28% 100%, 38.4% 90.5%, 31% 86.2%, 39.7% 76.8%, 33.9% 72.5%, 40.9% 63%, 36.9% 58.7%, 42.2% 49.3%, 39.8% 45%, 43.4% 35.5%, 46% 14%, 52.2% 45%, 48.6% 35.5%, 55.1% 58.7%, 49.8% 49.3%, 58.1% 72.5%, 51.1% 63%, 61% 86.2%, 52.3% 76.8%, 64% 100%, 53.6% 90.5%, 64% 100%, 60% 100%, 60% 100%, 68.1% 94.1%, 62.3% 91.4%, 69.1% 85.4%, 64.6% 82.7%, 70% 76.8%, 66.9% 74.1%, 71% 68.1%, 69.2% 65.4%, 72% 59.5%, 74% 46%, 78.8% 65.4%, 76% 59.5%, 81.1% 74.1%, 77% 68.1%, 83.4% 82.7%, 78% 76.8%, 85.7% 91.4%, 78.9% 85.4%, 88% 100%, 79.9% 94.1%, 88% 100%, 100% 100%);
+}
+.aurora-pines.p1 { left: 6%; }
+.theme-bg-shapes .aurora-pines.p2 {
+    right: 2%; bottom: 21%;
+    width: calc(var(--au-pw) * 0.8); height: calc(var(--au-pw) * 1.12);
+    transform: scaleX(-1);
+}
+.aurora-cabin {
+    position: absolute;
+    right: 15%; bottom: 22.6%;
+    width: var(--au-cw); height: calc(var(--au-cw) * 0.6);
+    background:
+        linear-gradient(var(--au-win), var(--au-win)) 24% 42% / 20% 32% no-repeat,
+        linear-gradient(var(--au-win), var(--au-win)) 66% 42% / 20% 32% no-repeat,
+        var(--au-wall);
+}
+.aurora-cabin::before {
+    content: '';
+    position: absolute;
+    left: -9%; right: -9%; bottom: 100%;
+    height: 62%;
+    background: linear-gradient(180deg, var(--au-roofsnow) 0%, var(--au-roofsnow) 38%, var(--au-roof) 38%, var(--au-roof) 100%);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.aurora-cabin::after {
+    content: '';
+    position: absolute;
+    left: -60%; right: -60%; top: -90%; bottom: -90%;
+    background: radial-gradient(ellipse at 46% 58%, var(--au-glow) 0%, transparent 52%);
+}
+.aurora-cabin .au-chimney {
+    position: absolute;
+    left: 66%; bottom: calc(100% + 28%);
+    width: 11%; height: 36%;
+    background: var(--au-roof);
+}
+.aurora-cabin .au-smoke {
+    position: absolute;
+    left: 62%; bottom: calc(100% + 62%);
+    width: 20%; aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--au-smoke) 0%, transparent 70%);
+    opacity: 0;
+    animation: auroraSmokeRise 8s ease-out infinite;
+    will-change: transform, opacity;
+}
+@keyframes auroraRibbonSway {
+    0%   { transform: translateX(-2.5vw); opacity: calc(var(--au-rib) * 0.75); }
+    100% { transform: translateX(2.5vw);  opacity: var(--au-rib); }
+}
+@keyframes auroraRibbonSway2 {
+    0%   { transform: translateX(2vw);  opacity: var(--au-rib); }
+    100% { transform: translateX(-3vw); opacity: calc(var(--au-rib) * 0.7); }
+}
+@keyframes auroraSmokeRise {
+    0%   { transform: translate(0, 0) scale(0.6); opacity: 0; }
+    20%  { opacity: 1; }
+    100% { transform: translate(60%, -260%) scale(2.2); opacity: 0; }
 }
 
 /* ================================================================
@@ -2323,94 +2518,8 @@
     50%      { transform: rotate(1.5deg); }
 }
 
-/* ================================================================
-   ===== LIGHT MODE OVERRIDES FOR "DARK-FIRST" THEMES =====
-   ===== (variable overrides, kept from previous version) =====
-   ================================================================ */
-[data-timawa-theme="aurora"][data-timawa-mode="light"] {
-    --theme-primary: #059669;
-    --theme-accent: #7c3aed;
-    --theme-primary-dark: #047857;
-    --theme-primary-soft: #d1fae5;
-    --theme-primary-soft-2: #ecfdf5;
-    --theme-bg: #f0fdfa;
-    --theme-bg-soft: #f7fefb;
-    --theme-card: #ffffff;
-    --theme-text: #0f2a25;
-    --theme-text-muted: #3d5c55;
-    --theme-text-dim: #6b8a82;
-    --theme-text-faint: #a0bcc4;
-    --theme-border: #d5efe6;
-    --theme-border-soft: #e6f6f0;
-    --theme-border-input: #bfe4d8;
-    --theme-gradient: linear-gradient(45deg, #059669 0%, #7c3aed 100%);
-    --theme-shadow: rgba(5, 150, 105, 0.18);
-    --theme-shadow-soft: rgba(124, 58, 237, 0.15);
-    --theme-nav-bg: rgba(240, 253, 250, 0.98);
-}
-[data-timawa-theme="starry"][data-timawa-mode="light"] {
-    --theme-primary: #7c3aed;
-    --theme-accent: #a78bfa;
-    --theme-primary-dark: #6d28d9;
-    --theme-primary-soft: #ede9fe;
-    --theme-primary-soft-2: #f5f3ff;
-    --theme-bg: #faf8ff;
-    --theme-bg-soft: #f4f0ff;
-    --theme-card: #ffffff;
-    --theme-text: #1e1a3d;
-    --theme-text-muted: #4f4870;
-    --theme-text-dim: #857ca0;
-    --theme-text-faint: #bab4cf;
-    --theme-border: #e6e1f5;
-    --theme-border-soft: #f0ecfa;
-    --theme-border-input: #d4ccee;
-    --theme-gradient: linear-gradient(45deg, #7c3aed 0%, #a78bfa 100%);
-    --theme-shadow: rgba(124, 58, 237, 0.18);
-    --theme-shadow-soft: rgba(167, 139, 250, 0.2);
-    --theme-nav-bg: rgba(250, 248, 255, 0.98);
-}
-[data-timawa-theme="nebula"][data-timawa-mode="light"] {
-    --theme-primary: #7c3aed;
-    --theme-accent: #ec4899;
-    --theme-primary-dark: #6d28d9;
-    --theme-primary-soft: #f3e8ff;
-    --theme-primary-soft-2: #fdf2f8;
-    --theme-bg: #fdf7ff;
-    --theme-bg-soft: #f9f0ff;
-    --theme-card: #ffffff;
-    --theme-text: #2a1e4d;
-    --theme-text-muted: #5a4b80;
-    --theme-text-dim: #8a7ca8;
-    --theme-text-faint: #beb5d4;
-    --theme-border: #ecdff5;
-    --theme-border-soft: #f5eafb;
-    --theme-border-input: #dcc8ee;
-    --theme-gradient: linear-gradient(45deg, #7c3aed 0%, #ec4899 100%);
-    --theme-shadow: rgba(124, 58, 237, 0.2);
-    --theme-shadow-soft: rgba(236, 72, 153, 0.18);
-    --theme-nav-bg: rgba(253, 247, 255, 0.98);
-}
-[data-timawa-theme="ember"][data-timawa-mode="light"] {
-    --theme-primary: #ea580c;
-    --theme-accent: #dc2626;
-    --theme-primary-dark: #c2410c;
-    --theme-primary-soft: #ffedd5;
-    --theme-primary-soft-2: #fff7ed;
-    --theme-bg: #fff8f2;
-    --theme-bg-soft: #fef3e8;
-    --theme-card: #ffffff;
-    --theme-text: #3a1f0f;
-    --theme-text-muted: #6b4a30;
-    --theme-text-dim: #a57852;
-    --theme-text-faint: #d4b096;
-    --theme-border: #f5e0c8;
-    --theme-border-soft: #faecd8;
-    --theme-border-input: #e8c8a8;
-    --theme-gradient: linear-gradient(45deg, #ea580c 0%, #dc2626 100%);
-    --theme-shadow: rgba(234, 88, 12, 0.2);
-    --theme-shadow-soft: rgba(220, 38, 38, 0.18);
-    --theme-nav-bg: rgba(255, 248, 242, 0.98);
-}
+/* Light palettes for aurora / starry / nebula / ember now live in theme.js.
+   (Variable overrides here were overridden by inline styles and never applied.) */
 
 /* ================================================================
    ===== REDUCED MOTION =====

@@ -7,7 +7,13 @@
    - Ocean: 3 static bubbles + 2 rising animated bubbles.
    - Sakura: single sweeping blossom branch (no more tree).
    - Crimson: added a resting butterfly.
-   Palettes, applyTheme, storage, sync: UNCHANGED.
+   ★ LIGHT-MODE FIX ★ Light palettes are now the single source of truth for
+     light colours. applyTheme() sets inline styles, which always beat the
+     old [data-timawa-mode="light"] variable blocks in theme.css, so those
+     values now live here (aurora, nebula, ember, + text colours for
+     sunset, forest, crimson, maroon, moonlit). Starry light is unchanged
+     except for lighter muted text.
+   applyTheme, storage, sync: UNCHANGED.
    ================================================================ */
 
 (function () {
@@ -41,23 +47,20 @@
             <div class="shape sunset-bird sb1"></div>
         `,
 
-        // ★ NEW SAKURA — single sweeping blossom branch + 2 twigs +
-        //   6 clusters + 3 petals + sun + ground
+        // ★ SAKURA — "Torii at Dawn": sun, peak, water, gate + reflection, blossom bough, 2 petals
         sakura: `
             <div class="shape sakura-sun"></div>
-            <div class="shape sakura-ground"></div>
-            <div class="shape sakura-branch"></div>
-            <div class="shape sakura-twig"></div>
-            <div class="shape sakura-twig t2"></div>
-            <div class="shape sakura-cluster c1"></div>
-            <div class="shape sakura-cluster c2"></div>
-            <div class="shape sakura-cluster c3"></div>
-            <div class="shape sakura-cluster c4"></div>
-            <div class="shape sakura-cluster c5"></div>
-            <div class="shape sakura-cluster c6"></div>
+            <div class="shape sakura-mount"></div>
+            <div class="shape sakura-mist"></div>
+            <div class="shape sakura-water"></div>
+            <div class="shape sakura-sunpath"></div>
+            <div class="shape sakura-torii-ref"></div>
+            <div class="shape sakura-ripples"></div>
+            <div class="shape sakura-torii"></div>
+            <div class="shape sakura-floaters"></div>
+            <div class="shape sakura-bough"><i class="sk-wood"></i><i class="sk-bl b1"></i><i class="sk-bl b2"></i><i class="sk-bl b3"></i><i class="sk-bl b4"></i><i class="sk-bl b5"></i><i class="sk-bl b6"></i><i class="sk-bl b7"></i><i class="sk-bl b8"></i></div>
             <div class="shape sakura-petal p1"></div>
             <div class="shape sakura-petal p2"></div>
-            <div class="shape sakura-petal p3"></div>
         `,
 
         pink: `
@@ -78,13 +81,21 @@
             <div class="shape blossom-butterfly bf1"></div>
         `,
 
+        // ★ FOREST — "Canopy Window": ridges, mist, light rays, canopy, trunks, ferns, firefly
         forest: `
-            <div class="shape forest-moon"></div>
-            <div class="shape forest-hill"></div>
-            <div class="shape forest-pines"></div>
-            <div class="shape forest-ground"></div>
-            <div class="shape forest-fog f1"></div>
-            <div class="shape forest-spore sp1"></div>
+            <div class="shape forest-glow"></div>
+            <div class="shape forest-ridge r1"></div>
+            <div class="shape forest-ridge r2"></div>
+            <div class="shape forest-mist"></div>
+            <div class="shape forest-ridge r3"></div>
+            <div class="shape forest-rays"></div>
+            <div class="shape forest-canopy c2"></div>
+            <div class="shape forest-canopy c1"></div>
+            <div class="shape forest-trunk t3"></div>
+            <div class="shape forest-trunk t1"></div>
+            <div class="shape forest-trunk t2"></div>
+            <div class="shape forest-ferns"></div>
+            <div class="shape forest-firefly"></div>
         `,
 
         sunshine: `
@@ -169,7 +180,6 @@
             <div class="shape ember-crack ec3"></div>
             <div class="shape ember-crack ec4"></div>
             <div class="shape ember-crack ec5"></div>
-            <div class="shape ember-heat"></div>
             <div class="shape ember-particle"></div>
         `,
 
@@ -217,16 +227,18 @@
             <div class="shape moonlit-star mls3"></div>
         `,
 
+        // ★ AURORA — "Arctic Cabin": ribbons, ridge, frozen lake, snow, pines, lit cabin + smoke
         aurora: `
-            <div class="shape aurora-mountain am1"></div>
-            <div class="shape aurora-mountain am2"></div>
-            <div class="shape aurora-mountain am3"></div>
-            <div class="shape aurora-curtain ac1"></div>
-            <div class="shape aurora-curtain ac2"></div>
-            <div class="shape aurora-curtain ac3"></div>
-            <div class="shape aurora-reflection-lake"></div>
-            <div class="shape aurora-snowcap as1"></div>
-            <div class="shape aurora-snowcap as2"></div>
+            <div class="shape aurora-stars"></div>
+            <div class="shape aurora-ribbon a1"></div>
+            <div class="shape aurora-ribbon a2"></div>
+            <div class="shape aurora-ridge"></div>
+            <div class="shape aurora-ice"></div>
+            <div class="shape aurora-snow s1"></div>
+            <div class="shape aurora-snow s2"></div>
+            <div class="shape aurora-pines p1"></div>
+            <div class="shape aurora-pines p2"></div>
+            <div class="shape aurora-cabin"><i class="au-chimney"></i><i class="au-smoke"></i></div>
         `,
 
         nebula: `
@@ -287,7 +299,7 @@
                 '--theme-primary': '#f5576c', '--theme-accent': '#f093fb', '--theme-primary-dark': '#c73a52',
                 '--theme-primary-soft': '#ffe4e6', '--theme-primary-soft-2': '#fff1f2',
                 '--theme-bg': '#ffffff', '--theme-bg-soft': '#fff8f9', '--theme-card': '#ffffff',
-                '--theme-text': '#2e1a1e', '--theme-text-muted': '#6b4a50', '--theme-text-dim': '#9c7a80', '--theme-text-faint': '#c4a5aa',
+                '--theme-text': '#3a1418', '--theme-text-muted': '#6b3038', '--theme-text-dim': '#8a5560', '--theme-text-faint': '#b08890',
                 '--theme-border': '#fdeef0', '--theme-border-soft': '#fef5f6', '--theme-border-input': '#fde0e3',
                 '--theme-gradient': 'linear-gradient(45deg, #f5576c 0%, #f093fb 100%)',
                 '--theme-shadow': 'rgba(245, 87, 108, 0.15)', '--theme-shadow-soft': 'rgba(245, 87, 108, 0.2)',
@@ -329,13 +341,13 @@
             }
         },
         forest: {
-            name: 'Forest', sub: 'Fresh · Natural', emoji: '🌲',
+            name: 'Forest', sub: 'Misty · Canopy', emoji: '🌲',
             preview: { primary: '#16a34a', gradient: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)' },
             light: {
                 '--theme-primary': '#16a34a', '--theme-accent': '#22c55e', '--theme-primary-dark': '#15803d',
                 '--theme-primary-soft': '#dcfce7', '--theme-primary-soft-2': '#f0fdf4',
                 '--theme-bg': '#ffffff', '--theme-bg-soft': '#f8fdf9', '--theme-card': '#ffffff',
-                '--theme-text': '#0f2e1a', '--theme-text-muted': '#3d5c47', '--theme-text-dim': '#698072', '--theme-text-faint': '#9cb3a4',
+                '--theme-text': '#0a2418', '--theme-text-muted': '#2a5040', '--theme-text-dim': '#4a7a60', '--theme-text-faint': '#7aa890',
                 '--theme-border': '#e8f5ec', '--theme-border-soft': '#f0f9f2', '--theme-border-input': '#d1e7d8',
                 '--theme-gradient': 'linear-gradient(45deg, #16a34a 0%, #22c55e 100%)',
                 '--theme-shadow': 'rgba(22, 163, 74, 0.15)', '--theme-shadow-soft': 'rgba(22, 163, 74, 0.2)',
@@ -383,7 +395,7 @@
                 '--theme-primary': '#a78bfa', '--theme-accent': '#c4b5fd', '--theme-primary-dark': '#8b5cf6',
                 '--theme-primary-soft': '#2a1e3d', '--theme-primary-soft-2': '#150e26',
                 '--theme-bg': '#0a0714', '--theme-bg-soft': '#0e0818', '--theme-card': '#17102a',
-                '--theme-text': '#e8e0ff', '--theme-text-muted': '#b0a0d0', '--theme-text-dim': '#8878b0', '--theme-text-faint': '#665a88',
+                '--theme-text': '#e8e0ff', '--theme-text-muted': '#cfc4f0', '--theme-text-dim': '#b0a2d8', '--theme-text-faint': '#9486c4',
                 '--theme-border': '#281e3d', '--theme-border-soft': '#1a1229', '--theme-border-input': '#281e3d',
                 '--theme-gradient': 'linear-gradient(45deg, #a78bfa 0%, #c4b5fd 100%)',
                 '--theme-shadow': 'rgba(167, 139, 250, 0.3)', '--theme-shadow-soft': 'rgba(167, 139, 250, 0.2)',
@@ -431,7 +443,7 @@
                 '--theme-primary': '#dc2626', '--theme-accent': '#f87171', '--theme-primary-dark': '#b91c1c',
                 '--theme-primary-soft': '#fee2e2', '--theme-primary-soft-2': '#fef2f2',
                 '--theme-bg': '#ffffff', '--theme-bg-soft': '#fff5f5', '--theme-card': '#ffffff',
-                '--theme-text': '#2e1a1a', '--theme-text-muted': '#6b4a4a', '--theme-text-dim': '#9c7a7a', '--theme-text-faint': '#c4a5a5',
+                '--theme-text': '#3a1018', '--theme-text-muted': '#6b2530', '--theme-text-dim': '#8a4550', '--theme-text-faint': '#b0808a',
                 '--theme-border': '#fde8e8', '--theme-border-soft': '#fef3f3', '--theme-border-input': '#fbd5d5',
                 '--theme-gradient': 'linear-gradient(45deg, #dc2626 0%, #f87171 100%)',
                 '--theme-shadow': 'rgba(220, 38, 38, 0.15)', '--theme-shadow-soft': 'rgba(220, 38, 38, 0.2)',
@@ -455,7 +467,7 @@
                 '--theme-primary': '#800000', '--theme-accent': '#a52a2a', '--theme-primary-dark': '#5c0000',
                 '--theme-primary-soft': '#f5e6e6', '--theme-primary-soft-2': '#faf0f0',
                 '--theme-bg': '#fdf8f8', '--theme-bg-soft': '#f9f0f0', '--theme-card': '#ffffff',
-                '--theme-text': '#2e1a1a', '--theme-text-muted': '#5c3a3a', '--theme-text-dim': '#8a6a6a', '--theme-text-faint': '#b5a0a0',
+                '--theme-text': '#3a1010', '--theme-text-muted': '#6b2525', '--theme-text-dim': '#8a4545', '--theme-text-faint': '#b08080',
                 '--theme-border': '#e8d5d5', '--theme-border-soft': '#f0e0e0', '--theme-border-input': '#d4b5b5',
                 '--theme-gradient': 'linear-gradient(45deg, #800000 0%, #a52a2a 100%)',
                 '--theme-shadow': 'rgba(128, 0, 0, 0.15)', '--theme-shadow-soft': 'rgba(128, 0, 0, 0.2)',
@@ -473,7 +485,7 @@
             }
         },
         sakura: {
-            name: 'Sakura', sub: 'Dreamy · Spring', emoji: '🌸',
+            name: 'Sakura', sub: 'Shrine · Dawn', emoji: '🌸',
             preview: { primary: '#ff8fab', gradient: 'linear-gradient(135deg, #ffb7c5 0%, #ff8fab 100%)' },
             light: {
                 '--theme-primary': '#ff8fab', '--theme-accent': '#ffb7c5', '--theme-primary-dark': '#e57399',
@@ -501,13 +513,13 @@
             preview: { primary: '#7c3aed', gradient: 'linear-gradient(135deg, #1e1b4b 0%, #7c3aed 50%, #ec4899 100%)' },
             light: {
                 '--theme-primary': '#7c3aed', '--theme-accent': '#ec4899', '--theme-primary-dark': '#6d28d9',
-                '--theme-primary-soft': '#2a1e4d', '--theme-primary-soft-2': '#150e26',
-                '--theme-bg': '#0a0618', '--theme-bg-soft': '#120a24', '--theme-card': '#1a1030',
-                '--theme-text': '#ede5ff', '--theme-text-muted': '#b8a8e0', '--theme-text-dim': '#8878b0', '--theme-text-faint': '#665a88',
-                '--theme-border': '#2a1e4d', '--theme-border-soft': '#1a1229', '--theme-border-input': '#2a1e4d',
+                '--theme-primary-soft': '#f3e8ff', '--theme-primary-soft-2': '#fdf2f8',
+                '--theme-bg': '#fdf7ff', '--theme-bg-soft': '#f9f0ff', '--theme-card': '#ffffff',
+                '--theme-text': '#2a1e4d', '--theme-text-muted': '#5a4b80', '--theme-text-dim': '#8a7ca8', '--theme-text-faint': '#beb5d4',
+                '--theme-border': '#ecdff5', '--theme-border-soft': '#f5eafb', '--theme-border-input': '#dcc8ee',
                 '--theme-gradient': 'linear-gradient(45deg, #7c3aed 0%, #ec4899 100%)',
-                '--theme-shadow': 'rgba(124, 58, 237, 0.35)', '--theme-shadow-soft': 'rgba(236, 72, 153, 0.25)',
-                '--theme-nav-bg': 'rgba(10, 6, 24, 0.98)'
+                '--theme-shadow': 'rgba(124, 58, 237, 0.2)', '--theme-shadow-soft': 'rgba(236, 72, 153, 0.18)',
+                '--theme-nav-bg': 'rgba(253, 247, 255, 0.98)'
             },
             dark: {
                 '--theme-primary': '#a78bfa', '--theme-accent': '#f472b6', '--theme-primary-dark': '#8b5cf6',
@@ -524,14 +536,14 @@
             name: 'Ember', sub: 'Intense · Fiery', emoji: '🔥',
             preview: { primary: '#f97316', gradient: 'linear-gradient(135deg, #7c2d12 0%, #f97316 50%, #dc2626 100%)' },
             light: {
-                '--theme-primary': '#f97316', '--theme-accent': '#dc2626', '--theme-primary-dark': '#ea580c',
-                '--theme-primary-soft': '#3d1a0a', '--theme-primary-soft-2': '#1e0e05',
-                '--theme-bg': '#1a0f08', '--theme-bg-soft': '#241812', '--theme-card': '#2a1a10',
-                '--theme-text': '#fbe8d9', '--theme-text-muted': '#c9b0a0', '--theme-text-dim': '#a58a78', '--theme-text-faint': '#7d6858',
-                '--theme-border': '#3a2015', '--theme-border-soft': '#2a1a10', '--theme-border-input': '#3a2015',
-                '--theme-gradient': 'linear-gradient(45deg, #f97316 0%, #dc2626 100%)',
-                '--theme-shadow': 'rgba(249, 115, 22, 0.35)', '--theme-shadow-soft': 'rgba(220, 38, 38, 0.28)',
-                '--theme-nav-bg': 'rgba(26, 15, 8, 0.98)'
+                '--theme-primary': '#ea580c', '--theme-accent': '#dc2626', '--theme-primary-dark': '#c2410c',
+                '--theme-primary-soft': '#ffedd5', '--theme-primary-soft-2': '#fff7ed',
+                '--theme-bg': '#fff8f2', '--theme-bg-soft': '#fef3e8', '--theme-card': '#ffffff',
+                '--theme-text': '#3a1f0f', '--theme-text-muted': '#6b4a30', '--theme-text-dim': '#a57852', '--theme-text-faint': '#d4b096',
+                '--theme-border': '#f5e0c8', '--theme-border-soft': '#faecd8', '--theme-border-input': '#e8c8a8',
+                '--theme-gradient': 'linear-gradient(45deg, #ea580c 0%, #dc2626 100%)',
+                '--theme-shadow': 'rgba(234, 88, 12, 0.2)', '--theme-shadow-soft': 'rgba(220, 38, 38, 0.18)',
+                '--theme-nav-bg': 'rgba(255, 248, 242, 0.98)'
             },
             dark: {
                 '--theme-primary': '#fb923c', '--theme-accent': '#ef4444', '--theme-primary-dark': '#f97316',
@@ -623,7 +635,7 @@
                 '--theme-primary': '#64748b', '--theme-accent': '#94a3b8', '--theme-primary-dark': '#475569',
                 '--theme-primary-soft': '#e2e8f0', '--theme-primary-soft-2': '#f1f5f9',
                 '--theme-bg': '#f8fafc', '--theme-bg-soft': '#f1f5f9', '--theme-card': '#ffffff',
-                '--theme-text': '#1e293b', '--theme-text-muted': '#475569', '--theme-text-dim': '#94a3b8', '--theme-text-faint': '#cbd5e1',
+                '--theme-text': '#0f172a', '--theme-text-muted': '#3a4759', '--theme-text-dim': '#64748b', '--theme-text-faint': '#94a3b8',
                 '--theme-border': '#e2e8f0', '--theme-border-soft': '#eef2f6', '--theme-border-input': '#cbd5e1',
                 '--theme-gradient': 'linear-gradient(45deg, #64748b 0%, #94a3b8 100%)',
                 '--theme-shadow': 'rgba(100, 116, 139, 0.15)', '--theme-shadow-soft': 'rgba(148, 163, 184, 0.22)',
@@ -641,17 +653,17 @@
             }
         },
         aurora: {
-            name: 'Aurora', sub: 'Alpine · Ethereal', emoji: '🌠',
+            name: 'Aurora', sub: 'Arctic · Night', emoji: '🌠',
             preview: { primary: '#34d399', gradient: 'linear-gradient(135deg, #0f172a 0%, #34d399 50%, #a78bfa 100%)' },
             light: {
-                '--theme-primary': '#10b981', '--theme-accent': '#a78bfa', '--theme-primary-dark': '#059669',
-                '--theme-primary-soft': '#0f2a25', '--theme-primary-soft-2': '#08181a',
-                '--theme-bg': '#061414', '--theme-bg-soft': '#0f1e24', '--theme-card': '#0f1e24',
-                '--theme-text': '#e0fff4', '--theme-text-muted': '#a0d4c4', '--theme-text-dim': '#7aa89c', '--theme-text-faint': '#5a7c72',
-                '--theme-border': '#1a3028', '--theme-border-soft': '#122019', '--theme-border-input': '#1a3028',
-                '--theme-gradient': 'linear-gradient(45deg, #10b981 0%, #a78bfa 100%)',
-                '--theme-shadow': 'rgba(16, 185, 129, 0.3)', '--theme-shadow-soft': 'rgba(167, 139, 250, 0.25)',
-                '--theme-nav-bg': 'rgba(6, 20, 20, 0.98)'
+                '--theme-primary': '#059669', '--theme-accent': '#7c3aed', '--theme-primary-dark': '#047857',
+                '--theme-primary-soft': '#d1fae5', '--theme-primary-soft-2': '#ecfdf5',
+                '--theme-bg': '#f0fdfa', '--theme-bg-soft': '#f7fefb', '--theme-card': '#ffffff',
+                '--theme-text': '#0f2a25', '--theme-text-muted': '#3d5c55', '--theme-text-dim': '#6b8a82', '--theme-text-faint': '#a0bcc4',
+                '--theme-border': '#d5efe6', '--theme-border-soft': '#e6f6f0', '--theme-border-input': '#bfe4d8',
+                '--theme-gradient': 'linear-gradient(45deg, #059669 0%, #7c3aed 100%)',
+                '--theme-shadow': 'rgba(5, 150, 105, 0.18)', '--theme-shadow-soft': 'rgba(124, 58, 237, 0.15)',
+                '--theme-nav-bg': 'rgba(240, 253, 250, 0.98)'
             },
             dark: {
                 '--theme-primary': '#34d399', '--theme-accent': '#c4b5fd', '--theme-primary-dark': '#10b981',
