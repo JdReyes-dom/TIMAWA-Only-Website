@@ -13,6 +13,7 @@
      - Video:  ONE video per story, max 60 s, length is automatic.
      - Music:  searched in the site (iTunes Search API, 30 s previews).
                You slide a window over the available audio to pick the part.
+               The song can be shown on the story as a foreground sticker: none | bar | square | disc (like Instagram).
                A story with music lasts exactly as long as the chosen clip
                (video stories keep the video's length), and the viewer keeps
                the song locked to the story clock.
@@ -34,7 +35,7 @@
     let C = null, root = null, q = {};
     const M = {
         sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
-        texts: [], sel: null, caption: '', track: null, spotify: null, query: '', spq: '', changing: false,
+        texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar', query: '', spq: '', changing: false,
         hist: [], preview: false, xhr: null, busy: false, results: [], msg: '', searching: false, playing: '', drag: null, lastTap: null, tl: null
     };
     let PALETTE = ['#ffffff', '#111111', '#ffd23f', '#ff5a6e', '#4ade80', '#38bdf8', '#c084fc'];
@@ -84,9 +85,10 @@
           </div>
           <div class="st-cbody">
             <div class="st-stagewrap"><div class="st-cstage">
-              <div class="st-bgblur"></div><div class="st-media-wrap"></div><div class="st-texts"></div>
+              <div class="st-bgblur"></div><div class="st-media-wrap"></div><div class="st-texts"></div><div class="st-msticker"></div>
               <div class="st-safe" style="top:14%"></div><div class="st-safe" style="top:80%"></div>
               <div class="st-scrim-t" hidden></div><div class="st-scrim-b" hidden></div>
+              <div class="st-song" hidden></div>
               <div class="st-tools" role="toolbar" aria-label="Story tools"></div>
               <div class="st-pv" hidden style="position:absolute;left:12px;right:12px;bottom:12px;z-index:4;color:#fff;display:flex;flex-direction:column;gap:8px;pointer-events:none"></div>
             </div></div>
@@ -97,7 +99,7 @@
         document.body.appendChild(root);
         q = { head: $('.st-ch'), stage: $('.st-cstage'), mw: $('.st-media-wrap'), bg: $('.st-bgblur'), tx: $('.st-texts'), tools: $('.st-tools'), sheet: $('.st-sheet'),
               sht: $('.st-sh-h b'), shb: $('.st-sh-b'), file: $('input[type=file]'), bar: $('.st-bar'), barI: $('.st-bar i'), pub: $('[data-k=publish]'),
-              pv: $('.st-pv'), sT: $('.st-scrim-t'), sB: $('.st-scrim-b'), prevB: $('[data-k=preview]') };
+              pv: $('.st-pv'), msk: $('.st-msticker'), song: $('.st-song'), sT: $('.st-scrim-t'), sB: $('.st-scrim-b'), prevB: $('[data-k=preview]') };
         S.observeStage(q.stage);
         if ('ResizeObserver' in window) new ResizeObserver(measure).observe(q.sheet);
 
@@ -142,7 +144,7 @@
     }
     function reset() {
         stopAudio(); revokeAll();
-        Object.assign(M, { sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR, texts: [], sel: null, caption: '', track: null, spotify: null, query: '', spq: '', changing: false,
+        Object.assign(M, { sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR, texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar', query: '', spq: '', changing: false,
             hist: [], preview: false, busy: false, results: [], msg: '', searching: false, playing: '', tl: null });
     }
     function dirty() { return !!(hasMedia() || M.texts.length || M.track || M.spotify); }
@@ -227,13 +229,21 @@
         const art = S.safeImgUrl(tr.thumbnail);
         return `<div class="st-music-card playing">${art ? `<img src="${S.esc(art)}" alt="">` : '<span class="ph">🎵</span>'}<div class="st-mt"><b>${S.esc(tr.title)}</b><small>${S.esc(tr.artist || (spotify ? 'Spotify' : 'Music'))}</small></div>${spotify ? '<span class="st-mbtn">▶ Play</span>' : '<span class="st-eq" aria-hidden="true"><i></i><i></i><i></i></span>'}</div>`;
     }
+    // foreground music sticker (none | bar | square | disc) + the text-only song line under the progress bar (preview only)
+    function renderSticker() {
+        const m = M.track;
+        q.msk.innerHTML = m ? S.musicSticker(m, M.mstyle) : '';
+        q.song.textContent = m ? S.musicLine(m) : '';
+        q.song.hidden = !(M.preview && m);
+    }
     function renderPv() {
+        renderSticker();
         q.stage.classList.toggle('pv', M.preview);
         q.sT.hidden = q.sB.hidden = q.pv.hidden = !M.preview;
         q.tx.style.pointerEvents = M.preview ? 'none' : '';
         if (!M.preview) { q.pv.innerHTML = ''; return; }
         q.pv.innerHTML = (M.caption ? `<div style="text-align:center;font-size:14px;text-shadow:0 1px 6px #000">${S.esc(M.caption)}</div>` : '') +
-            (M.track ? musicCard(M.track, false) : M.spotify ? musicCard(M.spotify, true) : '');
+            (M.spotify && !M.track ? musicCard(M.spotify, true) : '');
     }
     function setPreview(on) {
         M.preview = on;
@@ -338,6 +348,8 @@
               ${M.video ? `<p class="st-note2">Your video is ${S.fmtSec(vidSec())} long, so the clip follows it (${tr.clipSec}s). The video’s own sound is muted while a song is attached.</p>`
                 : `<div class="st-lab" style="margin-top:10px">Clip length = story length</div><div class="st-lenrow">${lens.map(v => `<button type="button" class="st-chip ${tr.clipSec === v ? 'on' : ''}" data-k="clipLen" data-v="${v}">${v}s</button>`).join('')}</div>`}
               <p class="st-note2">Drag the window to pick where the song starts. Your story lasts exactly as long as the clip and the song stays in sync. Library previews are ${P}s long.</p>
+              ${M.changing ? '' : `<div class="st-lab" style="margin-top:12px">Show on story</div>
+              <div class="st-row2">${chips(S.MUSIC_STYLES, S.normStyle(M.mstyle), 'mstyle')}</div>`}
               ${M.changing ? '' : `<div class="st-row2" style="margin-top:10px"><button class="st-btn ghost sm" type="button" data-k="changeSong"><i class="fas fa-arrows-rotate"></i> Change song</button></div>`}`;
         }
         if (searching) {
@@ -533,6 +545,7 @@
             case 'bg': style(x => { x.bg = v; }); break;
             case 'bgColor': style(x => { x.bgColor = v; }); break;
             case 'place': style(x => { x.y = v === 'top' ? 0.2 : v === 'mid' ? 0.5 : 0.74; x.x = 0.5; }); break;
+            case 'mstyle': M.mstyle = v; renderPv(); renderSheet(); break;
             case 'musicGo': musicSearch(); break;
             case 'playRes': {
                 const r = M.results[Number(v)]; if (!r) break;
@@ -649,7 +662,7 @@
                 caption: M.caption.trim().slice(0, MAX_CAPTION),
                 textOverlays: M.texts.slice(0, MAX_TEXTS).map(t => ({ id: t.id, text: t.text.slice(0, MAX_TEXT_LEN), x: +t.x.toFixed(4), y: +t.y.toFixed(4), size: +t.size.toFixed(4), rot: Math.round(t.rot), font: t.font, color: t.color, bg: t.bg, bgColor: t.bgColor, align: t.align, bold: !!t.bold, italic: !!t.italic })),
                 spotifyTrack: M.spotify ? { trackId: M.spotify.trackId, url: M.spotify.url, title: M.spotify.title, artist: (M.spotify.artist || '').slice(0, 80), thumbnail: M.spotify.thumbnail || '' } : null,
-                music: M.track ? { provider: 'itunes', trackId: M.track.trackId, title: M.track.title, artist: (M.track.artist || '').slice(0, 80), thumbnail: M.track.thumbnail || '', previewUrl: M.track.previewUrl, previewSec: M.track.previewSec || 30, startSec: M.track.startSec, clipSec: M.track.clipSec } : null,
+                music: M.track ? { provider: 'itunes', trackId: M.track.trackId, title: M.track.title, artist: (M.track.artist || '').slice(0, 80), thumbnail: M.track.thumbnail || '', previewUrl: M.track.previewUrl, previewSec: M.track.previewSec || 30, startSec: M.track.startSec, clipSec: M.track.clipSec, style: S.normStyle(M.mstyle) } : null,
                 muteVideo: !!(isV && M.track),          // music added to a video mutes the video's audio
                 mediaPublicIds: ups.map(u => u.public_id || '').filter(Boolean),
                 status: 'active',
