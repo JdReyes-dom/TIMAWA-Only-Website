@@ -3,6 +3,11 @@
    TIMAWA — Shared theme system
    Loaded SYNCHRONOUSLY in <head> after theme.css, before page render.
 
+   ★ v6.3 ★ Crimson = "Rose Park" (was Velvet Theatre), Maroon = "Wine Bar" (was Wine Cellar).
+   EVERY theme now has its own unique animated cursor (THEME_CURSORS), and the cursor engine is
+   zero-latency: the dot sits exactly on the pointer hotspot, the icon rides beside it (no easing).
+   ★ v6.2 ★ Blossom = "Flower Conservatory" (places, like Café). Themed animated cursor
+   (THEME_CURSORS + cursorKit; styles in theme.css).
    ★ v6.1 ★ NEW scenes for Blossom ("Bloom"), Sunshine ("Golden Hour") and Café ("Cozy Corner").
    Palettes unchanged; only their `sub` taglines were reworded.
    ★ v6 ★ Matches theme.css (modern depth layer: atmosphere, particles, colour grade).
@@ -22,6 +27,29 @@
 
     window.THEME_STORAGE_KEY = 'timawa_theme';
     window.THEME_EVENT = 'timawa-theme-change';
+
+    // ★ v6.3 — one unique themed cursor per theme (styled by theme.css "THEMED CURSOR")
+    // ocean = whale + spout; sunset = setting sun; pink = conservatory flower; forest = pine + fireflies; sunshine = sun; starry = sparkle; cafe = coffee mug; crimson = rose; maroon = wine glass; sakura = cherry blossom; nebula = ringed planet; ember = paper lantern; autumn = maple leaf; glacier = snowflake; tropic = palm tree; moonlit = crescent moon; aurora = aurora ribbons; matcha = matcha bowl
+    window.THEME_CURSORS = {
+        ocean: '<svg viewBox="0 0 34 34"><g class="spt"><path class="k1" d="M13 12V7M13 7Q10.5 4.5 8.5 6.5M13 7Q15.5 4.5 17.5 6.5"/></g><g class="bob"><path class="f1 o2" d="M3 22C3 15 10 12 18 13.6C23 14.6 25 18.4 31 16.4C31.6 21 29.6 25 25 26.6C19 29 6 28.6 3 22Z"/><path class="fw" opacity=".55" d="M6 24.4C12 27 20 26.8 25 25L24 26.6C19 28.6 9 28 6 24.4Z"/><circle class="f2" cx="9.5" cy="20.4" r="1.4"/></g></svg>',
+        sunset: '<svg viewBox="0 0 34 34"><g class="ry"><path class="k1" d="M29.5 22H33M27.8 15.8L30.9 14M23.3 11.2L25 8.1M17 9.5V6M10.7 11.2L9 8.1M6.2 15.8L3.1 14M4.5 22H1"/></g><path class="f1 o2" d="M6 23A11 11 0 0 1 28 23Z"/><path class="k2" d="M2 26.5H32M7 30.5H27"/></svg>',
+        pink: '<svg viewBox="0 0 34 34"><g class="spin"><g class="pet"><ellipse cx="17" cy="9" rx="4.6" ry="6.4" transform="rotate(0 17 17)"/><ellipse cx="17" cy="9" rx="4.6" ry="6.4" transform="rotate(60 17 17)"/><ellipse cx="17" cy="9" rx="4.6" ry="6.4" transform="rotate(120 17 17)"/><ellipse cx="17" cy="9" rx="4.6" ry="6.4" transform="rotate(180 17 17)"/><ellipse cx="17" cy="9" rx="4.6" ry="6.4" transform="rotate(240 17 17)"/><ellipse cx="17" cy="9" rx="4.6" ry="6.4" transform="rotate(300 17 17)"/></g><circle class="ct" cx="17" cy="17" r="3.8"/></g><circle class="tw" cx="30" cy="6" r="1.7"/><circle class="tw d" cx="4" cy="29" r="1.3"/></svg>',
+        forest: '<svg viewBox="0 0 34 34"><g class="tsw"><rect class="f2" x="15" y="27" width="4" height="5" rx="1"/><path class="f1 o2" d="M17 2L24 12H20.5L26.5 20H21.5L28 28H6L12.5 20H7.5L13.5 12H10Z"/></g><circle class="fy stw" cx="29" cy="8" r="1.8"/><circle class="fy stw d" cx="5" cy="13" r="1.4"/></svg>',
+        sunshine: '<svg viewBox="0 0 34 34"><g class="spin"><path class="k1" d="M27 17H31.5M24.07 9.93L27.26 6.74M17 7V2.5M9.93 9.93L6.74 6.74M7 17H2.5M9.93 24.07L6.74 27.26M17 27V31.5M24.07 24.07L27.26 27.26"/></g><circle class="f1 o2" cx="17" cy="17" r="6.5"/><circle class="fy" cx="17" cy="17" r="3"/></svg>',
+        starry: '<svg viewBox="0 0 34 34"><path class="f1 ow sp1" d="M17 2Q18.4 15.6 32 17Q18.4 18.4 17 32Q15.6 18.4 2 17Q15.6 15.6 17 2Z"/><path class="fw stw" d="M28 3Q28.4 6.6 32 7Q28.4 7.4 28 11Q27.6 7.4 24 7Q27.6 6.6 28 3Z"/><path class="fw stw d" d="M6 24Q6.3 26.7 9 27Q6.3 27.3 6 30Q5.7 27.3 3 27Q5.7 26.7 6 24Z"/></svg>',
+        cafe: '<svg viewBox="0 0 34 34"><g class="steam"><path d="M11 12C8 9 14 7 11 3"/><path d="M17 12C14 9 20 7 17 3"/><path d="M23 12C20 9 26 7 23 3"/></g><path class="hd" d="M25 18H27.5Q31.5 18 31.5 22T27.5 26H24"/><path class="bd" d="M5 15H26V23C26 28 22.5 31.5 15.5 31.5S5 28 5 23Z"/><ellipse class="cf" cx="15.5" cy="15" rx="10.5" ry="2.6"/><path class="ht" d="M15.5 25C11 22 12 19 14 19.5C15 19.8 15.5 20.6 15.5 20.6S16 19.8 17 19.5C19 19 20 22 15.5 25Z"/></svg>',
+        crimson: '<svg viewBox="0 0 34 34"><ellipse class="fg o2" cx="8" cy="27" rx="6" ry="3" transform="rotate(-28 8 27)"/><ellipse class="fg o2" cx="26" cy="27" rx="6" ry="3" transform="rotate(28 26 27)"/><g class="rb"><circle class="f1 o2" cx="17.00" cy="8.00" r="6.2"/><circle class="f1 o2" cx="23.66" cy="12.84" r="6.2"/><circle class="f1 o2" cx="21.11" cy="20.66" r="6.2"/><circle class="f1 o2" cx="12.89" cy="20.66" r="6.2"/><circle class="f1 o2" cx="10.34" cy="12.84" r="6.2"/><circle class="f2 o2" cx="17" cy="15" r="6.4"/><circle class="f1 o2" cx="17" cy="15" r="3.8"/><path class="kt" d="M14.6 15.4Q15 12.6 17.8 13Q20 14 19 16.6Q17.4 18 15.4 17"/></g><ellipse class="f1 fp" cx="29" cy="5" rx="2.2" ry="1.4"/></svg>',
+        maroon: '<svg viewBox="0 0 34 34"><defs><clipPath id="twcWine"><path d="M9 4H25C25 14.5 22 20.5 17 20.5S9 14.5 9 4Z"/></clipPath></defs><path class="gg" d="M9 4H25C25 14.5 22 20.5 17 20.5S9 14.5 9 4Z"/><g clip-path="url(#twcWine)"><g class="slosh"><path class="wn" d="M4 10Q10.5 7 17 10T30 10V26H4Z"/></g></g><path class="gb" d="M9 4H25C25 14.5 22 20.5 17 20.5S9 14.5 9 4Z"/><path class="gs" d="M17 20.5V29.5M11 30.5H23"/><circle class="tw" cx="29" cy="5" r="1.6"/><path class="hl" d="M12 6Q12.5 12 15 16"/></svg>',
+        sakura: '<svg viewBox="0 0 34 34"><g class="sk"><path class="f1 ow" transform="rotate(0 17 17)" d="M17 17C11.6 12.6 11 5.6 14.6 4L17 6.6L19.4 4C23 5.6 22.4 12.6 17 17Z"/><path class="f1 ow" transform="rotate(72 17 17)" d="M17 17C11.6 12.6 11 5.6 14.6 4L17 6.6L19.4 4C23 5.6 22.4 12.6 17 17Z"/><path class="f1 ow" transform="rotate(144 17 17)" d="M17 17C11.6 12.6 11 5.6 14.6 4L17 6.6L19.4 4C23 5.6 22.4 12.6 17 17Z"/><path class="f1 ow" transform="rotate(216 17 17)" d="M17 17C11.6 12.6 11 5.6 14.6 4L17 6.6L19.4 4C23 5.6 22.4 12.6 17 17Z"/><path class="f1 ow" transform="rotate(288 17 17)" d="M17 17C11.6 12.6 11 5.6 14.6 4L17 6.6L19.4 4C23 5.6 22.4 12.6 17 17Z"/><circle class="fy" cx="17" cy="17" r="2.2"/></g><ellipse class="f1 fp" cx="29" cy="5" rx="2" ry="1.3"/></svg>',
+        nebula: '<svg viewBox="0 0 34 34"><circle class="f1 o2" cx="17" cy="17" r="8"/><path class="fw" opacity=".3" d="M11 13.5A8 8 0 0 1 20 9.2Q13 11 11 13.5Z"/><ellipse class="ko" cx="17" cy="17" rx="15" ry="5" transform="rotate(-22 17 17)"/><g class="orb"><circle class="fa" cx="17" cy="1.8" r="1.8"/></g></svg>',
+        ember: '<svg viewBox="0 0 34 34"><circle class="gwl" cx="17" cy="16" r="15"/><path class="k2" d="M17 1V5"/><g class="lsw"><rect class="fo o2" x="11" y="4.6" width="12" height="3.4" rx="1"/><ellipse class="f1 o2" cx="17" cy="16" rx="10" ry="8.6"/><path class="kt" d="M17 7.4C12.4 11 12.4 21 17 24.6M17 7.4C21.6 11 21.6 21 17 24.6M8 16H26"/><rect class="fo o2" x="11" y="24" width="12" height="3.4" rx="1"/><path class="k1" d="M17 27.4V31"/><circle class="fy" cx="17" cy="31.6" r="1.6"/></g></svg>',
+        autumn: '<svg viewBox="0 0 34 34"><g class="lfs"><path class="f1 o2" d="M17 2L19.8 8.5L24.5 6.5L23.3 13L29.5 11.5L26 17.5L30 20L22 22L22.3 24.5L17.8 23.5V31H16.2V23.5L11.7 24.5L12 22L4 20L8 17.5L4.5 11.5L10.7 13L9.5 6.5L14.2 8.5Z"/><path class="kt" d="M17 24V9M17 18L11 14M17 18L23 14M17 21L9 20M17 21L25 20"/></g></svg>',
+        glacier: '<svg viewBox="0 0 34 34"><g class="spin"><path class="k1" transform="rotate(0 17 17)" d="M17 3V31M12.5 7.5L17 12L21.5 7.5M12.5 26.5L17 22L21.5 26.5"/><path class="k1" transform="rotate(60 17 17)" d="M17 3V31M12.5 7.5L17 12L21.5 7.5M12.5 26.5L17 22L21.5 26.5"/><path class="k1" transform="rotate(120 17 17)" d="M17 3V31M12.5 7.5L17 12L21.5 7.5M12.5 26.5L17 22L21.5 26.5"/><circle class="fw o2" cx="17" cy="17" r="2.4"/></g></svg>',
+        tropic: '<svg viewBox="0 0 34 34"><path class="tk" d="M15.6 32Q19 23 17 14"/><g class="psw"><path class="fgn o2" d="M17 14C12.5 5 5.5 5.5 2.5 10C8.5 8.4 13.5 10.4 17 14Z"/><path class="fgn o2" d="M17 14C21.5 5 28.5 5.5 31.5 10C25.5 8.4 20.5 10.4 17 14Z"/><path class="fgn o2" d="M17 14C14 7 15.4 3 17 1.5C18.6 3 20 7 17 14Z"/><path class="fgn o2" d="M17 14C10 12.6 6 16.6 5 21C9.4 17.2 13 16 17 14Z"/><path class="fgn o2" d="M17 14C24 12.6 28 16.6 29 21C24.6 17.2 21 16 17 14Z"/><circle class="fb" cx="15.4" cy="15.6" r="1.7"/><circle class="fb" cx="18.8" cy="16" r="1.7"/></g></svg>',
+        moonlit: '<svg viewBox="0 0 34 34"><defs><mask id="twcMoon"><rect width="34" height="34" fill="#fff"/><circle cx="23.5" cy="12" r="10.5" fill="#000"/></mask></defs><g class="bob"><circle class="f1" cx="15" cy="18" r="13" mask="url(#twcMoon)"/></g><path class="fy stw" d="M24 7Q24.4 10.6 28 11Q24.4 11.4 24 15Q23.6 11.4 20 11Q23.6 10.6 24 7Z"/><circle class="fy stw d" cx="30" cy="26" r="1.3"/></svg>',
+        aurora: '<svg viewBox="0 0 34 34"><path class="wv k1" d="M2 11Q9.5 3 17 11T32 11"/><path class="wv ka w2" d="M2 18Q9.5 10 17 18T32 18"/><path class="wv k1 w3" d="M2 25Q9.5 17 17 25T32 25"/><circle class="fw stw" cx="28" cy="4" r="1.1"/><circle class="fw stw d" cx="5" cy="31" r="1"/></svg>',
+        matcha: '<svg viewBox="0 0 34 34"><g class="steam"><path d="M12 11C9.6 8.6 14 7.2 12 4"/><path d="M19 11C16.6 8.6 21 7.2 19 4"/></g><path class="bowl o2" d="M4 15H30C30 24.6 24.6 29.6 17 29.6S4 24.6 4 15Z"/><ellipse class="f1 o2" cx="17" cy="15" rx="13" ry="3.2"/><circle class="fw" opacity=".6" cx="11" cy="15.2" r="1"/><circle class="fw" opacity=".6" cx="17.5" cy="16" r="1.3"/><circle class="fw" opacity=".6" cx="23" cy="14.8" r=".9"/><path class="f2" d="M12.5 29.5H21.5V32H12.5Z"/></svg>'
+    };
 
     window.THEME_SHAPES = {
 
@@ -48,10 +76,248 @@
             <div class="shape sy-grass"></div>
         `,
 
-        // ★ PINK — "Bloom" (counter-rotating mandala flowers; bokeh = ::before, petals = ::after)
+        // ★ PINK — "Flower Conservatory" (glazed arches, hanging baskets, potted flowers, tiled floor; light shafts = ::before, petals = ::after)
         pink: `
-            <div class="shape bl-a"></div>
-            <div class="shape bl-b opt"></div>
+            <svg class="shape bl-arch" viewBox="0 0 300 200" preserveAspectRatio="none">
+            <path class="pn" d="M3 200V64C3 22 26 5 50 5S97 22 97 64V200Z"/>
+            <path class="fr" d="M3 200V64C3 22 26 5 50 5S97 22 97 64V200Z"/>
+            <path class="fr" d="M50 5V200M3 78H97M3 140H97"/>
+            <path class="pn" d="M103 200V64C103 22 126 5 150 5S197 22 197 64V200Z"/>
+            <path class="fr" d="M103 200V64C103 22 126 5 150 5S197 22 197 64V200Z"/>
+            <path class="fr" d="M150 5V200M103 78H197M103 140H197"/>
+            <path class="pn" d="M203 200V64C203 22 226 5 250 5S297 22 297 64V200Z"/>
+            <path class="fr" d="M203 200V64C203 22 226 5 250 5S297 22 297 64V200Z"/>
+            <path class="fr" d="M250 5V200M203 78H297M203 140H297"/>
+            </svg>
+            <svg class="shape bl-hang h1" viewBox="0 0 120 200">
+            <path class="cd" d="M60 0V30M60 30L14 70M60 30L106 70"/>
+            <path class="vn" d="M22 104Q16 140 20 182M40 116Q36 148 40 172M82 116Q88 150 84 190M100 104Q106 134 102 168"/>
+            <g class="lf">
+            <ellipse cx="19" cy="130" rx="8" ry="3.4" transform="rotate(-50 19 130)"/>
+            <ellipse cx="22" cy="156" rx="8" ry="3.4" transform="rotate(50 22 156)"/>
+            <ellipse cx="38" cy="140" rx="7" ry="3" transform="rotate(-50 38 140)"/>
+            <ellipse cx="86" cy="140" rx="8" ry="3.4" transform="rotate(50 86 140)"/>
+            <ellipse cx="87" cy="168" rx="8" ry="3.4" transform="rotate(-50 87 168)"/>
+            <ellipse cx="102" cy="150" rx="7" ry="3" transform="rotate(50 102 150)"/>
+            </g>
+            <circle class="f1" cx="20" cy="184" r="5"/>
+            <circle class="f3" cx="40" cy="174" r="4.2"/>
+            <circle class="f2" cx="84" cy="192" r="5"/>
+            <circle class="f1" cx="102" cy="170" r="4.2"/>
+            <path class="po" d="M8 68H112C112 106 88 128 60 128S8 106 8 68Z"/>
+            <path class="po2" d="M10 80Q60 92 110 80M14 94Q60 108 106 94M24 108Q60 120 96 108" fill="none"/>
+            <rect class="po2" x="5" y="64" width="110" height="9" rx="4"/>
+            <g class="lf">
+            <ellipse cx="26" cy="62" rx="12" ry="5" transform="rotate(-25 26 62)"/>
+            <ellipse cx="94" cy="62" rx="12" ry="5" transform="rotate(25 94 62)"/>
+            <ellipse cx="60" cy="58" rx="10" ry="4"/>
+            </g>
+            <circle class="f1" cx="30" cy="54" r="14"/>
+            <circle class="f3" cx="90" cy="54" r="14"/>
+            <circle class="f2" cx="60" cy="44" r="16"/>
+            <circle class="f4" cx="44" cy="36" r="10"/>
+            <circle class="f1" cx="78" cy="34" r="10"/>
+            <circle class="fc" cx="60" cy="44" r="4.4"/>
+            <circle class="fc" cx="30" cy="54" r="3.4"/>
+            <circle class="fc" cx="90" cy="54" r="3.4"/>
+            </svg>
+            <svg class="shape bl-hang h2" viewBox="0 0 120 200">
+            <path class="cd" d="M60 0V30M60 30L14 70M60 30L106 70"/>
+            <path class="vn" d="M22 104Q16 140 20 182M40 116Q36 148 40 172M82 116Q88 150 84 190M100 104Q106 134 102 168"/>
+            <g class="lf">
+            <ellipse cx="19" cy="130" rx="8" ry="3.4" transform="rotate(-50 19 130)"/>
+            <ellipse cx="22" cy="156" rx="8" ry="3.4" transform="rotate(50 22 156)"/>
+            <ellipse cx="38" cy="140" rx="7" ry="3" transform="rotate(-50 38 140)"/>
+            <ellipse cx="86" cy="140" rx="8" ry="3.4" transform="rotate(50 86 140)"/>
+            <ellipse cx="87" cy="168" rx="8" ry="3.4" transform="rotate(-50 87 168)"/>
+            <ellipse cx="102" cy="150" rx="7" ry="3" transform="rotate(50 102 150)"/>
+            </g>
+            <circle class="f1" cx="20" cy="184" r="5"/>
+            <circle class="f3" cx="40" cy="174" r="4.2"/>
+            <circle class="f2" cx="84" cy="192" r="5"/>
+            <circle class="f1" cx="102" cy="170" r="4.2"/>
+            <path class="po" d="M8 68H112C112 106 88 128 60 128S8 106 8 68Z"/>
+            <path class="po2" d="M10 80Q60 92 110 80M14 94Q60 108 106 94M24 108Q60 120 96 108" fill="none"/>
+            <rect class="po2" x="5" y="64" width="110" height="9" rx="4"/>
+            <g class="lf">
+            <ellipse cx="26" cy="62" rx="12" ry="5" transform="rotate(-25 26 62)"/>
+            <ellipse cx="94" cy="62" rx="12" ry="5" transform="rotate(25 94 62)"/>
+            <ellipse cx="60" cy="58" rx="10" ry="4"/>
+            </g>
+            <circle class="f1" cx="30" cy="54" r="14"/>
+            <circle class="f3" cx="90" cy="54" r="14"/>
+            <circle class="f2" cx="60" cy="44" r="16"/>
+            <circle class="f4" cx="44" cy="36" r="10"/>
+            <circle class="f1" cx="78" cy="34" r="10"/>
+            <circle class="fc" cx="60" cy="44" r="4.4"/>
+            <circle class="fc" cx="30" cy="54" r="3.4"/>
+            <circle class="fc" cx="90" cy="54" r="3.4"/>
+            </svg>
+            <svg class="shape bl-hang h3 opt" viewBox="0 0 120 200">
+            <path class="cd" d="M60 0V30M60 30L14 70M60 30L106 70"/>
+            <path class="vn" d="M22 104Q16 140 20 182M40 116Q36 148 40 172M82 116Q88 150 84 190M100 104Q106 134 102 168"/>
+            <g class="lf">
+            <ellipse cx="19" cy="130" rx="8" ry="3.4" transform="rotate(-50 19 130)"/>
+            <ellipse cx="22" cy="156" rx="8" ry="3.4" transform="rotate(50 22 156)"/>
+            <ellipse cx="38" cy="140" rx="7" ry="3" transform="rotate(-50 38 140)"/>
+            <ellipse cx="86" cy="140" rx="8" ry="3.4" transform="rotate(50 86 140)"/>
+            <ellipse cx="87" cy="168" rx="8" ry="3.4" transform="rotate(-50 87 168)"/>
+            <ellipse cx="102" cy="150" rx="7" ry="3" transform="rotate(50 102 150)"/>
+            </g>
+            <circle class="f1" cx="20" cy="184" r="5"/>
+            <circle class="f3" cx="40" cy="174" r="4.2"/>
+            <circle class="f2" cx="84" cy="192" r="5"/>
+            <circle class="f1" cx="102" cy="170" r="4.2"/>
+            <path class="po" d="M8 68H112C112 106 88 128 60 128S8 106 8 68Z"/>
+            <path class="po2" d="M10 80Q60 92 110 80M14 94Q60 108 106 94M24 108Q60 120 96 108" fill="none"/>
+            <rect class="po2" x="5" y="64" width="110" height="9" rx="4"/>
+            <g class="lf">
+            <ellipse cx="26" cy="62" rx="12" ry="5" transform="rotate(-25 26 62)"/>
+            <ellipse cx="94" cy="62" rx="12" ry="5" transform="rotate(25 94 62)"/>
+            <ellipse cx="60" cy="58" rx="10" ry="4"/>
+            </g>
+            <circle class="f1" cx="30" cy="54" r="14"/>
+            <circle class="f3" cx="90" cy="54" r="14"/>
+            <circle class="f2" cx="60" cy="44" r="16"/>
+            <circle class="f4" cx="44" cy="36" r="10"/>
+            <circle class="f1" cx="78" cy="34" r="10"/>
+            <circle class="fc" cx="60" cy="44" r="4.4"/>
+            <circle class="fc" cx="30" cy="54" r="3.4"/>
+            <circle class="fc" cx="90" cy="54" r="3.4"/>
+            </svg>
+            <svg class="shape bl-pots l" viewBox="0 0 260 200">
+            <g class="lf2">
+            <path d="M75 146Q70 108 74 74"/>
+            <path d="M70 146Q54 120 46 98"/>
+            <path d="M80 146Q96 120 104 96"/>
+            <path d="M151 154Q148 120 150 92"/>
+            <path d="M146 155Q132 130 128 108"/>
+            <path d="M156 155Q170 128 174 106"/>
+            <path d="M214 168Q206 142 206 116"/>
+            <path d="M220 168Q228 134 226 102"/>
+            </g>
+            <g class="lf">
+            <ellipse cx="62" cy="120" rx="12" ry="4.6" transform="rotate(-35 62 120)"/>
+            <ellipse cx="90" cy="118" rx="12" ry="4.6" transform="rotate(35 90 118)"/>
+            <ellipse cx="72" cy="100" rx="10" ry="4" transform="rotate(-20 72 100)"/>
+            <path d="M151 158Q130 142 124 124Q146 134 151 158Z"/>
+            <path d="M151 158Q172 142 178 124Q156 134 151 158Z"/>
+            <ellipse cx="210" cy="140" rx="9" ry="3.6" transform="rotate(-40 210 140)"/>
+            <ellipse cx="224" cy="132" rx="9" ry="3.6" transform="rotate(40 224 132)"/>
+            </g>
+            <rect class="po2" x="40" y="142" width="70" height="11" rx="3"/>
+            <path class="po" d="M45 152H105L99 200H51Z"/>
+            <rect class="po2" x="124" y="152" width="58" height="10" rx="3"/>
+            <path class="po" d="M128 161H178L173 200H133Z"/>
+            <rect class="po2" x="194" y="166" width="44" height="9" rx="3"/>
+            <path class="po" d="M198 174H234L230 200H202Z"/>
+            <circle class="p1" cx="74" cy="70" r="21"/>
+            <circle class="p2" cx="74" cy="70" r="14.7"/>
+            <circle class="p3" cx="74" cy="70" r="8.4"/>
+            <circle class="p1" cx="45" cy="94" r="17"/>
+            <circle class="p2" cx="45" cy="94" r="11.9"/>
+            <circle class="p3" cx="45" cy="94" r="6.8"/>
+            <circle class="p1" cx="104" cy="92" r="17"/>
+            <circle class="p2" cx="104" cy="92" r="11.9"/>
+            <circle class="p3" cx="104" cy="92" r="6.8"/>
+            <path class="f1" transform="translate(150 92) rotate(0)" d="M0 0C-10 -2 -11 -18 -6 -27L-2 -19L0 -29L2 -19L6 -27C11 -18 10 -2 0 0Z"/>
+            <path class="f2" transform="translate(128 108) rotate(-14)" d="M0 0C-10 -2 -11 -18 -6 -27L-2 -19L0 -29L2 -19L6 -27C11 -18 10 -2 0 0Z"/>
+            <path class="f4" transform="translate(174 106) rotate(14)" d="M0 0C-10 -2 -11 -18 -6 -27L-2 -19L0 -29L2 -19L6 -27C11 -18 10 -2 0 0Z"/>
+            <g class="f2" transform="translate(206 114)">
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(0)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(45)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(90)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(135)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(180)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(225)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(270)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(315)"/>
+            </g>
+            <circle class="fc" cx="206" cy="114" r="4.5"/>
+            <g class="f2" transform="translate(226 100)">
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(0)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(45)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(90)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(135)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(180)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(225)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(270)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(315)"/>
+            </g>
+            <circle class="fc" cx="226" cy="100" r="3.8"/>
+            </svg>
+            <svg class="shape bl-pots r opt" viewBox="0 0 260 200">
+            <g class="lf2">
+            <path d="M75 146Q70 108 74 74"/>
+            <path d="M70 146Q54 120 46 98"/>
+            <path d="M80 146Q96 120 104 96"/>
+            <path d="M151 154Q148 120 150 92"/>
+            <path d="M146 155Q132 130 128 108"/>
+            <path d="M156 155Q170 128 174 106"/>
+            <path d="M214 168Q206 142 206 116"/>
+            <path d="M220 168Q228 134 226 102"/>
+            </g>
+            <g class="lf">
+            <ellipse cx="62" cy="120" rx="12" ry="4.6" transform="rotate(-35 62 120)"/>
+            <ellipse cx="90" cy="118" rx="12" ry="4.6" transform="rotate(35 90 118)"/>
+            <ellipse cx="72" cy="100" rx="10" ry="4" transform="rotate(-20 72 100)"/>
+            <path d="M151 158Q130 142 124 124Q146 134 151 158Z"/>
+            <path d="M151 158Q172 142 178 124Q156 134 151 158Z"/>
+            <ellipse cx="210" cy="140" rx="9" ry="3.6" transform="rotate(-40 210 140)"/>
+            <ellipse cx="224" cy="132" rx="9" ry="3.6" transform="rotate(40 224 132)"/>
+            </g>
+            <rect class="po2" x="40" y="142" width="70" height="11" rx="3"/>
+            <path class="po" d="M45 152H105L99 200H51Z"/>
+            <rect class="po2" x="124" y="152" width="58" height="10" rx="3"/>
+            <path class="po" d="M128 161H178L173 200H133Z"/>
+            <rect class="po2" x="194" y="166" width="44" height="9" rx="3"/>
+            <path class="po" d="M198 174H234L230 200H202Z"/>
+            <circle class="p1" cx="74" cy="70" r="21"/>
+            <circle class="p2" cx="74" cy="70" r="14.7"/>
+            <circle class="p3" cx="74" cy="70" r="8.4"/>
+            <circle class="p1" cx="45" cy="94" r="17"/>
+            <circle class="p2" cx="45" cy="94" r="11.9"/>
+            <circle class="p3" cx="45" cy="94" r="6.8"/>
+            <circle class="p1" cx="104" cy="92" r="17"/>
+            <circle class="p2" cx="104" cy="92" r="11.9"/>
+            <circle class="p3" cx="104" cy="92" r="6.8"/>
+            <path class="f1" transform="translate(150 92) rotate(0)" d="M0 0C-10 -2 -11 -18 -6 -27L-2 -19L0 -29L2 -19L6 -27C11 -18 10 -2 0 0Z"/>
+            <path class="f2" transform="translate(128 108) rotate(-14)" d="M0 0C-10 -2 -11 -18 -6 -27L-2 -19L0 -29L2 -19L6 -27C11 -18 10 -2 0 0Z"/>
+            <path class="f4" transform="translate(174 106) rotate(14)" d="M0 0C-10 -2 -11 -18 -6 -27L-2 -19L0 -29L2 -19L6 -27C11 -18 10 -2 0 0Z"/>
+            <g class="f2" transform="translate(206 114)">
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(0)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(45)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(90)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(135)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(180)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(225)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(270)"/>
+            <ellipse rx="3.6" ry="8" cy="-8.5" transform="rotate(315)"/>
+            </g>
+            <circle class="fc" cx="206" cy="114" r="4.5"/>
+            <g class="f2" transform="translate(226 100)">
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(0)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(45)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(90)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(135)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(180)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(225)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(270)"/>
+            <ellipse rx="3.1" ry="6.8" cy="-7.2" transform="rotate(315)"/>
+            </g>
+            <circle class="fc" cx="226" cy="100" r="3.8"/>
+            </svg>
+            <div class="shape bl-floor">
+            </div>
+            <svg class="shape bl-fly opt" viewBox="0 0 40 30">
+            <g class="wg">
+            <path class="w1" d="M20 15C14 2 2 2 3 11C4 18 14 19 20 15Z"/>
+            <path class="w1" d="M20 15C26 2 38 2 37 11C36 18 26 19 20 15Z"/>
+            <path class="w2" d="M20 16C13 18 6 24 10 28C14 30 19 24 20 16Z"/>
+            <path class="w2" d="M20 16C27 18 34 24 30 28C26 30 21 24 20 16Z"/>
+            </g>
+            <path class="bd" d="M20 10V24"/>
+            </svg>
         `,
 
         // ★ FOREST — "Canopy Window (upgraded)"
@@ -116,28 +382,39 @@
             <div class="shape cf-steam"></div>
         `,
 
-        // ★ CRIMSON — "Poppy Meadow"
+        // ★ CRIMSON — "Rose Park" (rose arbour, flowering hedge, rose bushes, blossom trees, lamp posts, bench, stone path; petals = ::after)
         crimson: `
-            <div class="shape cr-sun"></div>
-            <div class="shape cr-hill h1"></div>
-            <div class="shape cr-hill h2"></div>
-            <div class="shape cr-hill h3"></div>
-            <svg class="shape cr-field b" viewBox="0 0 600 160" preserveAspectRatio="xMidYMax slice"><path class="sm" d="M19 160Q22 131 19 110"/><g class="pp"><circle cx="14" cy="102" r="7.4"/><circle cx="24" cy="102" r="7.4"/><circle cx="19" cy="98" r="7.4"/><circle class="pc" cx="19" cy="102" r="2.4"/></g><path class="sm" d="M86 160Q95 121 86 91"/><g class="pp"><circle cx="81" cy="83" r="6.2"/><circle cx="90" cy="83" r="6.2"/><circle cx="86" cy="80" r="6.2"/><circle class="pc" cx="86" cy="83" r="2.0"/></g><path class="sm" d="M129 160Q128 125 129 97"/><g class="pp"><circle cx="122" cy="89" r="9.6"/><circle cx="135" cy="89" r="9.6"/><circle cx="129" cy="85" r="9.6"/><circle class="pc" cx="129" cy="89" r="3.1"/></g><path class="sm" d="M202 160Q192 130 202 107"/><g class="pp"><circle cx="196" cy="99" r="8.4"/><circle cx="208" cy="99" r="8.4"/><circle cx="202" cy="95" r="8.4"/><circle class="pc" cx="202" cy="99" r="2.7"/></g><path class="sm" d="M250 160Q257 137 250 123"/><g class="pp"><circle cx="244" cy="115" r="8.0"/><circle cx="255" cy="115" r="8.0"/><circle cx="250" cy="111" r="8.0"/><circle class="pc" cx="250" cy="115" r="2.6"/></g><path class="sm" d="M305 160Q308 121 305 91"/><g class="pp"><circle cx="299" cy="83" r="8.8"/><circle cx="312" cy="83" r="8.8"/><circle cx="305" cy="78" r="8.8"/><circle class="pc" cx="305" cy="83" r="2.8"/></g><path class="sm" d="M348 160Q347 121 348 89"/><g class="pp"><circle cx="342" cy="81" r="9.2"/><circle cx="355" cy="81" r="9.2"/><circle cx="348" cy="77" r="9.2"/><circle class="pc" cx="348" cy="81" r="2.9"/></g><path class="sm" d="M416 160Q428 138 416 123"/><g class="pp"><circle cx="410" cy="115" r="8.6"/><circle cx="422" cy="115" r="8.6"/><circle cx="416" cy="111" r="8.6"/><circle class="pc" cx="416" cy="115" r="2.8"/></g><path class="sm" d="M460 160Q472 136 460 120"/><g class="pp"><circle cx="455" cy="112" r="7.7"/><circle cx="466" cy="112" r="7.7"/><circle cx="460" cy="108" r="7.7"/><circle class="pc" cx="460" cy="112" r="2.5"/></g><path class="sm" d="M530 160Q522 122 530 92"/><g class="pp"><circle cx="526" cy="84" r="6.6"/><circle cx="535" cy="84" r="6.6"/><circle cx="530" cy="81" r="6.6"/><circle class="pc" cx="530" cy="84" r="2.1"/></g><path class="sm" d="M588 160Q582 129 588 105"/><g class="pp"><circle cx="582" cy="97" r="8.3"/><circle cx="593" cy="97" r="8.3"/><circle cx="588" cy="93" r="8.3"/><circle class="pc" cx="588" cy="97" r="2.7"/></g></svg>
-            <svg class="shape cr-field a" viewBox="0 0 600 160" preserveAspectRatio="xMidYMax slice"><path class="sm" d="M32 160Q42 110 32 69"/><g class="pp"><circle cx="26" cy="61" r="9.5"/><circle cx="39" cy="61" r="9.5"/><circle cx="32" cy="56" r="9.5"/><circle class="pc" cx="32" cy="61" r="3.0"/></g><path class="sm" d="M84 160Q72 114 84 76"/><g class="pp"><circle cx="75" cy="68" r="13.2"/><circle cx="93" cy="68" r="13.2"/><circle cx="84" cy="61" r="13.2"/><circle class="pc" cx="84" cy="68" r="4.2"/></g><path class="sm" d="M168 160Q165 117 168 82"/><g class="pp"><circle cx="162" cy="74" r="9.0"/><circle cx="175" cy="74" r="9.0"/><circle cx="168" cy="69" r="9.0"/><circle class="pc" cx="168" cy="74" r="2.9"/></g><path class="sm" d="M240 160Q230 112 240 73"/><g class="pp"><circle cx="231" cy="65" r="12.4"/><circle cx="249" cy="65" r="12.4"/><circle cx="240" cy="59" r="12.4"/><circle class="pc" cx="240" cy="65" r="4.0"/></g><path class="sm" d="M292 160Q303 103 292 54"/><g class="pp"><circle cx="284" cy="46" r="11.3"/><circle cx="300" cy="46" r="11.3"/><circle cx="292" cy="40" r="11.3"/><circle class="pc" cx="292" cy="46" r="3.6"/></g><path class="sm" d="M370 160Q376 121 370 91"/><g class="pp"><circle cx="362" cy="83" r="10.7"/><circle cx="377" cy="83" r="10.7"/><circle cx="370" cy="77" r="10.7"/><circle class="pc" cx="370" cy="83" r="3.4"/></g><path class="sm" d="M421 160Q427 108 421 64"/><g class="pp"><circle cx="412" cy="56" r="12.1"/><circle cx="429" cy="56" r="12.1"/><circle cx="421" cy="50" r="12.1"/><circle class="pc" cx="421" cy="56" r="3.9"/></g><path class="sm" d="M497 160Q489 102 497 53"/><g class="pp"><circle cx="490" cy="45" r="10.1"/><circle cx="505" cy="45" r="10.1"/><circle cx="497" cy="40" r="10.1"/><circle class="pc" cx="497" cy="45" r="3.2"/></g><path class="sm" d="M560 160Q570 122 560 93"/><g class="pp"><circle cx="553" cy="85" r="9.8"/><circle cx="567" cy="85" r="9.8"/><circle cx="560" cy="80" r="9.8"/><circle class="pc" cx="560" cy="85" r="3.1"/></g></svg>
-            <div class="shape cr-petal" style="--x:20%;--d:20s;--dl:-4s"></div>
-            <div class="shape cr-petal" style="--x:55%;--d:26s;--dl:-13s"></div>
-            <div class="shape cr-petal opt" style="--x:80%;--d:23s;--dl:-8s"></div>
+            <svg class="shape" width="0" height="0" style="position:absolute"><defs><g id="rpRa" class="rr-a"><circle class="o" r="10"/><circle class="m" r="7"/><circle class="o" r="4.2"/><path class="v" d="M-3.5 .5Q-2 -4 2.5 -2.2Q4.5 1.5 0 3Q-3.5 3 -2.5 -.5"/></g><g id="rpRb" class="rr-b"><circle class="o" r="10"/><circle class="m" r="7"/><circle class="o" r="4.2"/><path class="v" d="M-3.5 .5Q-2 -4 2.5 -2.2Q4.5 1.5 0 3Q-3.5 3 -2.5 -.5"/></g><g id="rpRc" class="rr-c"><circle class="o" r="10"/><circle class="m" r="7"/><circle class="o" r="4.2"/><path class="v" d="M-3.5 .5Q-2 -4 2.5 -2.2Q4.5 1.5 0 3Q-3.5 3 -2.5 -.5"/></g><path id="rpL" d="M0 0C4 -6 12 -6 16 0C12 6 4 6 0 0Z"/></defs></svg>
+            <div class="shape rp-sun"></div>
+            <div class="shape rp-hill h1"></div>
+            <div class="shape rp-hill h2"></div>
+            <svg class="shape rp-tree t2" viewBox="0 0 120 170"><rect class="tk" x="54" y="96" width="12" height="74" rx="3"/><circle class="cn" cx="60" cy="58" r="44"/><circle class="cn" cx="32" cy="84" r="30"/><circle class="cn" cx="88" cy="84" r="30"/><circle class="cs" cx="70" cy="92" r="28"/><circle class="bl" cx="45" cy="50" r="3.6"/><circle class="bl" cx="78" cy="66" r="3.6"/><circle class="bl" cx="60" cy="84" r="3.6"/><circle class="bl" cx="34" cy="88" r="3.6"/><circle class="bl" cx="90" cy="92" r="3.6"/><circle class="bl" cx="70" cy="40" r="3.6"/></svg>
+            <svg class="shape rp-tree t1 opt" viewBox="0 0 120 170"><rect class="tk" x="54" y="96" width="12" height="74" rx="3"/><circle class="cn" cx="60" cy="58" r="44"/><circle class="cn" cx="32" cy="84" r="30"/><circle class="cn" cx="88" cy="84" r="30"/><circle class="cs" cx="70" cy="92" r="28"/><circle class="bl" cx="40" cy="46" r="3.6"/><circle class="bl" cx="82" cy="58" r="3.6"/><circle class="bl" cx="58" cy="80" r="3.6"/><circle class="bl" cx="30" cy="84" r="3.6"/><circle class="bl" cx="92" cy="90" r="3.6"/></svg>
+            <div class="shape rp-hedge"></div>
+            <div class="shape rp-ground"></div>
+            <div class="shape rp-path"></div>
+            <svg class="shape rp-lamp l2 opt" viewBox="0 0 60 260"><circle class="gw a" cx="30" cy="38" r="66"/><circle class="gw b" cx="30" cy="38" r="42"/><circle class="gw c" cx="30" cy="38" r="24"/><path class="ir" d="M30 2L17 16H43Z"/><path class="gl" d="M19 18H41L44 54H16Z"/><path class="ir2" d="M19 18L16 54M41 18L44 54M30 18V54"/><path class="ir" d="M14 54H46L42 62H18Z"/><rect class="ir" x="28.5" y="62" width="3" height="186"/><circle class="ir" cx="30" cy="68" r="3.4"/><path class="ir" d="M20 248H40L44 258H16Z"/></svg>
+            <svg class="shape rp-lamp l1" viewBox="0 0 60 260"><circle class="gw a" cx="30" cy="38" r="66"/><circle class="gw b" cx="30" cy="38" r="42"/><circle class="gw c" cx="30" cy="38" r="24"/><path class="ir" d="M30 2L17 16H43Z"/><path class="gl" d="M19 18H41L44 54H16Z"/><path class="ir2" d="M19 18L16 54M41 18L44 54M30 18V54"/><path class="ir" d="M14 54H46L42 62H18Z"/><rect class="ir" x="28.5" y="62" width="3" height="186"/><circle class="ir" cx="30" cy="68" r="3.4"/><path class="ir" d="M20 248H40L44 258H16Z"/></svg>
+            <svg class="shape rp-arb" viewBox="0 0 200 300"><rect class="pt" x="10" y="92" width="12" height="208" rx="2"/><rect class="pt" x="178" y="92" width="12" height="208" rx="2"/><path class="ar" d="M16 100C16 24 184 24 184 100"/><use href="#rpL" class="rp-lf" transform="translate(14 118) rotate(-70) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(22 150) rotate(20) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(12 176) rotate(-100) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(22 206) rotate(30) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(14 240) rotate(-80) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(30 78) rotate(-80) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(52 52) rotate(-50) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(86 36) rotate(-20) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(114 34) rotate(20) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(148 44) rotate(45) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(170 64) rotate(75) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(186 120) rotate(-110) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(178 160) rotate(-150) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(188 196) rotate(-80) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(176 230) rotate(-30) scale(1)"/><use href="#rpL" class="rp-lf" transform="translate(186 262) rotate(-100) scale(1)"/><use href="#rpRa" transform="translate(17 132) scale(1.1)"/><use href="#rpRb" transform="translate(19 196) scale(1)"/><use href="#rpRc" transform="translate(15 252) scale(0.95)"/><use href="#rpRb" transform="translate(34 70) scale(1)"/><use href="#rpRa" transform="translate(66 44) scale(1.15)"/><use href="#rpRc" transform="translate(100 32) scale(1.2)"/><use href="#rpRa" transform="translate(134 42) scale(1.1)"/><use href="#rpRb" transform="translate(166 66) scale(1)"/><use href="#rpRc" transform="translate(183 128) scale(1)"/><use href="#rpRa" transform="translate(181 190) scale(1.15)"/><use href="#rpRb" transform="translate(186 250) scale(1)"/></svg>
+            <svg class="shape rp-bench opt" viewBox="0 0 200 110"><rect class="bw" x="12" y="10" width="176" height="9" rx="3"/><rect class="bw" x="12" y="24" width="176" height="9" rx="3"/><rect class="bw" x="12" y="38" width="176" height="9" rx="3"/><rect class="bw2" x="6" y="58" width="188" height="9" rx="3"/><rect class="bw2" x="6" y="70" width="188" height="9" rx="3"/><path class="bi" d="M22 8V104M178 8V104M22 56Q6 56 6 44"/></svg>
+            <svg class="shape rp-bush b3 opt" viewBox="0 0 220 140"><circle class="bs" cx="48" cy="102" r="40"/><circle class="bs" cx="110" cy="84" r="50"/><circle class="bs" cx="172" cy="102" r="40"/><circle class="bs" cx="78" cy="120" r="30"/><circle class="bs" cx="142" cy="120" r="30"/><circle class="bs" cx="110" cy="118" r="36"/><ellipse class="bs2" cx="110" cy="134" rx="104" ry="12"/><use href="#rpL" class="rp-lf" transform="translate(18 96) rotate(-150) scale(1.1)"/><use href="#rpL" class="rp-lf" transform="translate(202 98) rotate(-30) scale(1.1)"/><use href="#rpRc" transform="translate(44 90) scale(1.1)"/><use href="#rpRa" transform="translate(82 60) scale(1.2)"/><use href="#rpRb" transform="translate(118 74) scale(1.2)"/><use href="#rpRb" transform="translate(150 56) scale(1.1)"/><use href="#rpRa" transform="translate(176 88) scale(1.1)"/><use href="#rpRb" transform="translate(64 112) scale(0.95)"/><use href="#rpRc" transform="translate(130 108) scale(1)"/><use href="#rpRa" transform="translate(102 40) scale(0.9)"/><use href="#rpRc" transform="translate(156 112) scale(0.95)"/></svg>
+            <svg class="shape rp-bush b1" viewBox="0 0 220 140"><circle class="bs" cx="48" cy="102" r="40"/><circle class="bs" cx="110" cy="84" r="50"/><circle class="bs" cx="172" cy="102" r="40"/><circle class="bs" cx="78" cy="120" r="30"/><circle class="bs" cx="142" cy="120" r="30"/><circle class="bs" cx="110" cy="118" r="36"/><ellipse class="bs2" cx="110" cy="134" rx="104" ry="12"/><use href="#rpL" class="rp-lf" transform="translate(18 96) rotate(-150) scale(1.1)"/><use href="#rpL" class="rp-lf" transform="translate(202 98) rotate(-30) scale(1.1)"/><use href="#rpRa" transform="translate(40 88) scale(1.1)"/><use href="#rpRb" transform="translate(80 62) scale(1.2)"/><use href="#rpRa" transform="translate(114 76) scale(1.25)"/><use href="#rpRc" transform="translate(146 54) scale(1.1)"/><use href="#rpRb" transform="translate(178 86) scale(1.1)"/><use href="#rpRc" transform="translate(62 110) scale(0.95)"/><use href="#rpRb" transform="translate(128 106) scale(1)"/><use href="#rpRc" transform="translate(100 42) scale(0.9)"/><use href="#rpRa" transform="translate(158 112) scale(0.95)"/><use href="#rpRb" transform="translate(22 112) scale(0.8)"/></svg>
+            <svg class="shape rp-bush b2" viewBox="0 0 220 140"><circle class="bs" cx="48" cy="102" r="40"/><circle class="bs" cx="110" cy="84" r="50"/><circle class="bs" cx="172" cy="102" r="40"/><circle class="bs" cx="78" cy="120" r="30"/><circle class="bs" cx="142" cy="120" r="30"/><circle class="bs" cx="110" cy="118" r="36"/><ellipse class="bs2" cx="110" cy="134" rx="104" ry="12"/><use href="#rpL" class="rp-lf" transform="translate(18 96) rotate(-150) scale(1.1)"/><use href="#rpL" class="rp-lf" transform="translate(202 98) rotate(-30) scale(1.1)"/><use href="#rpRb" transform="translate(36 92) scale(1.1)"/><use href="#rpRa" transform="translate(76 66) scale(1.2)"/><use href="#rpRc" transform="translate(112 80) scale(1.2)"/><use href="#rpRa" transform="translate(148 58) scale(1.1)"/><use href="#rpRc" transform="translate(180 90) scale(1.05)"/><use href="#rpRa" transform="translate(58 112) scale(0.95)"/><use href="#rpRa" transform="translate(130 108) scale(1)"/><use href="#rpRb" transform="translate(98 44) scale(0.9)"/><use href="#rpRb" transform="translate(160 114) scale(0.95)"/><use href="#rpRa" transform="translate(200 112) scale(0.8)"/></svg>
         `,
 
-        // ★ MAROON — "Grand Library"
+        // ★ MAROON — "Wine Bar" (brick wall, back-bar shelves of wine + a few spirits, pendant lamps, neon wine glass, wooden counter, stools; dust = ::after)
         maroon: `
-            <svg class="shape mr-defs" width="0" height="0" style="position:absolute"><defs><g id="mr-bk"><rect class="b1" x="0" y="19" width="10" height="73"/><rect class="b2" x="11" y="8" width="13" height="84"/><rect class="b1" x="25" y="34" width="8" height="58"/><rect class="b1" x="34" y="20" width="13" height="72"/><rect class="b5" x="48" y="5" width="10" height="87"/><rect class="b2" x="59" y="21" width="12" height="71"/><rect class="b2" x="72" y="22" width="8" height="70"/><rect class="b3" x="81" y="22" width="7" height="70"/><rect class="b3" x="89" y="28" width="10" height="64"/><rect class="b1" x="100" y="15" width="11" height="77"/><rect class="b5" x="112" y="14" width="12" height="78"/><rect class="b2" x="125" y="27" width="10" height="65"/><rect class="b1" x="136" y="21" width="14" height="71"/><rect class="b3" x="151" y="38" width="11" height="54"/><rect class="b2" x="163" y="6" width="11" height="86"/><rect class="b5" x="175" y="11" width="13" height="81"/><rect class="b4" x="189" y="11" width="11" height="81"/><rect class="b3" x="201" y="24" width="9" height="68"/><rect class="b1" x="211" y="36" width="11" height="56"/><rect class="b6" x="223" y="9" width="7" height="83"/><rect class="b5" x="231" y="5" width="11" height="87"/><rect class="pk" x="0" y="92" width="240" height="8"/><rect class="b2" x="0" y="117" width="14" height="75"/><rect class="b4" x="15" y="134" width="10" height="58"/><rect class="b3" x="26" y="110" width="10" height="82"/><rect class="b4" x="37" y="116" width="9" height="76"/><rect class="b3" x="47" y="126" width="12" height="66"/><rect class="b6" x="60" y="135" width="8" height="57"/><rect class="b5" x="69" y="121" width="10" height="71"/><rect class="b3" x="80" y="131" width="10" height="61"/><rect class="b4" x="91" y="120" width="9" height="72"/><rect class="b3" x="101" y="136" width="7" height="56"/><rect class="b6" x="109" y="120" width="8" height="72"/><rect class="b3" x="118" y="137" width="12" height="55"/><rect class="b2" x="131" y="118" width="11" height="74"/><rect class="b3" x="143" y="134" width="13" height="58"/><rect class="b3" x="157" y="110" width="10" height="82"/><rect class="b4" x="168" y="122" width="9" height="70"/><rect class="b5" x="178" y="117" width="9" height="75"/><rect class="b1" x="188" y="115" width="7" height="77"/><rect class="b3" x="196" y="128" width="14" height="64"/><rect class="b5" x="211" y="120" width="12" height="72"/><rect class="b2" x="224" y="110" width="8" height="82"/><rect class="b1" x="233" y="125" width="13" height="67"/><rect class="pk" x="0" y="192" width="240" height="8"/><rect class="b1" x="0" y="235" width="7" height="57"/><rect class="b5" x="8" y="229" width="9" height="63"/><rect class="b4" x="18" y="204" width="7" height="88"/><rect class="b1" x="26" y="218" width="10" height="74"/><rect class="b3" x="37" y="205" width="8" height="87"/><rect class="b4" x="46" y="226" width="13" height="66"/><rect class="b4" x="60" y="223" width="10" height="69"/><rect class="b1" x="71" y="207" width="13" height="85"/><rect class="b4" x="85" y="212" width="10" height="80"/><rect class="b2" x="96" y="211" width="10" height="81"/><rect class="b1" x="107" y="226" width="14" height="66"/><rect class="b3" x="122" y="222" width="7" height="70"/><rect class="b2" x="130" y="205" width="10" height="87"/><rect class="b3" x="141" y="212" width="10" height="80"/><rect class="b1" x="152" y="218" width="9" height="74"/><rect class="b5" x="162" y="231" width="12" height="61"/><rect class="b4" x="175" y="236" width="13" height="56"/><rect class="b4" x="189" y="233" width="13" height="59"/><rect class="b3" x="203" y="228" width="10" height="64"/><rect class="b6" x="214" y="208" width="11" height="84"/><rect class="b5" x="226" y="212" width="12" height="80"/><rect class="b3" x="239" y="221" width="10" height="71"/><rect class="pk" x="0" y="292" width="240" height="8"/><rect class="b1" x="0" y="307" width="13" height="85"/><rect class="b1" x="14" y="326" width="11" height="66"/><rect class="b3" x="26" y="330" width="13" height="62"/><rect class="b6" x="40" y="328" width="7" height="64"/><rect class="b6" x="48" y="308" width="14" height="84"/><rect class="b2" x="63" y="314" width="13" height="78"/><rect class="b2" x="77" y="325" width="7" height="67"/><rect class="b1" x="85" y="322" width="7" height="70"/><rect class="b2" x="93" y="314" width="13" height="78"/><rect class="b2" x="107" y="326" width="7" height="66"/><rect class="b5" x="115" y="308" width="12" height="84"/><rect class="b1" x="128" y="337" width="14" height="55"/><rect class="b4" x="143" y="331" width="7" height="61"/><rect class="b1" x="151" y="330" width="11" height="62"/><rect class="b5" x="163" y="333" width="12" height="59"/><rect class="b3" x="176" y="319" width="7" height="73"/><rect class="b5" x="184" y="333" width="8" height="59"/><rect class="b2" x="193" y="314" width="14" height="78"/><rect class="b2" x="208" y="314" width="11" height="78"/><rect class="b1" x="220" y="313" width="14" height="79"/><rect class="b5" x="235" y="331" width="8" height="61"/><rect class="pk" x="0" y="392" width="240" height="8"/><rect class="b4" x="0" y="406" width="12" height="86"/><rect class="b1" x="13" y="410" width="13" height="82"/><rect class="b4" x="27" y="419" width="10" height="73"/><rect class="b5" x="38" y="431" width="13" height="61"/><rect class="b2" x="52" y="415" width="9" height="77"/><rect class="b3" x="62" y="429" width="9" height="63"/><rect class="b3" x="72" y="417" width="14" height="75"/><rect class="b1" x="87" y="428" width="7" height="64"/><rect class="b5" x="95" y="431" width="11" height="61"/><rect class="b6" x="107" y="407" width="8" height="85"/><rect class="b1" x="116" y="405" width="14" height="87"/><rect class="b3" x="131" y="412" width="10" height="80"/><rect class="b2" x="142" y="424" width="12" height="68"/><rect class="b5" x="155" y="435" width="7" height="57"/><rect class="b4" x="163" y="404" width="12" height="88"/><rect class="b4" x="176" y="406" width="11" height="86"/><rect class="b2" x="188" y="413" width="14" height="79"/><rect class="b6" x="203" y="415" width="11" height="77"/><rect class="b4" x="215" y="430" width="12" height="62"/><rect class="b6" x="228" y="429" width="8" height="63"/><rect class="b3" x="237" y="420" width="9" height="72"/><rect class="pk" x="0" y="492" width="240" height="8"/><rect class="b6" x="0" y="516" width="10" height="76"/><rect class="b4" x="11" y="534" width="8" height="58"/><rect class="b6" x="20" y="517" width="9" height="75"/><rect class="b2" x="30" y="518" width="12" height="74"/><rect class="b5" x="43" y="537" width="11" height="55"/><rect class="b1" x="55" y="505" width="7" height="87"/><rect class="b2" x="63" y="532" width="12" height="60"/><rect class="b6" x="76" y="507" width="9" height="85"/><rect class="b2" x="86" y="531" width="8" height="61"/><rect class="b5" x="95" y="524" width="14" height="68"/><rect class="b5" x="110" y="513" width="11" height="79"/><rect class="b6" x="122" y="507" width="10" height="85"/><rect class="b3" x="133" y="519" width="10" height="73"/><rect class="b5" x="144" y="518" width="10" height="74"/><rect class="b5" x="155" y="513" width="14" height="79"/><rect class="b3" x="170" y="518" width="13" height="74"/><rect class="b5" x="184" y="512" width="14" height="80"/><rect class="b2" x="199" y="522" width="7" height="70"/><rect class="b4" x="207" y="515" width="14" height="77"/><rect class="b2" x="222" y="537" width="13" height="55"/><rect class="b6" x="236" y="509" width="8" height="83"/><rect class="pk" x="0" y="592" width="240" height="8"/><rect class="b1" x="0" y="619" width="12" height="73"/><rect class="b2" x="13" y="608" width="11" height="84"/><rect class="b2" x="25" y="634" width="14" height="58"/><rect class="b3" x="40" y="634" width="10" height="58"/><rect class="b2" x="51" y="635" width="9" height="57"/><rect class="b3" x="61" y="604" width="13" height="88"/><rect class="b2" x="75" y="605" width="7" height="87"/><rect class="b2" x="83" y="632" width="9" height="60"/><rect class="b1" x="93" y="618" width="7" height="74"/><rect class="b1" x="101" y="621" width="8" height="71"/><rect class="b6" x="110" y="627" width="11" height="65"/><rect class="b2" x="122" y="612" width="9" height="80"/><rect class="b6" x="132" y="615" width="8" height="77"/><rect class="b5" x="141" y="629" width="7" height="63"/><rect class="b2" x="149" y="629" width="13" height="63"/><rect class="b5" x="163" y="608" width="11" height="84"/><rect class="b2" x="175" y="614" width="8" height="78"/><rect class="b5" x="184" y="622" width="9" height="70"/><rect class="b6" x="194" y="604" width="13" height="88"/><rect class="b3" x="208" y="613" width="11" height="79"/><rect class="b1" x="220" y="614" width="9" height="78"/><rect class="b3" x="230" y="637" width="13" height="55"/><rect class="pk" x="0" y="692" width="240" height="8"/></g></defs></svg>
-            <svg class="shape mr-shelf l" viewBox="0 0 240 700" preserveAspectRatio="xMinYMin slice"><use href="#mr-bk"/></svg>
-            <svg class="shape mr-shelf r" viewBox="0 0 240 700" preserveAspectRatio="xMinYMin slice"><use href="#mr-bk"/></svg>
-            <div class="shape mr-cone"></div>
-            <div class="shape mr-lamp"><i class="cd"></i><i class="sh"></i><i class="gw"></i></div>
-            <div class="shape mr-dust"></div>
-            <div class="shape mr-desk"></div>
+            <svg class="shape" width="0" height="0" style="position:absolute"><defs><g id="wbW"><path d="M-6 0V-31Q-6 -37 -2.3 -41V-53H2.3V-41Q6 -37 6 -31V0Z"/><rect class="wb-cap" x="-2.6" y="-55" width="5.2" height="9" rx="1"/><rect class="wb-lb" x="-6" y="-24" width="12" height="13"/><path class="wb-hl" d="M-4 -30V-4H-2.4V-30Z"/></g><g id="wbC"><path d="M-7 0V-26Q-7 -33 -3 -38V-52H3V-38Q7 -33 7 -26V0Z"/><rect class="wb-gold" x="-3.4" y="-53" width="6.8" height="15" rx="1"/><rect class="wb-lb" x="-7" y="-20" width="14" height="12"/><path class="wb-hl" d="M-5 -26V-3H-3.4V-26Z"/></g><g id="wbS"><path d="M-8 0V-27Q-8 -30 -5 -31V-36H5V-31Q8 -30 8 -27V0Z"/><rect class="wb-cork" x="-3.6" y="-41" width="7.2" height="6" rx="1"/><rect class="wb-lb" x="-8" y="-22" width="16" height="14"/><path class="wb-hl" d="M-6 -26V-3H-4.4V-26Z"/></g><g id="wbT"><path d="M-5 0V-34Q-5 -40 -2.4 -43V-56H2.4V-43Q5 -40 5 -34V0Z"/><rect class="wb-cork" x="-2.8" y="-60" width="5.6" height="5" rx="1"/><rect class="wb-lb" x="-5" y="-28" width="10" height="16"/><path class="wb-hl" d="M-3.6 -33V-3H-2.2V-33Z"/></g><g id="wbR"><path d="M-9 0V-20Q-9 -29 -3.4 -32V-44H3.4V-32Q9 -29 9 -20V0Z"/><rect class="wb-cork" x="-3.2" y="-48" width="6.4" height="5" rx="1"/><rect class="wb-lb" x="-9" y="-18" width="18" height="12"/><path class="wb-hl" d="M-7 -20V-3H-5.4V-20Z"/></g><g id="wbG"><path class="wb-gs" d="M-8 0H8M0 0V-10"/><path class="wb-gb" d="M-13 -46H13C13 -24 8 -10 0 -10S-13 -24 -13 -46Z"/><path class="wb-liq" d="M-11.6 -32H11.6C10.8 -20 7 -12.6 0 -12.6S-10.8 -20 -11.6 -32Z"/></g><g id="wbD"><path class="wb-gb" d="M-10 0H10L12 -26H-12Z"/><path class="wb-liq" d="M-10.4 -3H10.4L11.2 -15H-11.2Z"/><rect class="wb-cube" x="-6" y="-19" width="7" height="7" rx="1.4" transform="rotate(-12 -3 -15)"/></g></defs></svg>
+            <div class="shape wb-wall"></div>
+            <svg class="shape wb-shelf l" viewBox="0 0 300 230"><rect class="sp" x="6" y="0" width="288" height="220"/><rect class="sl" x="6" y="65" width="288" height="3"/><rect class="sl" x="6" y="135" width="288" height="3"/><rect class="sl" x="6" y="205" width="288" height="3"/><use href="#wbW" class="bw1" transform="translate(25 70)"/><use href="#wbW" class="bw2" transform="translate(50 70)"/><use href="#wbW" class="bw3" transform="translate(75 70)"/><use href="#wbW" class="bw1" transform="translate(100 70)"/><use href="#wbW" class="bw4" transform="translate(125 70)"/><use href="#wbW" class="bw2" transform="translate(150 70)"/><use href="#wbW" class="bw1" transform="translate(175 70)"/><use href="#wbW" class="bw3" transform="translate(200 70)"/><use href="#wbW" class="bw2" transform="translate(225 70)"/><use href="#wbW" class="bw1" transform="translate(250 70)"/><use href="#wbW" class="bw4" transform="translate(275 70)"/><use href="#wbW" class="bw2" transform="translate(25 140)"/><use href="#wbW" class="bw1" transform="translate(50 140)"/><use href="#wbW" class="bw3" transform="translate(75 140)"/><use href="#wbW" class="bw1" transform="translate(100 140)"/><use href="#wbC" class="bw4" transform="translate(125 140)"/><use href="#wbW" class="bw2" transform="translate(150 140)"/><use href="#wbW" class="bw1" transform="translate(175 140)"/><use href="#wbW" class="bw3" transform="translate(200 140)"/><use href="#wbW" class="bw1" transform="translate(225 140)"/><use href="#wbW" class="bw2" transform="translate(250 140)"/><use href="#wbW" class="bw3" transform="translate(275 140)"/><use href="#wbW" class="bw1" transform="translate(25 210)"/><use href="#wbW" class="bw3" transform="translate(50 210)"/><use href="#wbW" class="bw1" transform="translate(75 210)"/><use href="#wbS" class="bs1" transform="translate(100 210)"/><use href="#wbT" class="bs2" transform="translate(125 210)"/><use href="#wbR" class="bs5" transform="translate(150 210)"/><use href="#wbS" class="bs4" transform="translate(175 210)"/><use href="#wbT" class="bs3" transform="translate(200 210)"/><use href="#wbW" class="bw2" transform="translate(225 210)"/><use href="#wbW" class="bw1" transform="translate(250 210)"/><use href="#wbW" class="bw3" transform="translate(275 210)"/><rect class="sb" x="2" y="70" width="296" height="8" rx="2"/><rect class="sh" x="2" y="70" width="296" height="2"/><rect class="sb" x="2" y="140" width="296" height="8" rx="2"/><rect class="sh" x="2" y="140" width="296" height="2"/><rect class="sb" x="2" y="210" width="296" height="8" rx="2"/><rect class="sh" x="2" y="210" width="296" height="2"/><rect class="sf" x="0" y="0" width="7" height="232"/><rect class="sf" x="293" y="0" width="7" height="232"/><rect class="sf" x="0" y="0" width="300" height="6"/></svg>
+            <svg class="shape wb-shelf r" viewBox="0 0 300 230"><rect class="sp" x="6" y="0" width="288" height="220"/><rect class="sl" x="6" y="65" width="288" height="3"/><rect class="sl" x="6" y="135" width="288" height="3"/><rect class="sl" x="6" y="205" width="288" height="3"/><use href="#wbT" class="bs2" transform="translate(25 70)"/><use href="#wbS" class="bs1" transform="translate(50 70)"/><use href="#wbR" class="bs5" transform="translate(75 70)"/><use href="#wbT" class="bs3" transform="translate(100 70)"/><use href="#wbS" class="bs4" transform="translate(125 70)"/><use href="#wbR" class="bs6" transform="translate(150 70)"/><use href="#wbS" class="bs1" transform="translate(175 70)"/><use href="#wbW" class="bw1" transform="translate(200 70)"/><use href="#wbW" class="bw2" transform="translate(225 70)"/><use href="#wbW" class="bw3" transform="translate(250 70)"/><use href="#wbW" class="bw1" transform="translate(275 70)"/><use href="#wbW" class="bw1" transform="translate(25 140)"/><use href="#wbW" class="bw3" transform="translate(50 140)"/><use href="#wbW" class="bw2" transform="translate(75 140)"/><use href="#wbW" class="bw4" transform="translate(100 140)"/><use href="#wbW" class="bw1" transform="translate(125 140)"/><use href="#wbC" class="bw4" transform="translate(150 140)"/><use href="#wbW" class="bw2" transform="translate(175 140)"/><use href="#wbW" class="bw1" transform="translate(200 140)"/><use href="#wbW" class="bw3" transform="translate(225 140)"/><use href="#wbW" class="bw1" transform="translate(250 140)"/><use href="#wbW" class="bw2" transform="translate(275 140)"/><use href="#wbW" class="bw2" transform="translate(25 210)"/><use href="#wbW" class="bw1" transform="translate(50 210)"/><use href="#wbW" class="bw3" transform="translate(75 210)"/><use href="#wbW" class="bw1" transform="translate(100 210)"/><use href="#wbW" class="bw4" transform="translate(125 210)"/><use href="#wbW" class="bw1" transform="translate(150 210)"/><use href="#wbW" class="bw2" transform="translate(175 210)"/><use href="#wbW" class="bw3" transform="translate(200 210)"/><use href="#wbW" class="bw1" transform="translate(225 210)"/><use href="#wbW" class="bw2" transform="translate(250 210)"/><use href="#wbW" class="bw1" transform="translate(275 210)"/><rect class="sb" x="2" y="70" width="296" height="8" rx="2"/><rect class="sh" x="2" y="70" width="296" height="2"/><rect class="sb" x="2" y="140" width="296" height="8" rx="2"/><rect class="sh" x="2" y="140" width="296" height="2"/><rect class="sb" x="2" y="210" width="296" height="8" rx="2"/><rect class="sh" x="2" y="210" width="296" height="2"/><rect class="sf" x="0" y="0" width="7" height="232"/><rect class="sf" x="293" y="0" width="7" height="232"/><rect class="sf" x="0" y="0" width="300" height="6"/></svg>
+            <svg class="shape wb-neon opt" viewBox="0 0 90 116"><g class="halo"><path d="M20 12H70C70 38 60 54 45 54S20 38 20 12ZM45 54V90M30 94H60M12 106Q45 114 78 106"/></g><g class="tube"><path d="M20 12H70C70 38 60 54 45 54S20 38 20 12Z"/><path d="M45 54V90M30 94H60"/><path d="M24 26Q34 22 45 26T66 26"/><path d="M12 106Q45 114 78 106"/><circle cx="38" cy="38" r="1.6"/><circle cx="50" cy="42" r="1.3"/><circle cx="45" cy="33" r="1.1"/></g></svg>
+            <svg class="shape wb-lamp p1" viewBox="0 0 80 130"><circle class="gw a" cx="40" cy="98" r="74"/><circle class="gw b" cx="40" cy="98" r="48"/><circle class="gw c" cx="40" cy="98" r="26"/><path class="cd" d="M40 0V46"/><path class="shd" d="M14 88L27 46H53L66 88Z"/><rect class="rim" x="12" y="86" width="56" height="5" rx="2.5"/><circle class="bu" cx="40" cy="96" r="6"/></svg>
+            <svg class="shape wb-lamp p2" viewBox="0 0 80 130"><circle class="gw a" cx="40" cy="98" r="74"/><circle class="gw b" cx="40" cy="98" r="48"/><circle class="gw c" cx="40" cy="98" r="26"/><path class="cd" d="M40 0V46"/><path class="shd" d="M14 88L27 46H53L66 88Z"/><rect class="rim" x="12" y="86" width="56" height="5" rx="2.5"/><circle class="bu" cx="40" cy="96" r="6"/></svg>
+            <div class="shape wb-counter"></div>
+            <svg class="shape wb-ice opt" viewBox="0 0 120 130"><use href="#wbW" class="bw1" transform="translate(88 76) rotate(13) scale(1.25)"/><use href="#wbC" class="bw4" transform="translate(54 74) scale(1.3)"/><path class="bk" d="M20 66H100L92 124H28Z"/><path class="bk2" d="M20 66H100L99 72H21Z"/><rect class="bk2" x="16" y="62" width="88" height="8" rx="3"/><rect class="ic" x="26" y="56" width="13" height="11" rx="2.4" transform="rotate(-10 32 61)"/><rect class="ic" x="42" y="58" width="12" height="10" rx="2.4" transform="rotate(8 48 63)"/><rect class="ic" x="66" y="57" width="13" height="11" rx="2.4" transform="rotate(-6 72 62)"/><rect class="ic" x="82" y="58" width="12" height="10" rx="2.4" transform="rotate(12 88 63)"/><path class="bhl" d="M34 76L38 116"/></svg>
+            <svg class="shape wb-pour" viewBox="0 0 260 110"><use href="#wbW" class="bw1" transform="translate(34 104) scale(1.7)"/><use href="#wbS" class="bs1" transform="translate(78 104) scale(1.7)"/><use href="#wbG" class="gw1" transform="translate(132 104) scale(1.5)"/><use href="#wbG" class="gw2" transform="translate(170 104) scale(1.5)"/><use href="#wbD" class="gw3" transform="translate(220 104) scale(1.5)"/></svg>
+            <div class="shape wb-stools"></div>
         `,
 
         // ★ SAKURA — "Torii at Dawn (upgraded)"
@@ -320,7 +597,7 @@
             }
         },
         pink: {
-            name: 'Blossom', sub: 'Bloom · Dreamy', emoji: '🌸',
+            name: 'Blossom', sub: 'Conservatory · Dreamy', emoji: '🌸',
             preview: { primary: '#ec4899', gradient: 'linear-gradient(135deg, #ec4899 0%, #f9a8d4 100%)' },
             light: {
                 '--theme-primary': '#ec4899', '--theme-accent': '#f9a8d4', '--theme-primary-dark': '#be185d',
@@ -440,7 +717,7 @@
             }
         },
         crimson: {
-            name: 'Crimson', sub: 'Poppy · Bold', emoji: '🌹',
+            name: 'Crimson', sub: 'Rose Park · Bold', emoji: '🌹',
             preview: { primary: '#dc2626', gradient: 'linear-gradient(135deg, #dc2626 0%, #f87171 100%)' },
             light: {
                 '--theme-primary': '#dc2626', '--theme-accent': '#f87171', '--theme-primary-dark': '#b91c1c',
@@ -464,7 +741,7 @@
             }
         },
         maroon: {
-            name: 'Maroon', sub: 'Library · Classic', emoji: '🍷',
+            name: 'Maroon', sub: 'Wine Bar · Classic', emoji: '🍷',
             preview: { primary: '#800000', gradient: 'linear-gradient(135deg, #800000 0%, #a52a2a 100%)' },
             light: {
                 '--theme-primary': '#800000', '--theme-accent': '#a52a2a', '--theme-primary-dark': '#5c0000',
@@ -705,6 +982,95 @@
         }
     };
 
+    // ── themed cursor (v6.3) — icons live in THEME_CURSORS; styles in theme.css ──
+    // ZERO-LAG: the exact pointer position is written straight from the pointer event (no
+    // easing / no rAF queue), and the icon rides beside the pointer instead of covering it,
+    // so the small dot is always the true hotspot and the element under it stays visible.
+    (function cursorKit() {
+        const root = document.documentElement;
+        let fine = false;
+        try { fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) { /* ignore */ }
+        window.__twCursorSync = function () { };
+        if (!fine) return;
+        const CLICKABLE = 'a,button,summary,label,[role="button"],[role="tab"],[role="link"],[role="menuitem"],[role="switch"],input[type="button"],input[type="submit"],input[type="reset"],input[type="checkbox"],input[type="radio"],[onclick],[tabindex]:not([tabindex="-1"]),.btn,[class*="btn-"],[class*="-btn"],[class*="clickable"]';
+        const NATIVE = 'input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable=""],[contenteditable="true"]';
+        const SIZE = 30, GAP = 8;               // icon box + distance from the hotspot
+        const RAW = ('onpointerrawupdate' in window);
+        let ring = null, dot = null, key = '', seen = false, lx = -1, ly = -1;
+
+        function paint() {
+            if (!ring) return;
+            ring.firstChild.innerHTML = (key && window.THEME_CURSORS[key]) || '';
+        }
+        function build() {
+            if (ring || !document.body) return;
+            ring = document.createElement('div');
+            ring.id = 'twCur';
+            ring.setAttribute('aria-hidden', 'true');
+            ring.innerHTML = '<div class="ic"></div>';
+            dot = document.createElement('div');
+            dot.id = 'twCurDot';
+            dot.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(ring);
+            document.body.appendChild(dot);
+            ring.addEventListener('animationend', (e) => { if (e.animationName === 'twcPop') ring.classList.remove('pop'); });
+            paint();
+        }
+        // dot = exact hotspot; icon flips to the other side near the right / bottom viewport edge
+        function place(x, y) {
+            lx = x; ly = y;
+            dot.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+            const ox = (x + GAP + SIZE > window.innerWidth) ? -(GAP + SIZE) : GAP;
+            const oy = (y + GAP + SIZE > window.innerHeight) ? -(GAP + SIZE) : GAP;
+            ring.style.transform = 'translate3d(' + (x + ox) + 'px,' + (y + oy) + 'px,0)';
+        }
+        function sync(presetKey) {
+            key = (window.THEME_CURSORS && window.THEME_CURSORS[presetKey]) ? presetKey : '';
+            if (!key) root.removeAttribute('data-tw-cursor');
+            else if (seen) root.setAttribute('data-tw-cursor', key);
+            paint();
+        }
+        window.__twCursorSync = sync;
+
+        const onMove = (e) => {
+            if (e.pointerType && e.pointerType !== 'mouse') return;
+            if (!seen) {
+                seen = true;
+                build();
+                if (key) root.setAttribute('data-tw-cursor', key);
+            }
+            if (!ring) return;
+            place(e.clientX, e.clientY);
+            if (ring.classList.contains('out')) { ring.classList.remove('out'); dot.classList.remove('out'); }
+        };
+        document.addEventListener('pointermove', onMove, { passive: true });
+        // Chromium: un-coalesced, un-throttled position updates (secure contexts) = even less latency
+        if (RAW) document.addEventListener('pointerrawupdate', onMove, { passive: true });
+        document.addEventListener('mouseover', (e) => {
+            if (!ring || !(e.target instanceof Element)) return;
+            const nat = !!e.target.closest(NATIVE);
+            const hov = !nat && !!e.target.closest(CLICKABLE);
+            ring.classList.toggle('nat', nat);
+            dot.classList.toggle('nat', nat);
+            ring.classList.toggle('hov', hov);
+            dot.classList.toggle('hov', hov);
+        }, { passive: true });
+        document.addEventListener('pointerdown', (e) => {
+            if (!ring || (e.pointerType && e.pointerType !== 'mouse')) return;
+            ring.classList.add('dn');
+            dot.classList.add('dn');
+            ring.classList.remove('pop');
+            void ring.offsetWidth;
+            ring.classList.add('pop');
+        }, { passive: true });
+        const up = () => { if (ring) { ring.classList.remove('dn'); dot.classList.remove('dn'); } };
+        document.addEventListener('pointerup', up, { passive: true });
+        document.addEventListener('pointercancel', up, { passive: true });
+        window.addEventListener('resize', () => { if (ring && lx >= 0) place(lx, ly); }, { passive: true });
+        root.addEventListener('mouseleave', () => { if (ring) { ring.classList.add('out'); dot.classList.add('out'); } });
+        root.addEventListener('mouseenter', () => { if (ring) { ring.classList.remove('out'); dot.classList.remove('out'); } });
+    })();
+
     window.DEFAULT_THEME = { preset: 'ocean', mode: 'light' };
     window.selectedTheme = { ...window.DEFAULT_THEME };
 
@@ -745,6 +1111,7 @@
         root.setAttribute('data-timawa-mode', mode);
         root.style.colorScheme = mode; // v6: native form controls / scrollbars follow the mode
         window.injectThemeShapes(presetKey);
+        if (window.__twCursorSync) window.__twCursorSync(presetKey);
         let meta = document.querySelector('meta[name="theme-color"]');
         if (!meta) {
             meta = document.createElement('meta');
