@@ -1973,6 +1973,7 @@
         ::-webkit-scrollbar-track { background: var(--admin-border); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: var(--admin-gradient); border-radius: 10px; }
     </style>
+    <link rel="stylesheet" href="stories.css?v=1.2.0" />
 </head>
 <body>
     <!-- ===== LOADING OVERLAY ===== -->
@@ -2120,6 +2121,10 @@
                 <i class="fas fa-comment-dots"></i> Chats
                 <span class="tab-badge" id="chatsTabBadge" style="display:none;">0</span>
             </button>
+            <button class="admin-tab" data-tab="stories">
+                <i class="fas fa-circle-play"></i> Stories
+                <span class="tab-badge" id="storiesTabBadge" style="display:none;">0</span>
+            </button>
         </div>
 
         <div id="tab-coffee" class="tab-content active">
@@ -2190,6 +2195,8 @@
 
         <!-- ===== HIGHLIGHTS TAB ===== -->
         <div id="tab-highlights" class="tab-content">
+            <!-- Stories row (same as the homepage): above the highlights management card -->
+            <div id="adminStoriesMount" class="st-row-mount st-in-admin" hidden></div>
             <div class="admin-card">
                 <div class="card-header">
                     <h3><i class="fas fa-images" style="color: var(--admin-primary);"></i> Highlights Management</h3>
@@ -2418,6 +2425,32 @@
                     </div>
                 </div>
                 <div class="items-grid" id="chatsGrid"></div>
+            </div>
+        </div>
+
+        <div id="tab-stories" class="tab-content">
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-circle-play" style="color: var(--admin-primary);"></i> Stories (Moderation)</h3>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%;margin-top:10px;">
+                        <div class="user-search-wrap">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="storiesSearchInput" placeholder="Search by owner, caption or text..." oninput="renderStoriesAdmin()" />
+                        </div>
+                        <select id="storiesStatusFilter" onchange="renderStoriesAdmin()">
+                            <option value="active">🟢 Active (24h)</option>
+                            <option value="removed">🚫 Removed</option>
+                            <option value="expired">⌛ Expired</option>
+                            <option value="all">All</option>
+                        </select>
+                        <span class="count" id="storiesCount">0 stories</span>
+                    </div>
+                </div>
+                <p style="font-size:12.5px;color:var(--admin-text-dim);margin:4px 0 14px;">
+                    <b>Remove</b> hides a story from every member immediately and keeps the record (reversible).
+                    <b>Delete</b> removes the record permanently. Uploaded media stays on Cloudinary until your cleanup job runs.
+                </p>
+                <div class="items-grid" id="storiesGrid"></div>
             </div>
         </div>
     </div>
@@ -5942,6 +5975,7 @@
                 loadNotesAdmin();
                 loadCommentsAdmin();
                 loadChatsAdmin();
+                loadStoriesAdmin();
                 loadHighlightsAdmin();
                 loadChatFeatureFlag();
 
@@ -6424,6 +6458,154 @@
             });
         });
 
+        // ================================================================
+        // ===== STORIES MODERATION (uses the same isAdmin gate as the page) =====
+        // ================================================================
+        let unsubscribeAdminStories = null;
+        let adminStoriesCache = [];
+        const STORY_TTL_MS = 24 * 60 * 60 * 1000;
+
+        function storyTsMs(ts) { return ts && typeof ts.toMillis === 'function' ? ts.toMillis() : 0; }
+        function storyEffectiveStatus(s) {
+            if (s.status === 'removed') return 'removed';
+            const created = storyTsMs(s.createdAt);
+            if (!created) return 'expired'; // malformed / no server timestamp -> never treated as live
+            const exp = Math.min(storyTsMs(s.expiresAt) || (created + STORY_TTL_MS), created + STORY_TTL_MS);
+            return exp > Date.now() ? 'active' : 'expired';
+        }
+        function storySafeCloudUrl(u) {
+            try { const x = new URL(u); return (x.protocol === 'https:' && x.hostname === 'res.cloudinary.com') ? x.href : ''; } catch (e) { return ''; }
+        }
+
+        // Auto-delete: the Firestore TTL policy on stories.expiresAt is the primary cleaner (see STORIES_SETUP.md).
+        // TTL can lag, so whenever an admin has this page open, expired stories (and their reactions) are removed here too.
+        const sweepTried = new Set();
+        async function sweepExpiredStories() {
+            const now = Date.now();
+            const dead = adminStoriesCache.filter(s => {
+                if (sweepTried.has(s.id)) return false;
+                const created = storyTsMs(s.createdAt);
+                if (!created) return false;
+                const exp = Math.min(storyTsMs(s.expiresAt) || (created + STORY_TTL_MS), created + STORY_TTL_MS);
+                return exp + 60000 < now;
+            });
+            for (const s of dead.slice(0, 25)) {
+                sweepTried.add(s.id);
+                try {
+                    const ref = db.collection('stories').doc(s.id);
+                    const rs = await ref.collection('reactions').get();
+                    const b = db.batch(); rs.forEach(d => b.delete(d.ref)); b.delete(ref);
+                    await b.commit();
+                } catch (e) { console.warn('Expired story cleanup failed:', s.id, e.code || e.message); }
+            }
+        }
+
+        function loadStoriesAdmin() {
+            if (unsubscribeAdminStories) { try { unsubscribeAdminStories(); } catch (e) {} unsubscribeAdminStories = null; }
+            unsubscribeAdminStories = db.collection('stories').orderBy('createdAt', 'desc').limit(200).onSnapshot(snap => {
+                adminStoriesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderStoriesAdmin();
+                sweepExpiredStories();
+            }, err => {
+                console.warn('Stories admin listener:', err.code || err.message);
+                const grid = document.getElementById('storiesGrid');
+                if (grid) grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-triangle-exclamation"></i><p>Could not load stories (' + escapeHtml(err.code || err.message) + '). Check the Firestore rules for the "stories" collection.</p></div>';
+            });
+        }
+
+        function renderStoriesAdmin() {
+            const grid = document.getElementById('storiesGrid');
+            if (!grid) return;
+            const filter = (document.getElementById('storiesStatusFilter') || {}).value || 'active';
+            const term = ((document.getElementById('storiesSearchInput') || {}).value || '').trim().toLowerCase();
+
+            const withStatus = adminStoriesCache.map(s => ({ s, status: storyEffectiveStatus(s) }));
+            const activeCount = withStatus.filter(x => x.status === 'active').length;
+            const badge = document.getElementById('storiesTabBadge');
+            if (badge) { badge.textContent = activeCount; badge.style.display = activeCount > 0 ? '' : 'none'; }
+
+            const list = withStatus.filter(({ s, status }) => {
+                if (filter !== 'all' && status !== filter) return false;
+                if (!term) return true;
+                const hay = [s.ownerName, s.ownerUid, s.caption, ...(Array.isArray(s.textOverlays) ? s.textOverlays.map(t => t.text) : []), s.spotifyTrack && s.spotifyTrack.title].join(' ').toLowerCase();
+                return hay.includes(term);
+            });
+            const cnt = document.getElementById('storiesCount');
+            if (cnt) cnt.textContent = list.length + ' stor' + (list.length === 1 ? 'y' : 'ies') + ' · ' + activeCount + ' live';
+
+            if (!list.length) {
+                grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-circle-play"></i><p>No stories match this filter.</p></div>';
+                return;
+            }
+
+            const fmt = ms => ms ? new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+            const colors = { active: 'var(--admin-success)', removed: 'var(--admin-danger)', expired: 'var(--admin-text-dim)' };
+            grid.innerHTML = list.map(({ s, status }) => {
+                const thumb = storySafeCloudUrl(s.thumbUrl) || (s.mediaType === 'image' ? storySafeCloudUrl(s.mediaUrl) : '');
+                const media = storySafeCloudUrl(s.mediaUrl);
+                const created = storyTsMs(s.createdAt);
+                const texts = Array.isArray(s.textOverlays) ? s.textOverlays.filter(t => t && t.text).map(t => t.text).join(' · ') : '';
+                const removedLine = status === 'removed'
+                    ? `<div style="font-size:12px;color:var(--admin-danger);margin-top:6px;"><i class="fas fa-ban"></i> Removed ${escapeHtml(fmt(storyTsMs(s.removedAt)))}${s.removedBy ? ' by ' + escapeHtml(s.removedBy === (currentUser && currentUser.uid) ? 'you' : s.removedBy.slice(0, 8) + '…') : ''}</div>` : '';
+                const canRestore = status === 'removed' && created && (created + STORY_TTL_MS) > Date.now();
+                return `
+                <div class="item-card" data-story-id="${escapeAttr(s.id)}">
+                    <div style="display:flex;gap:12px;align-items:flex-start;">
+                        <div style="flex:0 0 64px;height:96px;border-radius:10px;overflow:hidden;background:var(--admin-bg-soft);display:grid;place-items:center;color:var(--admin-text-dim);">
+                            ${thumb ? `<img src="${escapeAttr(thumb)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.remove()">` : `<i class="fas fa-${s.mediaType === 'video' ? 'video' : 'image'}"></i>`}
+                        </div>
+                        <div style="min-width:0;flex:1;">
+                            <div style="font-weight:700;color:var(--admin-text);overflow-wrap:anywhere;">${escapeHtml(s.ownerName || 'Member')}</div>
+                            <div style="font-size:11.5px;color:var(--admin-text-dim);overflow-wrap:anywhere;">${escapeHtml(s.ownerUid || '')}</div>
+                            <div style="margin-top:6px;font-size:12px;"><span style="font-weight:700;color:${colors[status]};text-transform:capitalize;">● ${status}</span>
+                                <span style="color:var(--admin-text-dim);"> · ${s.mediaType === 'video' ? 'Video' : 'Photo'} · ${escapeHtml(fmt(created))}</span></div>
+                            ${s.caption ? `<div style="font-size:12.5px;color:var(--admin-text-muted);margin-top:6px;overflow-wrap:anywhere;">“${escapeHtml(String(s.caption).slice(0, 140))}”</div>` : ''}
+                            ${texts ? `<div style="font-size:12px;color:var(--admin-text-muted);margin-top:4px;overflow-wrap:anywhere;"><i class="fas fa-font"></i> ${escapeHtml(texts.slice(0, 140))}</div>` : ''}
+                            ${s.spotifyTrack && s.spotifyTrack.title ? `<div style="font-size:12px;color:var(--admin-text-muted);margin-top:4px;"><i class="fab fa-spotify" style="color:#1db954;"></i> ${escapeHtml(String(s.spotifyTrack.title).slice(0, 80))}</div>` : ''}
+                            ${removedLine}
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                        ${media ? `<a class="btn-secondary" href="${escapeAttr(media)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;"><i class="fas fa-up-right-from-square"></i> Media</a>` : ''}
+                        ${status === 'active' ? `<button class="btn-danger" onclick="moderateStory('${escapeAttr(s.id)}','remove')"><i class="fas fa-ban"></i> Remove</button>` : ''}
+                        ${canRestore ? `<button class="btn-secondary" onclick="moderateStory('${escapeAttr(s.id)}','restore')"><i class="fas fa-rotate-left"></i> Restore</button>` : ''}
+                        <button class="btn-danger" onclick="moderateStory('${escapeAttr(s.id)}','delete')"><i class="fas fa-trash"></i> Delete</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function moderateStory(id, action) {
+            if (!currentUser || !id) return;
+            const ref = db.collection('stories').doc(id);
+            const run = async () => {
+                try {
+                    if (action === 'remove') {
+                        await ref.update({ status: 'removed', removedAt: firebase.firestore.FieldValue.serverTimestamp(), removedBy: currentUser.uid, removalReason: 'Removed by admin' });
+                        showToast('Story removed from the feed.', 'success');
+                    } else if (action === 'restore') {
+                        await ref.update({ status: 'active', removedAt: firebase.firestore.FieldValue.delete(), removedBy: firebase.firestore.FieldValue.delete(), removalReason: firebase.firestore.FieldValue.delete() });
+                        showToast('Story restored.', 'success');
+                    } else if (action === 'delete') {
+                        const rs = await ref.collection('reactions').get();
+                        const b = db.batch(); rs.forEach(d => b.delete(d.ref)); b.delete(ref);
+                        await b.commit();
+                        showToast('Story deleted permanently.', 'success');
+                    }
+                } catch (err) {
+                    console.error('moderateStory error:', err);
+                    showToast((err.code === 'permission-denied' ? 'Permission denied — your Firestore rules must allow admins to moderate stories.' : 'Action failed: ' + err.message), 'error');
+                }
+            };
+            const copy = {
+                remove: { title: 'Remove this story?', message: 'It disappears for every member right away. You can restore it while it is still within its 24 hours.', confirmLabel: 'Remove', type: 'danger' },
+                restore: { title: 'Restore this story?', message: 'It becomes visible again until its original expiry time.', confirmLabel: 'Restore', type: 'info' },
+                delete: { title: 'Delete this story permanently?', message: 'The story record and its reactions are erased. This cannot be undone.', confirmLabel: 'Delete', type: 'danger' }
+            }[action];
+            if (!copy) return;
+            showConfirm({ ...copy, onConfirm: run });
+        }
+
         function toggleMobileMenu() {
             const nav = document.getElementById('navLinks');
             nav.classList.toggle('active');
@@ -6545,5 +6727,7 @@
     </script>
 
     <script src="idle-logout.js"></script>
+    <script src="stories-shared.js?v=1.2.0"></script>
+    <script src="stories.js?v=1.2.0"></script>
 </body>
 </html>

@@ -15,6 +15,7 @@
 
     <!-- ★ Shared theme system (must load before page render to avoid theme flash) -->
     <link rel="stylesheet" href="theme.css" />
+    <link rel="stylesheet" href="stories.css?v=1.2.0" />
     <script src="theme.js"></script>
 
     <!-- JSZip for ZIP downloads -->
@@ -2577,6 +2578,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Stories row: directly under the nav bar, above "Welcome to the TIMAWA Squad" (mounted/hidden by stories.js; only visible when signed in) -->
+    <div id="storiesMount" class="st-row-mount st-below-nav" hidden></div>
 
     <section class="hero" id="home">
         <div class="hero-content">
@@ -8283,6 +8287,8 @@
         }
     </script>
 
+    <script src="stories-shared.js?v=1.2.0"></script>
+    <script src="stories.js?v=1.2.0"></script>
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
 </body>

@@ -16,6 +16,7 @@
 
     <!-- ★ Shared theme system (must load before page render to avoid theme flash) -->
     <link rel="stylesheet" href="theme.css" />
+    <link rel="stylesheet" href="stories.css" />
     <script src="theme.js"></script>
 
     <!-- Cloudinary Upload Widget -->
@@ -7188,6 +7189,9 @@
             </div>
         </div>
 
+        <!-- Stories row (mounted/hidden by stories.js) -->
+        <div id="storiesMount" class="st-row-mount" hidden></div>
+
         <section class="highlights-section">
             <div class="section-header">
                 <h2>
@@ -8762,7 +8766,7 @@
 
                     if (!summaries[convKey] || createdDate > (summaries[convKey]._date || new Date(0))) {
                         summaries[convKey] = {
-                            text: msg.text || '',
+                            text: msg.type === 'story_reply' ? ('↩ Story reply: ' + (msg.text || '')) : (msg.text || ''),
                             senderUid: msg.senderUid,
                             senderName: msg.senderName || 'Someone',
                             createdAt: msg.createdAt,
@@ -9646,6 +9650,7 @@
                         <div class="chat-msg-bubble-wrap">
                             ${showAuthor ? `<div class="chat-msg-author">${escapeHtml(authorName)}</div>` : ''}
                             ${replyPreviewHtml}
+                            ${(window.Stories && typeof window.Stories.renderChatRef === 'function') ? window.Stories.renderChatRef(msg) : ''}
                             <div class="chat-msg-bubble">${textHtml}</div>
                             <div class="chat-msg-meta-row">
                                 <div class="chat-msg-time">${escapeHtml(formatChatTime(createdDate))}</div>
@@ -15997,6 +16002,8 @@
         }, true);
     </script>
 
+    <script src="stories-shared.js"></script>
+    <script src="stories.js"></script>
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
 </body>
