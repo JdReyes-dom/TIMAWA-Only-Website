@@ -219,6 +219,21 @@
         });
         return out.slice(0, 20);
     }
+    // ------------------------------------------------------------ music sticker (foreground, like Instagram): none | bar | square | disc
+    const MUSIC_STYLES = [['none', 'None'], ['bar', 'Bar'], ['square', 'Square'], ['disc', 'Disc']];
+    const normStyle = v => (MUSIC_STYLES.some(x => x[0] === v) ? v : 'bar');
+    function musicSticker(m, style) {
+        style = normStyle(style);
+        if (!m || style === 'none') return '';
+        const art = safeImgUrl(m.thumbnail);
+        const img = art ? `<img src="${esc(art)}" alt="">` : '<span class="ph">🎵</span>';
+        const txt = `<span class="st-msk-t"><b>${esc(m.title)}</b><small>${esc(m.artist || 'Music')}</small></span>`;
+        const eq = '<span class="st-eq" aria-hidden="true"><i></i><i></i><i></i></span>';
+        return `<div class="st-msk st-msk-${style} st-ui" data-a="mute"><span class="st-msk-art">${img}</span>${txt}${style === 'bar' ? eq : ''}</div>`;
+    }
+    // "Title · Artist" as plain text (shown under the progress bar)
+    const musicLine = m => m ? ('♪ ' + String(m.title || '') + (m.artist ? ' · ' + m.artist : '')) : '';
+
     // Validates a music object read back from Firestore (never trust stored data blindly).
     function cleanMusic(m) {
         if (!m || typeof m !== 'object') return null;
@@ -229,7 +244,7 @@
         const clipSec = clamp(m.clipSec || 15, 5, previewSec - startSec);
         return {
             provider: 'itunes', trackId: String(m.trackId || '').slice(0, 20), title: String(m.title || 'Song').slice(0, 120), artist: String(m.artist || '').slice(0, 80),
-            thumbnail: safeImgUrl(m.thumbnail) || '', previewUrl: url, previewSec, startSec, clipSec
+            thumbnail: safeImgUrl(m.thumbnail) || '', previewUrl: url, previewSec, startSec, clipSec, style: normStyle(m.style)
         };
     }
     // Loops an <audio> element between start and end (seconds). Returns a detach function.
@@ -244,7 +259,7 @@
     window.StoriesShared = {
         FONTS, SAFE, LAYOUTS, MAX_PHOTOS, loadFonts, esc, clamp, safeMediaUrl, safeSpotifyUrl, safeImgUrl, safeAudioUrl, safeColor, rgba,
         textStyle, textHtml, renderTexts, observeStage, timeAgo, cloudAvatar, cloudResize, fmtSec,
-        layoutsFor, getLayout, collageHtml, miniLayoutHtml, searchMusic, cleanMusic, attachClipLoop,
+        layoutsFor, getLayout, collageHtml, miniLayoutHtml, searchMusic, cleanMusic, attachClipLoop, MUSIC_STYLES, normStyle, musicSticker, musicLine,
         DURATION_MS: 24 * 60 * 60 * 1000,          // how long a story stays available (expiry)
         MIN_SHOW_MS: 15 * 1000, MAX_SHOW_MS: 60 * 1000   // how long a story plays for viewers
     };
