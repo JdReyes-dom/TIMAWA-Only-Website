@@ -397,3 +397,48 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
     .st-tool { width: 40px; height: 40px; font-size: 15px; }
     .st-tools { gap: 8px; left: 8px; top: 8px; }
 }
+/* ================================================================
+   v1.5: foreground music sticker (none | bar | square | disc) + text-only song line
+   Sticker sizes scale with the story width via --stw.
+   ================================================================ */
+.st-song { margin-top: 7px; font-size: 12px; font-weight: 600; line-height: 1.3; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, .75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.st-song[hidden] { display: none; }
+.st-song.blocked::after { content: ' · 🔇 tap the speaker to play'; opacity: .85; }
+.st-cstage .st-song { position: absolute; top: 12px; left: 14px; right: 14px; margin: 0; z-index: 5; text-align: center; }
+
+.st-msticker { position: absolute; left: 0; right: 0; top: 54%; transform: translateY(-50%); z-index: 3; display: flex; justify-content: center; pointer-events: none; }
+.st-msticker:empty { display: none; }
+.st-msticker.blocked .st-msk { pointer-events: auto; cursor: pointer; }
+.st-msk { --u: calc(var(--stw, 360px) / 360); display: flex; color: #111; text-align: left; max-width: 88%; }
+.st-msk-art { display: block; position: relative; overflow: hidden; flex: 0 0 auto; background: #1db954; }
+.st-msk-art img, .st-msk-art .ph { width: 100%; height: 100%; object-fit: cover; display: grid; place-items: center; font-size: calc(var(--u) * 20); }
+.st-msk-t { min-width: 0; line-height: 1.25; }
+.st-msk-t b { display: block; font-size: calc(var(--u) * 13); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-msk-t small { display: block; font-size: calc(var(--u) * 11.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-msk .st-eq { padding-right: 0; }
+.st-msticker.blocked .st-eq { display: none; }
+
+/* bar: cover + title/artist in a white pill */
+.st-msk-bar { align-items: center; gap: calc(var(--u) * 10); padding: calc(var(--u) * 8) calc(var(--u) * 14) calc(var(--u) * 8) calc(var(--u) * 8); border-radius: calc(var(--u) * 16); background: rgba(255, 255, 255, .94); box-shadow: 0 calc(var(--u) * 4) calc(var(--u) * 18) rgba(0, 0, 0, .3); }
+.st-msk-bar .st-msk-art { width: calc(var(--u) * 40); height: calc(var(--u) * 40); border-radius: calc(var(--u) * 9); }
+.st-msk-bar .st-msk-t { max-width: calc(var(--u) * 190); }
+.st-msk-bar small { color: #555; }
+
+/* square: big cover with the text under it */
+.st-msk-square { flex-direction: column; width: calc(var(--u) * 156); padding: calc(var(--u) * 8); border-radius: calc(var(--u) * 18); background: rgba(255, 255, 255, .94); box-shadow: 0 calc(var(--u) * 4) calc(var(--u) * 18) rgba(0, 0, 0, .3); }
+.st-msk-square .st-msk-art { width: 100%; aspect-ratio: 1; border-radius: calc(var(--u) * 11); }
+.st-msk-square .st-msk-t { margin-top: calc(var(--u) * 8); padding: 0 calc(var(--u) * 2) calc(var(--u) * 2); }
+.st-msk-square small { color: #555; }
+
+/* disc: round spinning record, text beneath */
+.st-msk-disc { flex-direction: column; align-items: center; gap: calc(var(--u) * 12); color: #fff; }
+.st-msk-disc .st-msk-art { width: calc(var(--u) * 150); height: calc(var(--u) * 150); border-radius: 50%; box-shadow: 0 0 0 calc(var(--u) * 5) rgba(18, 18, 22, .92), 0 calc(var(--u) * 6) calc(var(--u) * 22) rgba(0, 0, 0, .45); animation: stSpin 8s linear infinite; }
+.st-msk-disc .st-msk-art::after { content: ''; position: absolute; left: 50%; top: 50%; width: calc(var(--u) * 22); height: calc(var(--u) * 22); transform: translate(-50%, -50%); border-radius: 50%; background: #111; border: calc(var(--u) * 3) solid rgba(255, 255, 255, .85); box-sizing: border-box; }
+.st-msk-disc .st-msk-t { text-align: center; max-width: calc(var(--u) * 240); text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
+@media (prefers-reduced-motion: reduce) { .st-msk-disc .st-msk-art { animation: none !important; } }
+
+/* composer: "Share to your story" is full-width on phones only, a compact centred button on desktop */
+@media (min-width: 900px) {
+    .st-bb .st-btn { display: flex; width: auto; min-width: 240px; max-width: 340px; margin: 0 auto; padding: 12px 28px; }
+    .st-bb .st-bar { max-width: 340px; margin: 8px auto 0; }
+}
