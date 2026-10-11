@@ -244,12 +244,13 @@
           <div class="st-bd"></div>
           <button class="st-nav st-prev" type="button" aria-label="Previous story"><i class="fas fa-chevron-left"></i></button>
           <div class="st-frame">
-            <div class="st-bgblur"></div><div class="st-media-wrap"></div><div class="st-texts"></div>
+            <div class="st-bgblur"></div><div class="st-media-wrap"></div><div class="st-texts"></div><div class="st-msticker"></div>
             <div class="st-scrim-t"></div><div class="st-scrim-b"></div>
             <div class="st-loading" role="status" aria-label="Loading"><span class="st-spin"></span></div>
             <div class="st-error" hidden><div><i class="fas fa-triangle-exclamation" style="font-size:26px"></i><p>We couldn't load this story.</p><button type="button" data-a="skip">Skip</button></div></div>
             <div class="st-expired" hidden><div><i class="fas fa-hourglass-end" style="font-size:26px"></i><p>This story has expired.</p><button type="button" data-a="skip">Continue</button></div></div>
             <div class="st-top"><div class="st-prog" aria-hidden="true"></div>
+              <div class="st-song" hidden></div>
               <div class="st-head"><span class="st-av"></span><div class="st-who"><b></b><small></small></div>
                 <button class="st-ib" type="button" data-a="pause" aria-label="Pause"><i class="fas fa-pause"></i></button>
                 <button class="st-ib" type="button" data-a="mute" aria-label="Mute" hidden><i class="fas fa-volume-high"></i></button>
@@ -275,7 +276,7 @@
         V.el = el;
         const $ = s => el.querySelector(s);
         V.q = { frame: $('.st-frame'), bg: $('.st-bgblur'), mw: $('.st-media-wrap'), tx: $('.st-texts'), load: $('.st-loading'), err: $('.st-error'), exp: $('.st-expired'),
-                prog: $('.st-prog'), av: $('.st-head .st-av'), who: $('.st-who b'), when: $('.st-who small'), cap: $('.st-caption'), sum: $('.st-rsum'), music: $('.st-music'),
+                prog: $('.st-prog'), av: $('.st-head .st-av'), who: $('.st-who b'), when: $('.st-who small'), cap: $('.st-caption'), sum: $('.st-rsum'), music: $('.st-music'), msk: $('.st-msticker'), song: $('.st-song'),
                 tray: $('.st-tray'), form: $('.st-reply'), input: $('.st-reply input'), send: $('.st-send'), heart: $('.st-heart'), note: $('.st-note'),
                 pauseB: $('[data-a=pause]'), muteB: $('[data-a=mute]'), delB: $('[data-a=delete]'),
                 bd: $('.st-bd'), own: $('.st-own'), vc: $('.st-vc'), vl: $('.st-vl'), vsheet: $('.st-vsheet'), vlist: $('.st-vlist') };
@@ -518,7 +519,7 @@
 
         // expired mid-view -> consistent fallback, no interactions
         if (!isActive(s)) {
-            q.mw.innerHTML = ''; q.bg.innerHTML = ''; q.tx.innerHTML = ''; q.cap.textContent = ''; q.music.innerHTML = ''; q.sum.innerHTML = '';
+            q.mw.innerHTML = ''; q.bg.innerHTML = ''; q.tx.innerHTML = ''; q.cap.textContent = ''; q.music.innerHTML = ''; q.msk.innerHTML = ''; q.song.hidden = true; q.sum.innerHTML = '';
             q.load.hidden = true; q.exp.hidden = false; q.form.hidden = true; q.own.hidden = true; q.note.hidden = true; return;
         }
         const firstSeen = !st.seen[s.id];
@@ -602,14 +603,15 @@
         V.last = performance.now(); V.raf = requestAnimationFrame(tick);
     }
 
-    // ---- music card (official Spotify embed / link only; never rehosted, never mixed)
+    // ---- music: foreground sticker (none | bar | square | disc) + a text-only "♪ Title · Artist" line under the progress bar.
+    //      Spotify-link stories (legacy) keep their own card.
     function renderMusic(s) {
-        const box = V.q.music;
-        if (s.music) {
-            const m = s.music, art = S.safeImgUrl(m.thumbnail);
-            box.innerHTML = `<div class="st-music-card playing" data-a="mute" role="button" tabindex="0" aria-label="Toggle music sound">${art ? `<img src="${S.esc(art)}" alt="">` : '<span class="ph">🎵</span>'}
-                <div class="st-mt"><b>${S.esc(m.title)}</b><small>${S.esc(m.artist || 'Music')}</small></div>
-                <span class="st-eq" aria-hidden="true"><i></i><i></i><i></i></span></div>`;
+        const box = V.q.music, m = s.music, q = V.q;
+        q.msk.className = 'st-msticker'; q.song.className = 'st-song'; q.song.hidden = true; q.msk.innerHTML = '';
+        if (m) {
+            q.song.textContent = S.musicLine(m); q.song.hidden = false;
+            q.msk.innerHTML = S.musicSticker(m, m.style);
+            box.innerHTML = '';
             return;
         }
         renderSpotify(s);
@@ -634,7 +636,7 @@
     }
     function setBlocked(b) {
         V.musicBlocked = b;
-        const c = V.q.music.querySelector('.st-music-card'); if (c) c.classList.toggle('blocked', b);
+        V.q.msk.classList.toggle('blocked', b); V.q.song.classList.toggle('blocked', b);
         syncMuteIcon();
     }
     function playMusic() {
