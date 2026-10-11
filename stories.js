@@ -1,5 +1,5 @@
 /* ================================================================
-   stories.js · TIMAWA / Barkada Stories  (core, v1.3)
+   stories.js · TIMAWA / Barkada Stories  (core, v1.6)
    One module shared by index.html and dashboard.html:
      - ONE realtime listener on `stories` (active ones only)
      - Stories row (mounted into #storiesMount) + rings on squad avatars
@@ -13,8 +13,9 @@
                                       textOverlays[], spotifyTrack?, status,
                                       mediaItems[] + layout (photo collage, images only),
                                       durationMs (how long it plays: 15-60s for photos,
-                                      auto for video), music? (30s clip + start/length),
-                                      muteVideo, createdAt (server), expiresAt (= +24h,
+                                      auto for video), music? (30s clip + start/length
+                                      + sticker {x,y,scale,rot}), muteVideo,
+                                      createdAt (server), expiresAt (= +24h,
                                       Firestore TTL policy deletes the doc afterwards)
      stories/{id}/reactions/{uid}     emoji, uid, name, photo, createdAt
      stories/{id}/views/{uid}         uid, name, photo, viewedAt  (readable by the story owner + admins only)
@@ -31,7 +32,7 @@
     const CFG = Object.assign({
         IMAGE_MS: 6000,
         MAX_REPLY: 300,
-        composerSrc: 'stories-composer.js?v=1.3.0',
+        composerSrc: 'stories-composer.js?v=1.8.0',
         spotifySearchUrl: ''          // optional Cloud Function URL (see STORIES_SETUP.md)
     }, window.STORIES_CONFIG || {});
 
@@ -305,7 +306,6 @@
         V.q.input.addEventListener('blur', () => resume('typing'));
 
         // left 30% = previous, the rest = next, hold = pause, drag down = dismiss.
-        // Pointer capture + touch-action:none keep taps reliable on phones (a browser pan used to cancel them).
         let down = null;
         const fr = V.q.frame;
         fr.addEventListener('pointerdown', e => {
@@ -604,13 +604,14 @@
     }
 
     // ---- music: foreground sticker (none | bar | square | disc) + a text-only "♪ Title · Artist" line under the progress bar.
-    //      Spotify-link stories (legacy) keep their own card.
+    //      The sticker's position / size / rotation come from music.sticker, so the viewer renders it identically on every device.
     function renderMusic(s) {
         const box = V.q.music, m = s.music, q = V.q;
         q.msk.className = 'st-msticker'; q.song.className = 'st-song'; q.song.hidden = true; q.msk.innerHTML = '';
         if (m) {
             q.song.textContent = S.musicLine(m); q.song.hidden = false;
-            q.msk.innerHTML = S.musicSticker(m, m.style);
+            // pass m.sticker (from Firestore) so the viewer positions the sticker exactly like the composer
+            q.msk.innerHTML = S.musicSticker(m, m.style, m.sticker, { showHandles: false });
             box.innerHTML = '';
             return;
         }
@@ -627,7 +628,6 @@
         V.audio = a;
     }
     // The story clock is the master: the song position is always clipStart + (elapsed mod clipLength).
-    // So restarting the story, going back, pausing or looping can never leave the song out of step.
     function syncAudio(force) {
         const a = V.audio, c = V.clip; if (!a || !c) return;
         const len = Math.max(1, c.end - c.start);
@@ -926,5 +926,5 @@
     function boot() { auth.onAuthStateChanged(onUser); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
-    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.3.0' };
+    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.8.0' };
 })();

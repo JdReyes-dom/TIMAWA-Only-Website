@@ -1,11 +1,6 @@
 /* ================================================================
    stories.css · TIMAWA / Barkada Stories
-   Uses the EXISTING theme tokens from theme.js (no separate theme):
-   --theme-primary / --theme-accent / --theme-bg / --theme-card /
-   --theme-text / --theme-text-muted / --theme-border / --theme-gradient
-   Story media itself is always shown on dark chrome (like Instagram),
-   so controls inside the viewer use fixed light-on-dark colours and only
-   accents come from the theme.
+   Uses the EXISTING theme tokens from theme.js.
    ================================================================ */
 
 /* ---------- Stories row (index + dashboard) ---------- */
@@ -47,7 +42,6 @@
 .st-row-msg { padding: 14px 8px; font-size: 13px; color: var(--theme-text-dim, #888); }
 @keyframes stPulse { from { opacity: .5; } to { opacity: 1; } }
 
-/* ring on squad / members avatars (box-shadow so layout never shifts) */
 .st-has { cursor: pointer; box-shadow: 0 0 0 3px var(--theme-card, #fff), 0 0 0 6px var(--theme-primary, #1089d3) !important; }
 .st-has.st-seen { box-shadow: 0 0 0 3px var(--theme-card, #fff), 0 0 0 6px color-mix(in srgb, var(--theme-text, #333) 30%, transparent) !important; }
 
@@ -62,7 +56,8 @@ html.st-lock, html.st-lock body { overflow: hidden !important; }
 @keyframes stFade { from { opacity: 0; } to { opacity: 1; } }
 .st-frame {
     position: relative; height: min(100dvh, 920px); aspect-ratio: 9 / 16; max-width: 100vw; overflow: hidden;
-    border-radius: 18px; background: #0b0b12; box-shadow: 0 24px 80px rgba(0, 0, 0, .55); isolation: isolate; touch-action: pan-y;
+    border-radius: 18px; background: #0b0b12; box-shadow: 0 24px 80px rgba(0, 0, 0, .55); isolation: isolate;
+    touch-action: none;
 }
 @media (max-width: 640px) { .st-frame { width: 100vw; height: 100dvh; aspect-ratio: auto; border-radius: 0; } .st-nav { display: none !important; } }
 .st-nav {
@@ -166,7 +161,7 @@ html.st-lock, html.st-lock body { overflow: hidden !important; }
 .st-btn:disabled { opacity: .55; cursor: default; }
 .st-btn.sm { padding: 7px 11px; font-size: 12.5px; border-radius: 10px; }
 .st-cbody { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.st-stagewrap { flex: 1; min-height: 0; display: grid; place-items: center; padding: 10px; background: color-mix(in srgb, var(--theme-text, #000) 6%, var(--theme-bg, #fff)); }
+.st-stagewrap { flex: 1; min-height: 0; display: grid; place-items: center; padding: 10px; background: color-mix(in srgb, var(--theme-text, #000) 6%, var(--theme-bg, #fff)); touch-action: none; }
 .st-cstage { position: relative; height: 100%; max-height: 100%; aspect-ratio: 9/16; max-width: 100%; border-radius: 16px; overflow: hidden; background: #0b0b12; box-shadow: 0 10px 40px rgba(0,0,0,.25); touch-action: none; }
 .st-cstage .st-media-wrap, .st-cstage .st-bgblur { position: absolute; inset: 0; }
 .st-cstage .st-t { pointer-events: auto; cursor: grab; touch-action: none; }
@@ -208,42 +203,31 @@ html.st-lock, html.st-lock body { overflow: hidden !important; }
 }
 
 /* ---------- Site integration (index.html / dashboard.html) ---------- */
-/* dashboard: the row sits inside .main-container which already has its own gutters */
 .main-container .st-row-wrap { max-width: none; padding: 0 0 22px; }
 @media (max-width: 480px) { .st-row-wrap { padding: 10px 12px 4px; } .main-container .st-row-wrap { padding: 0 0 16px; } .st-row { gap: 10px; border-radius: 16px; } }
-/* page toasts (z-index 3000) must stay visible above the viewer/composer */
 html.st-lock .toast-stack { z-index: 10200 !important; }
-/* own chat bubbles are right-aligned: keep the story reference card flush with them */
 .chat-msg.mine .st-chatref { margin-left: auto; }
 .st-chatref:focus-visible { outline: 2px solid var(--theme-primary, #1089d3); outline-offset: 2px; }
-/* no horizontal page scroll from the composer / viewer on narrow screens */
 .st-comp, .st-viewer { max-width: 100vw; overflow-x: hidden; }
 .st-panel { overscroll-behavior: contain; }
 
 /* ================================================================
    v1.2 additions
    ================================================================ */
-
-/* BUGFIX: `.st-empty { display:grid }` overrode the [hidden] attribute, so the
-   "Add a photo or video" indicator stayed on top of the media after adding it. */
 .st-empty[hidden] { display: none !important; }
 
-/* ---------- Stories row sits directly under the fixed nav bar (index.html) ---------- */
 .st-row-mount.st-below-nav { padding-top: 88px; padding-bottom: 0; }
 .st-row-mount.st-below-nav:not([hidden]) + .hero { padding-top: 28px; }
 @media (max-width: 900px) {
     .st-row-mount.st-below-nav { padding-top: 78px; }
     .st-row-mount.st-below-nav:not([hidden]) + .hero { padding-top: 20px; }
 }
-/* ---------- Stories row inside the admin page ---------- */
 .st-row-mount.st-in-admin { max-width: none; padding: 0 0 18px; }
 
-/* ---------- Photo collage (viewer + composer + admin) ---------- */
 .st-media-wrap.collage { background: #0b0b12; }
 .st-cell { position: absolute; padding: 3px; box-sizing: border-box; }
 .st-media-wrap .st-cell img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; user-select: none; -webkit-user-select: none; }
 
-/* ---------- Composer: photo strip, layout presets, duration, music clip ---------- */
 .st-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; width: 100%; margin-bottom: 4px; }
 .st-thumb { position: relative; flex: 0 0 auto; width: 64px; height: 86px; border-radius: 10px; overflow: hidden; background: #0b0b12; border: 2px solid var(--theme-border, #e5e7eb); }
 .st-thumb img, .st-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
@@ -262,7 +246,6 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
 .st-det summary { cursor: pointer; font-weight: 600; }
 .st-track .st-btn { flex: 0 0 auto; }
 
-/* ---------- Music card (auto-playing clip) ---------- */
 .st-music-card[data-a] { cursor: pointer; }
 .st-eq { display: flex; align-items: flex-end; gap: 2px; height: 16px; flex: 0 0 auto; padding-right: 4px; }
 .st-eq i { width: 3px; height: 4px; background: #1db954; border-radius: 2px; animation: stEq .9s ease-in-out infinite alternate; }
@@ -271,14 +254,11 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
 .st-music-card.blocked .st-eq { display: none; }
 .st-music-card.blocked::after { content: '🔇 Tap to play'; font-size: 12px; font-weight: 700; white-space: nowrap; padding-right: 4px; }
 @media (prefers-reduced-motion: reduce) { .st-eq i { animation: none !important; height: 10px; } }
+
 /* ================================================================
    v1.3 additions
    ================================================================ */
-
-/* [hidden] must always win inside the viewer/composer (several rules below set display) */
 .st-viewer [hidden], .st-comp [hidden] { display: none !important; }
-
-/* ---------- Viewer: backdrop is its own layer so the frame can grow out of / shrink into the story ring ---------- */
 .st-viewer { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; animation: none; }
 .st-bd { position: absolute; inset: 0; background: rgba(8, 8, 14, .92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 .st-frame { z-index: 1; touch-action: none; will-change: transform; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -289,7 +269,6 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
 .st-bottom .st-caption { position: static; max-height: 84px; padding: 0 4px; }
 .st-bottom { max-height: 78%; }
 
-/* ---------- Owner activity bar + viewers list ---------- */
 .st-own { display: flex; justify-content: flex-start; }
 .st-act {
     display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 700;
@@ -323,7 +302,6 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
     .st-reply input { padding: 8px 14px; } .st-heart, .st-send { width: 36px; height: 36px; }
 }
 
-/* ---------- Composer v1.3: media first, tools on the left, overlay sheets ---------- */
 .st-comp { background: var(--theme-bg, #fff); }
 .st-ch { flex: 0 0 auto; }
 .st-cbody { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
@@ -365,7 +343,6 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
 }
 @keyframes stIn { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-/* music: timeline picker (slide a window over the song) */
 .st-tl { position: relative; height: 66px; border-radius: 14px; background: var(--theme-bg-soft, #f1f5f9); overflow: hidden; touch-action: none; cursor: pointer; user-select: none; -webkit-user-select: none; margin: 8px 0 4px; }
 .st-wave { position: absolute; inset: 10px 8px; display: flex; align-items: center; gap: 2px; pointer-events: none; }
 .st-wave i { flex: 1; min-width: 1px; border-radius: 2px; background: var(--theme-text-dim, #888); opacity: .5; }
@@ -386,7 +363,6 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
     .st-vsheet, .st-sheet, .st-stagewrap, .st-tool { animation: none !important; transition: none !important; }
 }
 
-/* phones / narrow screens: shorter overlay so the story preview stays big enough to edit */
 @media (max-width: 899px) {
     .st-sheet { max-height: 44%; }
     .st-sh-h { padding: 8px 12px 2px; }
@@ -397,18 +373,27 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
     .st-tool { width: 40px; height: 40px; font-size: 15px; }
     .st-tools { gap: 8px; left: 8px; top: 8px; }
 }
+
 /* ================================================================
-   v1.5: foreground music sticker (none | bar | square | disc) + text-only song line
-   Sticker sizes scale with the story width via --stw.
+   v1.5: foreground music sticker + text-only song line
    ================================================================ */
 .st-song { margin-top: 7px; font-size: 12px; font-weight: 600; line-height: 1.3; color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, .75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 .st-song[hidden] { display: none; }
 .st-song.blocked::after { content: ' · 🔇 tap the speaker to play'; opacity: .85; }
 .st-cstage .st-song { position: absolute; top: 12px; left: 14px; right: 14px; margin: 0; z-index: 5; text-align: center; }
 
-.st-msticker { position: absolute; left: 0; right: 0; top: 54%; transform: translateY(-50%); z-index: 3; display: flex; justify-content: center; pointer-events: none; }
+/* The sticker container fills the stage, is NOT a flex parent (so children position by
+   absolute coordinates within it) and never intercepts pointer events. */
+.st-msticker {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    /* the wrapper inside it positions itself with left/top relative to this box */
+}
 .st-msticker:empty { display: none; }
-.st-msticker.blocked .st-msk { pointer-events: auto; cursor: pointer; }
+.st-msticker.blocked .st-mwrap .st-msk { pointer-events: auto; cursor: pointer; }
+
 .st-msk { --u: calc(var(--stw, 360px) / 360); display: flex; color: #111; text-align: left; max-width: 88%; }
 .st-msk-art { display: block; position: relative; overflow: hidden; flex: 0 0 auto; background: #1db954; }
 .st-msk-art img, .st-msk-art .ph { width: 100%; height: 100%; object-fit: cover; display: grid; place-items: center; font-size: calc(var(--u) * 20); }
@@ -416,29 +401,111 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
 .st-msk-t b { display: block; font-size: calc(var(--u) * 13); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-msk-t small { display: block; font-size: calc(var(--u) * 11.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-msk .st-eq { padding-right: 0; }
-.st-msticker.blocked .st-eq { display: none; }
+.st-msticker.blocked .st-msk .st-eq { display: none; }
 
-/* bar: cover + title/artist in a white pill */
 .st-msk-bar { align-items: center; gap: calc(var(--u) * 10); padding: calc(var(--u) * 8) calc(var(--u) * 14) calc(var(--u) * 8) calc(var(--u) * 8); border-radius: calc(var(--u) * 16); background: rgba(255, 255, 255, .94); box-shadow: 0 calc(var(--u) * 4) calc(var(--u) * 18) rgba(0, 0, 0, .3); }
 .st-msk-bar .st-msk-art { width: calc(var(--u) * 40); height: calc(var(--u) * 40); border-radius: calc(var(--u) * 9); }
 .st-msk-bar .st-msk-t { max-width: calc(var(--u) * 190); }
 .st-msk-bar small { color: #555; }
 
-/* square: big cover with the text under it */
 .st-msk-square { flex-direction: column; width: calc(var(--u) * 156); padding: calc(var(--u) * 8); border-radius: calc(var(--u) * 18); background: rgba(255, 255, 255, .94); box-shadow: 0 calc(var(--u) * 4) calc(var(--u) * 18) rgba(0, 0, 0, .3); }
 .st-msk-square .st-msk-art { width: 100%; aspect-ratio: 1; border-radius: calc(var(--u) * 11); }
 .st-msk-square .st-msk-t { margin-top: calc(var(--u) * 8); padding: 0 calc(var(--u) * 2) calc(var(--u) * 2); }
 .st-msk-square small { color: #555; }
 
-/* disc: round spinning record, text beneath */
 .st-msk-disc { flex-direction: column; align-items: center; gap: calc(var(--u) * 12); color: #fff; }
 .st-msk-disc .st-msk-art { width: calc(var(--u) * 150); height: calc(var(--u) * 150); border-radius: 50%; box-shadow: 0 0 0 calc(var(--u) * 5) rgba(18, 18, 22, .92), 0 calc(var(--u) * 6) calc(var(--u) * 22) rgba(0, 0, 0, .45); animation: stSpin 8s linear infinite; }
 .st-msk-disc .st-msk-art::after { content: ''; position: absolute; left: 50%; top: 50%; width: calc(var(--u) * 22); height: calc(var(--u) * 22); transform: translate(-50%, -50%); border-radius: 50%; background: #111; border: calc(var(--u) * 3) solid rgba(255, 255, 255, .85); box-sizing: border-box; }
 .st-msk-disc .st-msk-t { text-align: center; max-width: calc(var(--u) * 240); text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
 @media (prefers-reduced-motion: reduce) { .st-msk-disc .st-msk-art { animation: none !important; } }
 
-/* composer: "Share to your story" is full-width on phones only, a compact centred button on desktop */
 @media (min-width: 900px) {
     .st-bb .st-btn { display: flex; width: auto; min-width: 240px; max-width: 340px; margin: 0 auto; padding: 12px 28px; }
     .st-bb .st-bar { max-width: 340px; margin: 8px auto 0; }
 }
+
+/* ================================================================
+   v1.8 · MOVABLE / RESIZABLE / ROTATABLE MUSIC STICKER
+   The wrapper positions itself with `left`/`top` (fractions of the
+   stage) plus a transform. It is the ONLY interactive element; the
+   inner card is pointer-events:none so a tap always lands on the
+   wrapper. Corner handles resize; the top handle rotates; the red X
+   deletes.
+
+   Chain of `touch-action: none` (from .st-stagewrap → .st-cstage →
+   .st-mwrap) so a vertical drag is never stolen by a scroll gesture.
+   ================================================================ */
+
+/* The wrapper that carries position + transform. It's a *positioned*
+   element inside .st-msticker, which is `position:absolute; inset:0`,
+   so `left`/`top` are relative to the story frame. */
+.st-mwrap {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: 50% 50%;
+    will-change: transform, left, top;
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    z-index: 3;
+}
+.st-mwrap:active { cursor: grabbing; }
+.st-mwrap .st-msk { pointer-events: none; }
+.st-msticker.blocked .st-mwrap .st-msk { pointer-events: auto; cursor: pointer; }
+
+/* Selected state: outline + visible handles (composer only) */
+.st-mwrap.sel { outline: 2px dashed var(--theme-accent, #12b1d1); outline-offset: 6px; border-radius: 12px; }
+.st-cstage.pv .st-mwrap.sel { outline: none; }
+.st-cstage.pv .st-mwrap { cursor: default; }
+
+/* Handles (only rendered by the composer when selected) */
+.st-h {
+    position: absolute;
+    display: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--theme-card, #fff);
+    border: 2px solid var(--theme-primary, #1089d3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+    touch-action: none;
+    cursor: pointer;
+    z-index: 4;
+    align-items: center; justify-content: center;
+    color: #fff;
+    pointer-events: auto;
+}
+.st-mwrap.sel .st-h { display: flex; }
+.st-h.tl { left: -13px; top: -13px; cursor: nwse-resize; }
+.st-h.tr { right: -13px; top: -13px; cursor: nesw-resize; }
+.st-h.bl { left: -13px; bottom: -13px; cursor: nesw-resize; }
+.st-h.br { right: -13px; bottom: -13px; cursor: nwse-resize; }
+.st-h.rot { top: -36px; left: 50%; transform: translateX(-50%); background: var(--theme-gradient, #1089d3); border-color: #fff; cursor: grab; }
+.st-h.del { top: -13px; right: -13px; background: #ef4444; border-color: #fff; cursor: pointer; }
+.st-h.rot::before,
+.st-h.del::before {
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 10px;
+    line-height: 1;
+    display: block;
+}
+.st-h.rot::before { content: '\f01e'; }
+.st-h.del::before { content: '\f00d'; }
+
+/* In the viewer, the wrapper is not interactive (handles never render) */
+.st-frame .st-mwrap { pointer-events: none; cursor: default; }
+.st-frame .st-mwrap.blocked .st-msk { pointer-events: auto; }
+.st-frame .st-msticker.blocked .st-mwrap .st-msk { pointer-events: auto; }
+
+/* Preview mode hides handles and disables dragging */
+.st-cstage.pv .st-h { display: none !important; }
+.st-cstage.pv .st-mwrap { cursor: default; }
+
+/* While a sticker drag / resize / rotate session is active */
+.st-cstage.sticker-dragging { cursor: grabbing; }
+.st-cstage.sticker-dragging .st-mwrap { cursor: grabbing; }

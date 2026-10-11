@@ -1,19 +1,13 @@
 /* ================================================================
-   stories-shared.js  ·  TIMAWA / Barkada Stories   (v1.2)
-   Tiny shared layer used by the viewer, composer and admin preview:
-   - font stack + lazy Google Fonts loader (OFL-licensed families)
-   - text-overlay rendering from STRUCTURED data (normalized coords)
-   - photo-collage layout presets (images only)
-   - in-site song search (iTunes Search API, no key needed) + clip looper
-   - URL / colour sanitisers
-   The same renderer draws the composer preview, the viewer and the
-   admin preview, so what you see while editing is what gets published.
+   stories-shared.js  ·  TIMAWA / Barkada Stories   (v1.8)
+   Tiny shared layer used by the viewer, composer and admin preview.
+   The renderer produces IDENTICAL markup in every context, so what
+   the composer shows is exactly what the viewer paints.
    ================================================================ */
 (function () {
     'use strict';
     if (window.StoriesShared) return;
 
-    // Curated, readable font stacks. Families are Google Fonts (SIL OFL).
     const FONTS = {
         modern:  { label: 'Modern', css: "'Poppins',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif", normal: 500, bold: 800 },
         display: { label: 'Bold',   css: "'Bebas Neue',Impact,'Arial Narrow',sans-serif",                  normal: 400, bold: 400, upper: true },
@@ -35,32 +29,20 @@
         return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    // Only allow https media from our Cloudinary account (defence in depth).
     function safeMediaUrl(u) {
-        try {
-            const x = new URL(u);
-            return (x.protocol === 'https:' && x.hostname === 'res.cloudinary.com') ? x.href : '';
-        } catch (e) { return ''; }
+        try { const x = new URL(u); return (x.protocol === 'https:' && x.hostname === 'res.cloudinary.com') ? x.href : ''; } catch (e) { return ''; }
     }
     function safeSpotifyUrl(u) {
-        try {
-            const x = new URL(u);
-            return (x.protocol === 'https:' && x.hostname === 'open.spotify.com') ? x.href : '';
-        } catch (e) { return ''; }
+        try { const x = new URL(u); return (x.protocol === 'https:' && x.hostname === 'open.spotify.com') ? x.href : ''; } catch (e) { return ''; }
     }
-    // artwork: Cloudinary, Spotify CDN or Apple (iTunes) artwork CDN
     function safeImgUrl(u) {
         try {
             const x = new URL(u);
             return (x.protocol === 'https:' && (x.hostname === 'res.cloudinary.com' || /(^|\.)scdn\.co$/.test(x.hostname) || /(^|\.)spotifycdn\.com$/.test(x.hostname) || /(^|\.)mzstatic\.com$/.test(x.hostname))) ? x.href : '';
         } catch (e) { return ''; }
     }
-    // 30-second song previews served by Apple's CDN (never re-hosted by us)
     function safeAudioUrl(u) {
-        try {
-            const x = new URL(u);
-            return (x.protocol === 'https:' && /(^|\.)(mzstatic\.com|itunes\.apple\.com)$/.test(x.hostname)) ? x.href : '';
-        } catch (e) { return ''; }
+        try { const x = new URL(u); return (x.protocol === 'https:' && /(^|\.)(mzstatic\.com|itunes\.apple\.com)$/.test(x.hostname)) ? x.href : ''; } catch (e) { return ''; }
     }
     function safeColor(c, fb) { return /^#[0-9a-f]{6}$/i.test(c || '') ? c : (fb || '#ffffff'); }
     function rgba(hex, a) {
@@ -69,7 +51,6 @@
     }
     const clamp = (n, a, b) => Math.min(b, Math.max(a, Number(n) || 0));
 
-    // Safe vertical band (fractions) so text never sits under the header or reply bar.
     const SAFE = { xMin: 0.1, xMax: 0.9, yMin: 0.14, yMax: 0.8 };
 
     function textStyle(t) {
@@ -97,7 +78,6 @@
         container.innerHTML = (Array.isArray(overlays) ? overlays.slice(0, 8) : []).map(t => textHtml(t)).join('');
     }
 
-    // Keeps --stw (stage width in px) in sync so text scales with the canvas.
     function observeStage(stage) {
         const set = () => stage.style.setProperty('--stw', stage.clientWidth + 'px');
         set();
@@ -119,7 +99,6 @@
         if (/^[a-z]_/.test(after) || /^[a-z]+,[a-z]/.test(after)) return url;
         return url.replace('/upload/', `/upload/w_${size},h_${size},c_fill,g_face,q_auto:good,f_auto/`);
     }
-    // Resize a Cloudinary image on the fly (used for collage cells). Non-Cloudinary / blob URLs pass through.
     function cloudResize(url, w) {
         if (!url || !url.includes('res.cloudinary.com') || !url.includes('/upload/')) return url || '';
         const after = url.split('/upload/')[1] || '';
@@ -128,8 +107,6 @@
     }
     const fmtSec = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 
-    // ------------------------------------------------------------ collage layouts (images only)
-    // cells = [x, y, w, h] as fractions of the story frame.
     function grid(c, r, n) {
         const cells = [];
         for (let i = 0; i < n; i++) cells.push([(i % c) / c, Math.floor(i / c) / r, 1 / c, 1 / r]);
@@ -160,7 +137,6 @@
         return list.find(l => l.id === id) || list[0];
     }
     const pc = v => (v * 100).toFixed(3) + '%';
-    // items: [{url}] ; allowBlob lets the composer preview local files
     function collageHtml(items, layoutId, allowBlob) {
         const list = (items || []).slice(0, MAX_PHOTOS);
         const L = getLayout(layoutId, list.length);
@@ -176,10 +152,6 @@
         return '<span class="m">' + L.cells.map(c => `<i style="left:${pc(c[0])};top:${pc(c[1])};width:${pc(c[2])};height:${pc(c[3])}"></i>`).join('') + '</span>';
     }
 
-    // ------------------------------------------------------------ music (iTunes Search API: free, no key, CORS-enabled)
-    // Gives 30-second previews that can be played directly in an <audio> element,
-    // which is what makes auto-play + "choose the part of the song" possible.
-    // fetch first; if the browser blocks it (CORS / extension / network policy) fall back to JSONP (script tag)
     let jsonpN = 0;
     function itunesJsonp(url) {
         return new Promise((res, rej) => {
@@ -193,11 +165,8 @@
         });
     }
     async function itunesQuery(url) {
-        try {
-            const r = await fetch(url);
-            if (!r.ok) throw new Error('search ' + r.status);
-            return await r.json();
-        } catch (e) { return itunesJsonp(url); }
+        try { const r = await fetch(url); if (!r.ok) throw new Error('search ' + r.status); return await r.json(); }
+        catch (e) { return itunesJsonp(url); }
     }
     async function searchMusic(term) {
         const base = 'https://itunes.apple.com/search?media=music&entity=song&limit=15&term=' + encodeURIComponent(term);
@@ -219,37 +188,72 @@
         });
         return out.slice(0, 20);
     }
-    // ------------------------------------------------------------ music sticker (foreground, like Instagram): none | bar | square | disc
+
+    // ------------------------------------------------------------ music sticker
     const MUSIC_STYLES = [['none', 'None'], ['bar', 'Bar'], ['square', 'Square'], ['disc', 'Disc']];
     const normStyle = v => (MUSIC_STYLES.some(x => x[0] === v) ? v : 'bar');
-    function musicSticker(m, style) {
+
+    // Allow the sticker to be pushed off the frame; the center stays reachable.
+    function cleanSticker(s) {
+        if (!s || typeof s !== 'object') return { x: 0.5, y: 0.54, scale: 1, rot: 0 };
+        return {
+            x: clamp(s.x != null ? s.x : 0.5, -0.25, 1.25),
+            y: clamp(s.y != null ? s.y : 0.54, -0.25, 1.25),
+            scale: clamp(s.scale != null ? s.scale : 1, 0.25, 4),
+            rot: clamp(s.rot != null ? s.rot : 0, -180, 180)
+        };
+    }
+
+    function musicStickerInner(m, style) {
         style = normStyle(style);
         if (!m || style === 'none') return '';
         const art = safeImgUrl(m.thumbnail);
         const img = art ? `<img src="${esc(art)}" alt="">` : '<span class="ph">🎵</span>';
         const txt = `<span class="st-msk-t"><b>${esc(m.title)}</b><small>${esc(m.artist || 'Music')}</small></span>`;
         const eq = '<span class="st-eq" aria-hidden="true"><i></i><i></i><i></i></span>';
-        return `<div class="st-msk st-msk-${style} st-ui" data-a="mute"><span class="st-msk-art">${img}</span>${txt}${style === 'bar' ? eq : ''}</div>`;
+        return `<span class="st-msk-art">${img}</span>${txt}${style === 'bar' ? eq : ''}`;
     }
-    // "Title · Artist" as plain text (shown under the progress bar)
+
+    // The sticker wrapper carries position + transform. The card is a
+    // pointer-events:none child so the wrapper is the only interactive element.
+    function musicSticker(m, style, sticker, opts) {
+        style = normStyle(style);
+        if (!m || style === 'none') return '';
+        opts = opts || {};
+        const tr = cleanSticker(sticker);
+        const left = (tr.x * 100).toFixed(2);
+        const top  = (tr.y * 100).toFixed(2);
+        const transform = `translate(-50%,-50%) rotate(${tr.rot.toFixed(1)}deg) scale(${tr.scale.toFixed(3)})`;
+        const handles = opts.showHandles
+            ? '<i class="st-h rot" data-h="rot"></i>' +
+              '<i class="st-h del" data-h="del"></i>' +
+              '<i class="st-h tl"  data-h="tl"></i>' +
+              '<i class="st-h tr"  data-h="tr"></i>' +
+              '<i class="st-h bl"  data-h="bl"></i>' +
+              '<i class="st-h br"  data-h="br"></i>'
+            : '';
+        return `<div class="st-mwrap" style="left:${left}%;top:${top}%;transform:${transform};" data-sticker="1">` +
+            `<span class="st-msk st-msk-${style} st-ui" data-a="mute">${musicStickerInner(m, style)}</span>${handles}</div>`;
+    }
+
     const musicLine = m => m ? ('♪ ' + String(m.title || '') + (m.artist ? ' · ' + m.artist : '')) : '';
 
-    // Validates a music object read back from Firestore (never trust stored data blindly).
     function cleanMusic(m) {
         if (!m || typeof m !== 'object') return null;
         const url = safeAudioUrl(m.previewUrl);
         if (!url) return null;
         const previewSec = clamp(m.previewSec || 30, 5, 30);
-        const startSec = clamp(m.startSec, 0, previewSec - 5);
-        const clipSec = clamp(m.clipSec || 15, 5, previewSec - startSec);
+        const startSec   = clamp(m.startSec, 0, previewSec - 5);
+        const clipSec    = clamp(m.clipSec || 15, 5, previewSec - startSec);
         return {
             provider: 'itunes', trackId: String(m.trackId || '').slice(0, 20), title: String(m.title || 'Song').slice(0, 120), artist: String(m.artist || '').slice(0, 80),
-            thumbnail: safeImgUrl(m.thumbnail) || '', previewUrl: url, previewSec, startSec, clipSec, style: normStyle(m.style)
+            thumbnail: safeImgUrl(m.thumbnail) || '', previewUrl: url, previewSec, startSec, clipSec, style: normStyle(m.style),
+            sticker: cleanSticker(m.sticker)
         };
     }
-    // Loops an <audio> element between start and end (seconds). Returns a detach function.
+
     function attachClipLoop(audio, start, end) {
-        const back = () => { try { audio.currentTime = start; } catch (e) { /* not seekable yet */ } };
+        const back = () => { try { audio.currentTime = start; } catch (e) {} };
         const onEnded = () => { back(); audio.play().catch(() => {}); };
         const timer = setInterval(() => { if (!audio.paused && audio.currentTime >= end - 0.05) back(); }, 100);
         audio.addEventListener('ended', onEnded);
@@ -259,8 +263,9 @@
     window.StoriesShared = {
         FONTS, SAFE, LAYOUTS, MAX_PHOTOS, loadFonts, esc, clamp, safeMediaUrl, safeSpotifyUrl, safeImgUrl, safeAudioUrl, safeColor, rgba,
         textStyle, textHtml, renderTexts, observeStage, timeAgo, cloudAvatar, cloudResize, fmtSec,
-        layoutsFor, getLayout, collageHtml, miniLayoutHtml, searchMusic, cleanMusic, attachClipLoop, MUSIC_STYLES, normStyle, musicSticker, musicLine,
-        DURATION_MS: 24 * 60 * 60 * 1000,          // how long a story stays available (expiry)
-        MIN_SHOW_MS: 15 * 1000, MAX_SHOW_MS: 60 * 1000   // how long a story plays for viewers
+        layoutsFor, getLayout, collageHtml, miniLayoutHtml, searchMusic, cleanMusic, attachClipLoop,
+        MUSIC_STYLES, normStyle, musicSticker, musicStickerInner, cleanSticker, musicLine,
+        DURATION_MS: 24 * 60 * 60 * 1000,
+        MIN_SHOW_MS: 15 * 1000, MAX_SHOW_MS: 60 * 1000
     };
 })();

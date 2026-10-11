@@ -1,28 +1,5 @@
 /* ================================================================
-   stories-composer.js · TIMAWA / Barkada Stories  (lazy-loaded, v1.3)
-   Instagram-style flow:
-     1. "Add story" opens the photo / video picker immediately (see stories.js).
-     2. The editor opens with the selection already in place.
-        Tools sit on the LEFT of the story: Text, Music, Layout/Framing,
-        Timing, Caption. Each opens an overlay sheet (formatting for text,
-        song search + clip picker for music).
-     3. Changing the media means discarding (X) and starting again.
-
-   Media rules
-     - Photos: up to 6 per story, collage layout presets.
-     - Video:  ONE video per story, max 60 s, length is automatic.
-     - Music:  searched in the site (iTunes Search API, 30 s previews).
-               You slide a window over the available audio to pick the part.
-               The song can be shown on the story as a foreground sticker: none | bar | square | disc (like Instagram).
-               A story with music lasts exactly as long as the chosen clip
-               (video stories keep the video's length), and the viewer keeps
-               the song locked to the story clock.
-
-   Text is stored as STRUCTURED data (never baked into pixels):
-     { id, text, x, y, size, rot, font, color, bg, bgColor, align, bold, italic }
-   x / y are the element CENTRE as fractions (0-1) of the story canvas and
-   size is a fraction of canvas width, so every device renders identically.
-   Photos / videos are uploaded untouched (no re-encoding).
+   stories-composer.js · TIMAWA / Barkada Stories  (lazy-loaded, v1.8)
    ================================================================ */
 (function () {
     'use strict';
@@ -32,10 +9,19 @@
     const MAX_PHOTOS = S.MAX_PHOTOS, MIN_DUR = S.MIN_SHOW_MS / 1000, MAX_DUR = S.MAX_SHOW_MS / 1000, MIN_CLIP = 5;
     const rid = () => Math.random().toString(36).slice(2, 8);
 
+    const TAP_SLOP = 6;
+    const TAP_MS = 220;
+    // Wide bounds: the sticker can be pushed past the edges; only the centre stays reachable.
+    const STICKER_X_MIN = -0.25, STICKER_X_MAX = 1.25;
+    const STICKER_Y_MIN = -0.25, STICKER_Y_MAX = 1.25;
+
     let C = null, root = null, q = {};
     const M = {
         sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
-        texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar', query: '', spq: '', changing: false,
+        texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar',
+        mpos: { x: 0.5, y: 0.54, scale: 1, rot: 0 },
+        mSel: false, dragS: null,
+        query: '', spq: '', changing: false,
         hist: [], preview: false, xhr: null, busy: false, results: [], msg: '', searching: false, playing: '', drag: null, lastTap: null, tl: null
     };
     let PALETTE = ['#ffffff', '#111111', '#ffd23f', '#ff5a6e', '#4ade80', '#38bdf8', '#c084fc'];
@@ -46,21 +32,22 @@
     const hex = v => { v = (v || '').trim(); return /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : null; };
     const hasMedia = () => M.items.length > 0 || !!M.video;
     const vidSec = () => M.video ? Math.min(MAX_DUR, Math.round(M.video.dur || 0)) : 0;
-    // how long the story plays: video = its own length; photos = the music clip if there is one, else the chosen time
     const storyDur = () => M.video ? vidSec() : (M.track ? M.track.clipSec : M.dur);
+    const clampStickerX = v => S.clamp(v, STICKER_X_MIN, STICKER_X_MAX);
+    const clampStickerY = v => S.clamp(v, STICKER_Y_MIN, STICKER_Y_MAX);
 
-    // ------------------------------------------------------------ preview audio (composer only)
+    // ---------------- preview audio ----------------
     let aud = null, audStop = null;
     function stopAudio() {
         if (audStop) { audStop(); audStop = null; }
-        if (aud) { try { aud.pause(); aud.removeAttribute('src'); aud.load(); } catch (e) { /* ignore */ } aud = null; }
+        if (aud) { try { aud.pause(); aud.removeAttribute('src'); aud.load(); } catch (e) {} aud = null; }
         const was = M.playing; M.playing = '';
         return was;
     }
     function playAudio(url, key, start, end, loop) {
         stopAudio();
         const a = new Audio(); aud = a; a.preload = 'auto'; a.src = url;
-        a.addEventListener('loadedmetadata', () => { try { a.currentTime = start || 0; } catch (e) { /* ignore */ } });
+        a.addEventListener('loadedmetadata', () => { try { a.currentTime = start || 0; } catch (e) {} });
         if (loop) audStop = S.attachClipLoop(a, start || 0, end);
         else a.addEventListener('ended', () => { if (aud === a) { M.playing = ''; if (M.sheet === 'music') renderSheet(); } });
         M.playing = key;
@@ -70,7 +57,7 @@
     const playClip = () => { if (M.track) playAudio(M.track.previewUrl, 'clip', M.track.startSec, clipEnd(M.track), true); };
     function toggleClip() { if (M.playing === 'clip') stopAudio(); else playClip(); renderSheet(); }
 
-    // ------------------------------------------------------------ DOM
+    // ---------------- DOM ----------------
     function build() {
         if (root) return;
         S.loadFonts();
@@ -118,14 +105,15 @@
                 e.preventDefault(); setStart(M.track.startSec + (e.key === 'ArrowRight' ? 1 : -1)); if (M.playing === 'clip') playClip();
             }
         });
-        wireStage(); wireTimeline();
+        wireStage();
+        wireStickerInteraction();
+        wireTimeline();
         document.addEventListener('keydown', e => {
             if (!root || root.hidden || e.key !== 'Escape' || e.target.isContentEditable) return;
             M.sheet ? closeSheet() : tryClose();
         });
     }
 
-    // files: the selection made in the picker that opened this editor
     async function open(ctx, files) {
         C = ctx; C.cfg = Object.assign({ cloudName: 'ooq99nlw', uploadPreset: 't-imawa' }, C.cfg);
         build();
@@ -135,17 +123,23 @@
         root.hidden = false; document.documentElement.classList.add('st-lock');
         renderAll();
         await addFiles(files || []);
-        if (!hasMedia()) { closeNow(); return; }      // nothing usable was picked: no empty editor
+        if (!hasMedia()) { closeNow(); return; }
         const c = root.querySelector('[data-k=close]'); if (c) c.focus({ preventScroll: true });
     }
     function revokeAll() {
-        M.items.forEach(i => { try { URL.revokeObjectURL(i.url); } catch (e) { /* ignore */ } });
-        if (M.video) { try { URL.revokeObjectURL(M.video.url); } catch (e) { /* ignore */ } }
+        M.items.forEach(i => { try { URL.revokeObjectURL(i.url); } catch (e) {} });
+        if (M.video) { try { URL.revokeObjectURL(M.video.url); } catch (e) {} }
     }
     function reset() {
         stopAudio(); revokeAll();
-        Object.assign(M, { sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR, texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar', query: '', spq: '', changing: false,
-            hist: [], preview: false, busy: false, results: [], msg: '', searching: false, playing: '', tl: null });
+        Object.assign(M, {
+            sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
+            texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar',
+            mpos: { x: 0.5, y: 0.54, scale: 1, rot: 0 },
+            mSel: false, dragS: null,
+            query: '', spq: '', changing: false,
+            hist: [], preview: false, busy: false, results: [], msg: '', searching: false, playing: '', tl: null
+        });
     }
     function dirty() { return !!(hasMedia() || M.texts.length || M.track || M.spotify); }
     function tryClose() {
@@ -158,7 +152,7 @@
         q.mw.innerHTML = ''; q.bg.innerHTML = ''; q.tx.innerHTML = ''; q.bar.hidden = true;
     }
 
-    // ------------------------------------------------------------ media (selected up-front, not editable afterwards)
+    // ---------------- media ----------------
     function readImage(f) {
         return new Promise((res, rej) => {
             const url = URL.createObjectURL(f), im = new Image();
@@ -229,11 +223,13 @@
         const art = S.safeImgUrl(tr.thumbnail);
         return `<div class="st-music-card playing">${art ? `<img src="${S.esc(art)}" alt="">` : '<span class="ph">🎵</span>'}<div class="st-mt"><b>${S.esc(tr.title)}</b><small>${S.esc(tr.artist || (spotify ? 'Spotify' : 'Music'))}</small></div>${spotify ? '<span class="st-mbtn">▶ Play</span>' : '<span class="st-eq" aria-hidden="true"><i></i><i></i><i></i></span>'}</div>`;
     }
-    // foreground music sticker (none | bar | square | disc) + the text-only song line under the progress bar (preview only)
+
     function renderSticker() {
         const m = M.track;
-        q.msk.innerHTML = m ? S.musicSticker(m, M.mstyle) : '';
-        q.song.textContent = m ? S.musicLine(m) : '';
+        if (!m) { q.msk.innerHTML = ''; q.song.textContent = ''; q.song.hidden = true; return; }
+        const showHandles = M.mSel && !M.preview;
+        q.msk.innerHTML = S.musicSticker(m, M.mstyle, M.mpos, { showHandles });
+        q.song.textContent = S.musicLine(m);
         q.song.hidden = !(M.preview && m);
     }
     function renderPv() {
@@ -248,13 +244,13 @@
     function setPreview(on) {
         M.preview = on;
         if (on) {
-            M.sel = null; if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+            M.sel = null; M.mSel = false;
+            if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
             M.sheet = null; if (M.track) playClip(); else stopAudio();
         } else stopAudio();
         renderTexts(); renderPv(); renderSheet();
     }
 
-    // ------------------------------------------------------------ left tool column
     function renderTools() {
         const n = M.items.length, tools = [
             ['text', 'Aa', 'Text', M.texts.length > 0],
@@ -266,7 +262,6 @@
         q.tools.innerHTML = tools.map(([k, ic, lab, dot]) => `<button type="button" class="st-tool ${M.sheet === k ? 'on' : ''}" data-k="tool" data-v="${k}" aria-label="${lab}" aria-pressed="${M.sheet === k}">${ic}${dot ? '<span class="dot"></span>' : ''}<span class="st-tool-lab">${lab}</span></button>`).join('');
     }
 
-    // ------------------------------------------------------------ sheets (overlays)
     const SHEET_TITLES = { text: 'Text', music: 'Music', layout: '', time: 'Story length', caption: 'Caption' };
     function openSheet(name) {
         if (M.preview) setPreview(false);
@@ -304,7 +299,6 @@
     function sw(list, cur, k) { return list.map(c => `<button type="button" class="st-sw ${c === cur ? 'on' : ''}" data-k="${k}" data-v="${c}" style="background:${c}" aria-label="Colour ${c}"></button>`).join(''); }
     function chips(list, cur, k) { return list.map(([v, l]) => `<button type="button" class="st-chip ${v === cur ? 'on' : ''}" data-k="${k}" data-v="${v}">${l}</button>`).join(''); }
 
-    // ---- text: formatting overlay
     function textSheet() {
         const t = selT();
         let h = `<div class="st-row2"><button class="st-btn sm" type="button" data-k="addText"><i class="fas fa-plus"></i> Add text</button>
@@ -325,7 +319,6 @@
           <div class="st-lab">Position</div><div class="st-row2">${chips([['top', 'Top'], ['mid', 'Middle'], ['bot', 'Bottom']], '', 'place')}</div>`;
     }
 
-    // ---- music: search overlay + clip picker
     function waveHtml(seed, n) {
         let h = 7; for (const c of String(seed)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
         let out = '';
@@ -345,17 +338,30 @@
               <div class="st-tl" aria-label="Song timeline"><div class="st-wave">${waveHtml(tr.trackId || tr.title, 64)}</div>
                 <div class="st-win" role="slider" tabindex="0" aria-label="Clip start" aria-valuemin="0" aria-valuemax="${(P - tr.clipSec).toFixed(1)}" aria-valuenow="${tr.startSec}" style="left:${(tr.startSec / P * 100).toFixed(2)}%;width:${(tr.clipSec / P * 100).toFixed(2)}%"></div></div>
               <div class="st-tlab"><span>0:00</span><b class="st-cliplabel">${S.fmtSec(tr.startSec)} – ${S.fmtSec(tr.startSec + tr.clipSec)} · ${tr.clipSec}s</b><span>${S.fmtSec(P)}</span></div>
-              ${M.video ? `<p class="st-note2">Your video is ${S.fmtSec(vidSec())} long, so the clip follows it (${tr.clipSec}s). The video’s own sound is muted while a song is attached.</p>`
+              ${M.video ? `<p class="st-note2">Your video is ${S.fmtSec(vidSec())} long, so the clip follows it (${tr.clipSec}s). The video's own sound is muted while a song is attached.</p>`
                 : `<div class="st-lab" style="margin-top:10px">Clip length = story length</div><div class="st-lenrow">${lens.map(v => `<button type="button" class="st-chip ${tr.clipSec === v ? 'on' : ''}" data-k="clipLen" data-v="${v}">${v}s</button>`).join('')}</div>`}
               <p class="st-note2">Drag the window to pick where the song starts. Your story lasts exactly as long as the clip and the song stays in sync. Library previews are ${P}s long.</p>
               ${M.changing ? '' : `<div class="st-lab" style="margin-top:12px">Show on story</div>
               <div class="st-row2">${chips(S.MUSIC_STYLES, S.normStyle(M.mstyle), 'mstyle')}</div>`}
-              ${M.changing ? '' : `<div class="st-row2" style="margin-top:10px"><button class="st-btn ghost sm" type="button" data-k="changeSong"><i class="fas fa-arrows-rotate"></i> Change song</button></div>`}`;
+              ${M.changing ? '' : `
+                <div class="st-lab" style="margin-top:12px">Sticker on story</div>
+                <p class="st-note2" style="margin-top:0">The sticker can be dragged anywhere on the story. Tap it once to show the handles: corners resize, the top dot rotates, the red × removes it.</p>
+                <div class="st-row2" style="margin-top:6px">
+                  <button type="button" class="st-btn ghost sm" data-k="resetSticker"><i class="fas fa-rotate-left"></i> Reset position & size</button>
+                  <button type="button" class="st-btn ghost sm" data-k="centerSticker"><i class="fas fa-crosshairs"></i> Center</button>
+                </div>
+                <div class="st-row2" style="margin-top:6px">
+                  <label class="st-range">Size <input type="range" min="25" max="400" step="1" value="${Math.round(M.mpos.scale * 100)}" data-in="stickerScale"></label>
+                </div>
+                <div class="st-row2">
+                  <label class="st-range">Rotate <input type="range" min="-180" max="180" step="1" value="${Math.round(M.mpos.rot)}" data-in="stickerRot"></label>
+                </div>
+                <div class="st-row2" style="margin-top:10px"><button class="st-btn ghost sm" type="button" data-k="changeSong"><i class="fas fa-arrows-rotate"></i> Change song</button></div>`}`;
         }
         if (searching) {
             h += `<div class="st-lab"${tr ? ' style="margin-top:12px"' : ''}>${tr ? 'Search another song' : 'Search a song'}</div>
               <div class="st-row2" style="flex-wrap:nowrap"><input class="st-input" data-in="music" placeholder="Song or artist…" aria-label="Search songs" value="${S.esc(M.query)}"><button class="st-btn sm" type="button" data-k="musicGo" ${M.searching ? 'disabled' : ''} aria-label="Search"><i class="fas fa-magnifying-glass"></i></button></div>
-              ${M.searching ? '<p class="st-hint">Searching…</p>' : M.msg ? `<p class="st-hint">${S.esc(M.msg)}</p>` : '<p class="st-hint">Plays automatically for viewers. You’ll pick which part of the song goes with your story.</p>'}
+              ${M.searching ? '<p class="st-hint">Searching…</p>' : M.msg ? `<p class="st-hint">${S.esc(M.msg)}</p>` : '<p class="st-hint">Plays automatically for viewers. You\'ll pick which part of the song goes with your story.</p>'}
               ${M.results.map((r, i) => `<div class="st-track">${r.thumbnail ? `<img src="${S.esc(r.thumbnail)}" alt="">` : ''}<div class="st-mt"><b>${S.esc(r.title)}</b><small>${S.esc(r.artist || '')}</small></div>
                 <button class="st-btn ghost sm" type="button" data-k="playRes" data-v="${i}" aria-label="Preview">${M.playing === 'r' + i ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>'}</button>
                 <button class="st-btn sm" type="button" data-k="pickTrack" data-v="${i}">Select</button></div>`).join('')}
@@ -367,22 +373,20 @@
                   <div class="st-mt"><b>${S.esc(sp.title)}</b><small>${S.esc(sp.artist || 'Spotify')}</small></div>
                   <a class="st-btn ghost sm" href="${S.esc(sp.url)}" target="_blank" rel="noopener noreferrer">Open</a>
                   <button class="st-btn danger sm" type="button" data-k="rmSpotify" aria-label="Remove link"><i class="fas fa-xmark"></i></button></div>
-                <p class="st-hint">Spotify links show a Play button for viewers. They can’t auto-play or be clipped; search above for that.</p>`;
+                <p class="st-hint">Spotify links show a Play button for viewers. They can\'t auto-play or be clipped; search above for that.</p>`;
         }
         if (searching) h += `<details class="st-det"${sp && !tr ? ' open' : ''}><summary>Use a Spotify link instead</summary>
             <div class="st-row2" style="flex-wrap:nowrap;margin-top:8px"><input class="st-input" data-in="spotify" placeholder="Paste a Spotify track link" aria-label="Spotify link" value="${S.esc(M.spq)}"><button class="st-btn sm" type="button" data-k="spotifyGo">Add</button></div></details>`;
         return h;
     }
 
-    // ---- layout / framing
     function layoutSheet() {
         const n = M.items.length;
         if (n >= 2) return `<div class="st-row2">${S.layoutsFor(n).map(L => `<button type="button" class="st-lay ${L.id === M.layout ? 'on' : ''}" data-k="layout" data-v="${L.id}" title="${S.esc(L.label)}" aria-label="Layout: ${S.esc(L.label)}">${S.miniLayoutHtml(L)}</button>`).join('')}</div>
             <p class="st-hint">Photos appear in the order you selected them. To change photos, discard this story and pick again.</p>`;
         return `<div class="st-row2">${chips([['fill', 'Fill screen'], ['fit', 'Fit whole']], M.fit, 'fit')}</div>
-            <p class="st-hint">“Fit whole” shows the entire ${M.video ? 'video' : 'photo'} with a soft background.</p>`;
+            <p class="st-hint">"Fit whole" shows the entire ${M.video ? 'video' : 'photo'} with a soft background.</p>`;
     }
-    // ---- timing (photos)
     function timeSheet() {
         if (M.track) return `<p class="st-hint" style="margin:0">With music attached your story lasts exactly as long as the song clip: <b>${M.track.clipSec}s</b>. Change the clip length in <b>Music</b>.</p>`;
         return `<div class="st-row2" style="margin-bottom:4px">${[15, 30, 45, 60].map(v => `<button type="button" class="st-chip ${M.dur === v ? 'on' : ''}" data-k="dur" data-v="${v}">${v}s</button>`).join('')}</div>
@@ -393,7 +397,6 @@
         return `<input class="st-input" data-in="caption" maxlength="${MAX_CAPTION}" placeholder="Say something about this moment…" value="${S.esc(M.caption)}" aria-label="Caption"><p class="st-hint">Shown at the bottom of your story. Up to ${MAX_CAPTION} characters.</p>`;
     }
 
-    // ------------------------------------------------------------ text elements
     const snap = () => JSON.stringify(M.texts);
     function pushHist() { const s = snap(); if (M.hist[M.hist.length - 1] !== s) { M.hist.push(s); if (M.hist.length > 40) M.hist.shift(); } }
     function undo() {
@@ -446,25 +449,30 @@
         };
         el.addEventListener('input', onIn); el.addEventListener('paste', onPaste); el.addEventListener('blur', onBlur);
     }
+
+    // ---------------- text interaction (unchanged) ----------------
     function wireStage() {
         const st = q.stage;
         st.addEventListener('pointerdown', e => {
             if (M.preview || e.target.closest('.st-tools')) return;
+            if (e.target.closest('.st-mwrap')) return;   // sticker session handles it
             const el = e.target.closest('.st-t');
             if (!el) {
                 if (document.activeElement && document.activeElement.isContentEditable) document.activeElement.blur();
                 if (M.sheet === 'text') closeSheet(); else select(null);
+                if (M.mSel) { M.mSel = false; renderSticker(); }
                 return;
             }
             if (el.isContentEditable) return;
             const t = find(el.dataset.id); if (!t) return;
             select(t.id);
+            if (M.mSel) { M.mSel = false; renderSticker(); }
             const nowT = Date.now();
             if (M.lastTap && M.lastTap.id === t.id && nowT - M.lastTap.t < 320) { M.lastTap = null; edit(t.id); return; }
             M.lastTap = { id: t.id, t: nowT };
             const r = st.getBoundingClientRect();
             M.drag = { id: t.id, sx: e.clientX, sy: e.clientY, ox: t.x, oy: t.y, w: r.width, h: r.height, moved: false };
-            try { el.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+            try { el.setPointerCapture(e.pointerId); } catch (err) {}
             e.preventDefault();
         });
         st.addEventListener('pointermove', e => {
@@ -481,7 +489,138 @@
         st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
     }
 
-    // ------------------------------------------------------------ music clip picker (draggable window)
+    // ---------------- sticker interaction ----------------
+    // The wrapper is dragged from ANYWHERE on its surface (both axes).
+    // Listeners are on `window` in capture phase so a drag that leaves the
+    // stage still tracks, and pointercancel (from a browser scroll attempt)
+    // is caught so the sticker never freezes.
+    function wireStickerInteraction() {
+        const st = q.stage;
+        let session = null;
+        let moved = false;
+        let downAt = 0;
+
+        function detach() {
+            window.removeEventListener('pointermove', onMove, true);
+            window.removeEventListener('pointerup', onUp, true);
+            window.removeEventListener('pointercancel', onUp, true);
+            st.classList.remove('sticker-dragging');
+        }
+
+        function endSession(e) {
+            if (!session) return;
+            const s = session; session = null;
+            detach();
+            const wasTap = s.kind === 'move' && !moved && (performance.now() - downAt) < TAP_MS;
+            if (s.kind === 'move') {
+                if (wasTap) { M.mSel = true; renderSticker(); }
+                else pushHist();
+            } else pushHist();
+            if (M.sheet === 'music') renderSheet();
+            if (e && e.pointerId != null) { try { st.releasePointerCapture(e.pointerId); } catch (err) {} }
+        }
+
+        function onMove(e) {
+            const s = session;
+            if (!s || (s.pointerId != null && e.pointerId !== s.pointerId)) return;
+            const sr = s.stageRect || st.getBoundingClientRect();
+            if (s.kind === 'move') {
+                const dxPx = e.clientX - s.sx;
+                const dyPx = e.clientY - s.sy;
+                if (!moved && Math.hypot(dxPx, dyPx) > TAP_SLOP) moved = true;
+                if (!moved) { e.preventDefault(); e.stopPropagation(); return; }
+                const dx = dxPx / sr.width;
+                const dy = dyPx / sr.height;
+                M.mpos.x = clampStickerX(s.ox + dx);
+                M.mpos.y = clampStickerY(s.oy + dy);
+                renderSticker();
+            } else if (s.mode === 'rot') {
+                const ang = Math.atan2(e.clientY - s.cy, e.clientX - s.cx);
+                let deg = (ang - s.startAngle) * 180 / Math.PI + s.orot;
+                deg = Math.round(deg / 5) * 5;
+                if (deg > 180) deg -= 360;
+                if (deg < -180) deg += 360;
+                M.mpos.rot = S.clamp(deg, -180, 180);
+                renderSticker();
+            } else {
+                const cx = s.rect.left + s.rect.width / 2;
+                const cy = s.rect.top + s.rect.height / 2;
+                const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+                const startDist = Math.hypot(s.sx - cx, s.sy - cy) || 1;
+                M.mpos.scale = S.clamp(s.oscale * (dist / startDist), 0.25, 4);
+                renderSticker();
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function onUp(e) {
+            const s = session;
+            if (!s || (s.pointerId != null && e.pointerId !== s.pointerId)) return;
+            endSession(e);
+        }
+
+        st.addEventListener('pointerdown', e => {
+            if (M.preview) return;
+            if (!M.track || S.normStyle(M.mstyle) === 'none') return;
+            const wrap = e.target.closest('.st-mwrap');
+            if (!wrap) return;
+            if (e.target.closest('a, button')) return;
+
+            const handle = e.target.closest('.st-h');
+            const rect = wrap.getBoundingClientRect();
+            const stageRect = st.getBoundingClientRect();
+
+            if (handle) {
+                const mode = handle.dataset.h;
+                if (mode === 'del') { e.preventDefault(); e.stopPropagation(); deleteSticker(); return; }
+                session = {
+                    kind: 'handle', mode,
+                    sx: e.clientX, sy: e.clientY,
+                    ox: M.mpos.x, oy: M.mpos.y,
+                    oscale: M.mpos.scale, orot: M.mpos.rot,
+                    rect, stageRect, pointerId: e.pointerId
+                };
+                if (mode === 'rot') {
+                    session.cx = rect.left + rect.width / 2;
+                    session.cy = rect.top + rect.height / 2;
+                    session.startAngle = Math.atan2(e.clientY - session.cy, e.clientX - session.cx);
+                }
+            } else {
+                session = {
+                    kind: 'move',
+                    sx: e.clientX, sy: e.clientY,
+                    ox: M.mpos.x, oy: M.mpos.y,
+                    stageRect, pointerId: e.pointerId
+                };
+            }
+
+            moved = false;
+            downAt = performance.now();
+            st.classList.add('sticker-dragging');
+
+            try { wrap.setPointerCapture(e.pointerId); } catch (err) {}
+            try { st.setPointerCapture(e.pointerId); } catch (err) {}
+
+            window.addEventListener('pointermove', onMove, true);
+            window.addEventListener('pointerup', onUp, true);
+            window.addEventListener('pointercancel', onUp, true);
+
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+    }
+
+    function deleteSticker() {
+        if (!M.track) return;
+        stopAudio();
+        M.track = null;
+        M.mSel = false;
+        M.changing = false;
+        renderSticker();
+        renderSheet();
+    }
+
     function setStart(v) {
         const t = M.track; if (!t) return;
         const P = t.previewSec || 30;
@@ -502,7 +641,7 @@
             let grab = x - winL;
             if (x < winL || x > winL + winW) { grab = winW / 2; setStart(((x - grab) / r.width) * P); }
             M.tl = { r, P, grab }; stopAudio();
-            try { tl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+            try { tl.setPointerCapture(e.pointerId); } catch (err) {}
             e.preventDefault();
         });
         q.shb.addEventListener('pointermove', e => { if (M.tl) setStart(((e.clientX - M.tl.r.left - M.tl.grab) / M.tl.r.width) * M.tl.P); });
@@ -516,6 +655,8 @@
         else if (k === 'music') { M.query = e.target.value; }
         else if (k === 'spotify') { M.spq = e.target.value; }
         else if (k === 'dur') { M.dur = S.clamp(Math.round(e.target.value), MIN_DUR, MAX_DUR); const b = $('.st-durv'); if (b) b.textContent = M.dur + 's'; }
+        else if (k === 'stickerScale') { M.mpos.scale = S.clamp(Number(e.target.value) / 100, 0.25, 4); renderSticker(); }
+        else if (k === 'stickerRot') { M.mpos.rot = S.clamp(Math.round(Number(e.target.value)), -180, 180); renderSticker(); }
         else if (t && k === 'size') { t.size = S.clamp(e.target.value / 1000, 0.035, 0.18); refreshEl(t); }
         else if (t && k === 'rot') { t.rot = Number(e.target.value); refreshEl(t); }
     }
@@ -558,20 +699,23 @@
                 const clip = M.video ? Math.max(MIN_CLIP, Math.min(P, vidSec() || 15)) : S.clamp(Math.round(M.dur), MIN_CLIP, P);
                 M.track = Object.assign({}, r, { startSec: 0, clipSec: clip });
                 M.spotify = null; M.results = []; M.msg = ''; M.changing = false;
-                renderSheet(); renderPv(); playClip(); renderSheet(); break;
+                M.mSel = true;
+                renderSticker(); renderSheet(); playClip(); renderSheet();
+                break;
             }
             case 'clipLen': if (M.track) { const P = M.track.previewSec || 30; M.track.clipSec = Math.min(Number(v), P); setStart(M.track.startSec); renderSheet(); renderPv(); if (M.playing === 'clip') playClip(); } break;
             case 'playClip': toggleClip(); break;
             case 'changeSong': stopAudio(); M.changing = true; M.results = []; M.msg = ''; renderSheet(); break;
             case 'keepSong': stopAudio(); M.changing = false; renderSheet(); break;
-            case 'rmTrack': stopAudio(); M.track = null; M.changing = false; renderSheet(); renderPv(); break;
+            case 'rmTrack': stopAudio(); M.track = null; M.mSel = false; M.changing = false; renderSticker(); renderSheet(); break;
             case 'spotifyGo': spotifyGo(); break;
             case 'rmSpotify': M.spotify = null; renderSheet(); renderPv(); break;
+            case 'resetSticker': M.mpos = { x: 0.5, y: 0.54, scale: 1, rot: 0 }; M.mSel = true; renderSticker(); renderSheet(); break;
+            case 'centerSticker': M.mpos.x = 0.5; M.mpos.y = 0.54; renderSticker(); renderSheet(); break;
             case 'publish': publish(); break;
         }
     }
 
-    // ------------------------------------------------------------ music: in-site search + optional Spotify link
     async function musicSearch() {
         const term = (M.query || '').trim();
         if (term.length < 2 || M.searching) { if (term.length < 2) { M.msg = 'Type at least 2 characters.'; renderSheet(); } return; }
@@ -591,20 +735,19 @@
     async function spotifyGo() {
         const val = (M.spq || '').trim(); if (!val) return;
         const id = spotifyId(val);
-        if (!id) { M.msg = 'That doesn’t look like a Spotify track link. Open a song in Spotify → Share → Copy link.'; renderSheet(); return; }
+        if (!id) { M.msg = 'That doesn\'t look like a Spotify track link. Open a song in Spotify → Share → Copy link.'; renderSheet(); return; }
         M.msg = 'Looking up…'; renderSheet();
         const url = 'https://open.spotify.com/track/' + id;
         let title = 'Spotify track', thumbnail = '';
         try {
             const r = await fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(url));
             if (r.ok) { const j = await r.json(); title = String(j.title || title).slice(0, 120); thumbnail = S.safeImgUrl(j.thumbnail_url) || ''; }
-        } catch (e) { /* oEmbed unreachable: keep link-only card */ }
+        } catch (e) {}
         stopAudio(); M.track = null; M.changing = false; M.spq = '';
         M.spotify = { trackId: id, url, title, artist: '', thumbnail }; M.msg = '';
         renderSheet(); renderPv();
     }
 
-    // ------------------------------------------------------------ publish
     const ymd = ms => { const d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
     function upload(file, onProg) {
         return new Promise((res, rej) => {
@@ -615,7 +758,7 @@
             x.open('POST', `https://api.cloudinary.com/v1_1/${C.cfg.cloudName}/auto/upload`);
             x.upload.onprogress = e => { if (e.lengthComputable) onProg(e.loaded / e.total); };
             x.onload = () => {
-                let j = {}; try { j = JSON.parse(x.responseText); } catch (e) { /* ignore */ }
+                let j = {}; try { j = JSON.parse(x.responseText); } catch (e) {}
                 x.status === 200 ? res(j) : rej(new Error((j.error && j.error.message) || 'Upload failed (' + x.status + ')'));
             };
             x.onerror = () => rej(new Error('Network error during upload'));
@@ -623,14 +766,13 @@
             x.send(fd);
         });
     }
-    // Best-effort cleanup if something fails after media was uploaded (unsigned presets return a short-lived delete_token).
     async function discardUploads(list) {
         for (const up of list) {
             try {
                 if (!up || !up.delete_token) continue;
                 const fd = new FormData(); fd.append('token', up.delete_token);
                 await fetch(`https://api.cloudinary.com/v1_1/${C.cfg.cloudName}/delete_by_token`, { method: 'POST', body: fd });
-            } catch (e) { /* orphan is swept by the expires_ tag job (see STORIES_SETUP.md) */ }
+            } catch (e) {}
         }
     }
     async function publish() {
@@ -657,13 +799,24 @@
                 ownerUid: C.me.uid, ownerName: C.me.name, ownerPhoto: C.me.photo || '',
                 mediaType: isV ? 'video' : 'image', mediaUrl: url, mediaPublicId: first.public_id || '', thumbUrl: S.safeMediaUrl(thumb),
                 mediaFit: M.fit, mediaW: first.width || 0, mediaH: first.height || 0,
-                // how long the story plays: video = its own length; photos = the music clip (if any) or the chosen 15-60 s
                 durationMs: isV ? Math.round(vSec * 1000) : Math.round(storyDur() * 1000),
                 caption: M.caption.trim().slice(0, MAX_CAPTION),
                 textOverlays: M.texts.slice(0, MAX_TEXTS).map(t => ({ id: t.id, text: t.text.slice(0, MAX_TEXT_LEN), x: +t.x.toFixed(4), y: +t.y.toFixed(4), size: +t.size.toFixed(4), rot: Math.round(t.rot), font: t.font, color: t.color, bg: t.bg, bgColor: t.bgColor, align: t.align, bold: !!t.bold, italic: !!t.italic })),
                 spotifyTrack: M.spotify ? { trackId: M.spotify.trackId, url: M.spotify.url, title: M.spotify.title, artist: (M.spotify.artist || '').slice(0, 80), thumbnail: M.spotify.thumbnail || '' } : null,
-                music: M.track ? { provider: 'itunes', trackId: M.track.trackId, title: M.track.title, artist: (M.track.artist || '').slice(0, 80), thumbnail: M.track.thumbnail || '', previewUrl: M.track.previewUrl, previewSec: M.track.previewSec || 30, startSec: M.track.startSec, clipSec: M.track.clipSec, style: S.normStyle(M.mstyle) } : null,
-                muteVideo: !!(isV && M.track),          // music added to a video mutes the video's audio
+                music: M.track ? {
+                    provider: 'itunes', trackId: M.track.trackId, title: M.track.title,
+                    artist: (M.track.artist || '').slice(0, 80), thumbnail: M.track.thumbnail || '',
+                    previewUrl: M.track.previewUrl, previewSec: M.track.previewSec || 30,
+                    startSec: M.track.startSec, clipSec: M.track.clipSec,
+                    style: S.normStyle(M.mstyle),
+                    sticker: {
+                        x: +M.mpos.x.toFixed(4),
+                        y: +M.mpos.y.toFixed(4),
+                        scale: +M.mpos.scale.toFixed(4),
+                        rot: Math.round(M.mpos.rot)
+                    }
+                } : null,
+                muteVideo: !!(isV && M.track),
                 mediaPublicIds: ups.map(u => u.public_id || '').filter(Boolean),
                 status: 'active',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -673,7 +826,7 @@
             q.barI.style.width = '96%';
             try { await ref.set(doc); }
             catch (we) { await discardUploads(ups); throw we; }
-            try { const s = await ref.get({ source: 'server' }); const c = s.data().createdAt; if (c && c.toMillis) C.onPublished(c.toMillis() - Date.now()); } catch (e) { /* skew is optional */ }
+            try { const s = await ref.get({ source: 'server' }); const c = s.data().createdAt; if (c && c.toMillis) C.onPublished(c.toMillis() - Date.now()); } catch (e) {}
             q.barI.style.width = '100%';
             C.toast('Story shared! It will disappear in 24 hours.', 'success');
             M.busy = false; closeNow();
@@ -682,7 +835,7 @@
             M.busy = false; q.bar.hidden = true;
             if (e.message === 'cancelled') { renderSheet(); return; }
             console.warn('publish failed', e);
-            C.toast(e.code === 'permission-denied' ? 'Couldn’t publish. Check that you’re signed in and your device clock/time zone is correct.' : ('Couldn’t publish: ' + e.message), 'error');
+            C.toast(e.code === 'permission-denied' ? 'Couldn\'t publish. Check that you\'re signed in and your device clock/time zone is correct.' : ('Couldn\'t publish: ' + e.message), 'error');
             renderSheet();
         }
     }
