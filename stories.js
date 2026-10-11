@@ -1,5 +1,5 @@
 /* ================================================================
-   stories.js · TIMAWA / Barkada Stories  (core, v1.2)
+   stories.js · TIMAWA / Barkada Stories  (core, v1.3)
    One module shared by index.html and dashboard.html:
      - ONE realtime listener on `stories` (active ones only)
      - Stories row (mounted into #storiesMount) + rings on squad avatars
@@ -16,7 +16,8 @@
                                       auto for video), music? (30s clip + start/length),
                                       muteVideo, createdAt (server), expiresAt (= +24h,
                                       Firestore TTL policy deletes the doc afterwards)
-     stories/{id}/reactions/{uid}     emoji, uid, name, createdAt
+     stories/{id}/reactions/{uid}     emoji, uid, name, photo, createdAt
+     stories/{id}/views/{uid}         uid, name, photo, viewedAt  (readable by the story owner + admins only)
      chatMessages/{id}                (existing schema) + type:'story_reply',
                                       storyRef:{...}
    ================================================================ */
@@ -30,7 +31,7 @@
     const CFG = Object.assign({
         IMAGE_MS: 6000,
         MAX_REPLY: 300,
-        composerSrc: 'stories-composer.js?v=1.2.0',
+        composerSrc: 'stories-composer.js?v=1.3.0',
         spotifySearchUrl: ''          // optional Cloud Function URL (see STORIES_SETUP.md)
     }, window.STORIES_CONFIG || {});
 
@@ -190,7 +191,7 @@
         const it = e.target.closest('.st-row .st-item[data-act]');
         if (!it) return;
         if (it.dataset.act === 'add') openComposer();
-        else openUser(it.dataset.uid);
+        else openUser(it.dataset.uid, null, it.querySelector('.st-ring'));
     });
     document.addEventListener('keydown', e => {
         if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('st-plus')) { e.preventDefault(); openComposer(); }
@@ -224,13 +225,14 @@
         const card = av.closest('.member-card');
         if (!card) return;
         e.preventDefault(); e.stopPropagation();
-        openUser(card.dataset.memberId);
+        openUser(card.dataset.memberId, null, av);
     }, true);
 
     // ------------------------------------------------------------ viewer
     const V = { open: false, el: null, order: [], gi: 0, si: 0, story: null, paused: new Set(), raf: 0, last: 0, el_ms: 0, dur: 0, video: null, ready: false,
                 unsubR: null, reactions: [], trayMore: false, returnFocus: null, pushed: false, sy: 0,
-                audio: null, stopLoop: null, clip: null, userMuted: false, musicBlocked: false, muteVid: false };
+                audio: null, clip: null, userMuted: false, musicBlocked: false, muteVid: false,
+                closing: false, anim: null, bdAnim: null, views: [], unsubV: null };
 
     function buildViewer() {
         if (V.el) return;
@@ -239,6 +241,7 @@
         el.className = 'st-viewer'; el.hidden = true;
         el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Story viewer');
         el.innerHTML = `
+          <div class="st-bd"></div>
           <button class="st-nav st-prev" type="button" aria-label="Previous story"><i class="fas fa-chevron-left"></i></button>
           <div class="st-frame">
             <div class="st-bgblur"></div><div class="st-media-wrap"></div><div class="st-texts"></div>
@@ -252,8 +255,8 @@
                 <button class="st-ib" type="button" data-a="mute" aria-label="Mute" hidden><i class="fas fa-volume-high"></i></button>
                 <button class="st-ib" type="button" data-a="delete" aria-label="Delete story" hidden><i class="fas fa-trash"></i></button>
                 <button class="st-ib" type="button" data-a="close" aria-label="Close"><i class="fas fa-xmark"></i></button></div></div>
-            <div class="st-caption st-ui"></div>
             <div class="st-bottom st-ui">
+              <div class="st-caption"></div>
               <div class="st-rsum" aria-live="polite"></div>
               <div class="st-music"></div>
               <div class="st-tray" hidden></div>
@@ -262,8 +265,10 @@
                 <button class="st-heart" type="button" data-a="tray" aria-label="React" aria-expanded="false"><i class="far fa-heart"></i></button>
                 <button class="st-send" type="submit" aria-label="Send reply"><i class="fas fa-paper-plane"></i></button>
               </form>
+              <div class="st-own" hidden><button class="st-act" type="button" data-a="viewers" aria-haspopup="dialog"><i class="far fa-eye"></i> <span class="st-vc">0</span> <span class="st-vl">viewers</span></button></div>
               <div class="st-note" hidden></div>
             </div>
+            <div class="st-vsheet st-ui" hidden role="dialog" aria-label="Story viewers"><div class="st-vh"><b>Viewers</b><button class="st-ib" type="button" data-a="vclose" aria-label="Close viewers"><i class="fas fa-xmark"></i></button></div><ul class="st-vlist"></ul></div>
           </div>
           <button class="st-nav st-next" type="button" aria-label="Next story"><i class="fas fa-chevron-right"></i></button>`;
         document.body.appendChild(el);
@@ -272,7 +277,8 @@
         V.q = { frame: $('.st-frame'), bg: $('.st-bgblur'), mw: $('.st-media-wrap'), tx: $('.st-texts'), load: $('.st-loading'), err: $('.st-error'), exp: $('.st-expired'),
                 prog: $('.st-prog'), av: $('.st-head .st-av'), who: $('.st-who b'), when: $('.st-who small'), cap: $('.st-caption'), sum: $('.st-rsum'), music: $('.st-music'),
                 tray: $('.st-tray'), form: $('.st-reply'), input: $('.st-reply input'), send: $('.st-send'), heart: $('.st-heart'), note: $('.st-note'),
-                pauseB: $('[data-a=pause]'), muteB: $('[data-a=mute]'), delB: $('[data-a=delete]') };
+                pauseB: $('[data-a=pause]'), muteB: $('[data-a=mute]'), delB: $('[data-a=delete]'),
+                bd: $('.st-bd'), own: $('.st-own'), vc: $('.st-vc'), vl: $('.st-vl'), vsheet: $('.st-vsheet'), vlist: $('.st-vlist') };
         S.observeStage(V.q.frame);
 
         $('.st-prev').onclick = prev; $('.st-next').onclick = next;
@@ -285,6 +291,8 @@
             else if (a === 'mute') toggleMute();
             else if (a === 'delete') deleteOwn();
             else if (a === 'tray') toggleTray();
+            else if (a === 'viewers') toggleViewers();
+            else if (a === 'vclose') toggleViewers(false);
         });
         V.q.tray.addEventListener('click', e => {
             const b = e.target.closest('button[data-e]'); if (!b) return;
@@ -295,31 +303,49 @@
         V.q.input.addEventListener('focus', () => pause('typing'));
         V.q.input.addEventListener('blur', () => resume('typing'));
 
-        // tap zones / hold-to-pause / swipe-down
+        // left 30% = previous, the rest = next, hold = pause, drag down = dismiss.
+        // Pointer capture + touch-action:none keep taps reliable on phones (a browser pan used to cancel them).
         let down = null;
-        V.q.frame.addEventListener('pointerdown', e => {
+        const fr = V.q.frame;
+        fr.addEventListener('pointerdown', e => {
+            if (V.anim || !V.open) return;
             if (e.target.closest('button,input,a,iframe,.st-ui,.st-tray')) return;
-            down = { x: e.clientX, y: e.clientY, t: Date.now(), held: false };
-            down.timer = setTimeout(() => { down.held = true; pause('hold'); }, 220);
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            down = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), held: false, drag: false, dy: 0 };
+            try { fr.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+            down.timer = setTimeout(() => { if (down && !down.drag) { down.held = true; pause('hold'); } }, 260);
         });
-        const up = e => {
-            if (!down) return;
-            clearTimeout(down.timer);
+        fr.addEventListener('pointermove', e => {
+            if (!down || e.pointerId !== down.id) return;
             const dx = e.clientX - down.x, dy = e.clientY - down.y;
-            if (down.held) resume('hold');
-            else if (dy > 90 && Math.abs(dy) > Math.abs(dx)) close();
-            else if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
-                const r = V.q.frame.getBoundingClientRect();
+            if (!down.drag && dy > 12 && dy > Math.abs(dx) * 1.2) {
+                down.drag = true; clearTimeout(down.timer);
+                if (down.held) { down.held = false; resume('hold'); }
+                pause('drag');
+            }
+            if (down.drag) { down.dy = Math.max(0, dy); dragFrame(down.dy); }
+        });
+        fr.addEventListener('pointerup', e => {
+            if (!down || e.pointerId !== down.id) return;
+            const d = down; down = null; clearTimeout(d.timer);
+            try { fr.releasePointerCapture(d.id); } catch (err) { /* ignore */ }
+            const dx = e.clientX - d.x, dy = e.clientY - d.y;
+            if (d.drag) { const v = d.dy / Math.max(1, performance.now() - d.t); (d.dy > 110 || v > 0.6) ? close(false, true) : springBack(); return; }
+            if (d.held) { resume('hold'); return; }
+            if (Math.abs(dx) < 14 && Math.abs(dy) < 14) {
+                const r = fr.getBoundingClientRect();
                 (e.clientX - r.left < r.width * 0.3) ? prev() : next();
             }
-            down = null;
-        };
-        V.q.frame.addEventListener('pointerup', up);
-        V.q.frame.addEventListener('pointercancel', () => { if (down) { clearTimeout(down.timer); if (down.held) resume('hold'); down = null; } });
+        });
+        fr.addEventListener('pointercancel', () => {
+            if (!down) return;
+            const d = down; down = null; clearTimeout(d.timer);
+            if (d.drag) springBack(); else if (d.held) resume('hold');
+        });
 
         document.addEventListener('keydown', e => {
             if (!V.open) return;
-            if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+            if (e.key === 'Escape') { e.preventDefault(); if (!V.q.vsheet.hidden) toggleViewers(false); else close(); return; }
             if (e.target === V.q.input) return;
             if (e.key === 'ArrowRight') next();
             else if (e.key === 'ArrowLeft') prev();
@@ -329,38 +355,111 @@
         window.addEventListener('popstate', () => { if (V.open && V.pushed) { V.pushed = false; close(true); } });
     }
 
-    function openUser(uid, startId) {
+    const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    // The on-screen ring / avatar the story grows out of (and shrinks back into).
+    function findOrigin(uid) {
+        const k = window.CSS && CSS.escape ? CSS.escape(uid) : uid;
+        const els = document.querySelectorAll(`.st-row [data-uid="${k}"] .st-ring, .member-card[data-member-id="${k}"] .st-has`);
+        for (const el of els) {
+            const r = el.getBoundingClientRect();
+            if (r.width > 8 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth) return r;
+        }
+        return null;
+    }
+    function frameState(o) {
+        const fr = V.q.frame, w = fr.offsetWidth, h = fr.offsetHeight, rad = innerWidth <= 640 ? 0 : 18;
+        const full = { transform: 'translate(0px,0px) scale(1)', clipPath: `inset(0px 0px 0px 0px round ${rad}px)`, opacity: 1 };
+        let small;
+        if (o && o.width > 8) {
+            const s = o.width / w, vi = Math.max(0, (h - w) / 2);
+            small = { transform: `translate(${o.left + o.width / 2 - innerWidth / 2}px,${o.top + o.height / 2 - innerHeight / 2}px) scale(${s})`,
+                      clipPath: `inset(${vi}px 0px ${vi}px 0px round ${w / 2}px)`, opacity: 1 };
+        } else small = { transform: 'translate(0px,26px) scale(.94)', clipPath: full.clipPath, opacity: 0 };
+        return { full, small };
+    }
+    function stopAnims() {
+        [V.anim, V.bdAnim].forEach(a => { if (a) { try { a.cancel(); } catch (e) { /* ignore */ } } });
+        V.anim = V.bdAnim = null;
+    }
+    function runAnim(from, to, ms, bdFrom, bdTo, done, keep) {
+        const fr = V.q.frame;
+        stopAnims();
+        if (reduceMotion() || !fr.animate) { done && done(); return; }
+        const ease = 'cubic-bezier(.22,.9,.28,1)';
+        const a = fr.animate([from, to], { duration: ms, easing: ease, fill: 'both' });
+        const b = V.q.bd.animate([{ opacity: bdFrom }, { opacity: bdTo }], { duration: ms, easing: 'ease-out', fill: 'both' });
+        V.anim = a; V.bdAnim = b;
+        a.onfinish = () => {
+            if (V.anim !== a) return;
+            if (!keep) stopAnims();
+            done && done();
+        };
+    }
+    function dragFrame(dy) {
+        const k = Math.min(dy / Math.max(300, innerHeight * 0.8), 1);
+        V.q.frame.style.transform = `translateY(${dy}px) scale(${(1 - k * 0.16).toFixed(3)})`;
+        V.q.bd.style.opacity = String((1 - k * 0.85).toFixed(3));
+    }
+    function springBack() {
+        const fr = V.q.frame, from = fr.style.transform || 'none', bdo = parseFloat(V.q.bd.style.opacity || '1');
+        fr.style.transform = ''; V.q.bd.style.opacity = '';
+        if (fr.animate && !reduceMotion()) {
+            fr.animate([{ transform: from }, { transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.2,.9,.3,1)' });
+            V.q.bd.animate([{ opacity: bdo }, { opacity: 1 }], { duration: 240 });
+        }
+        resume('drag');
+    }
+
+    function openUser(uid, startId, originEl) {
         if (!st.me) { toast('Sign in to view stories', 'warn'); return; }
         const g = st.byOwner.get(uid);
         if (!g) { toast('This story has expired.', 'info'); return; }
         buildViewer();
-        // order: mine, then groups with unseen, then the rest (snapshot at open time)
+        stopAnims(); V.closing = false;
+        V.q.frame.style.transform = ''; V.q.bd.style.opacity = '';
         V.order = st.groups.map(x => x.uid);
         V.gi = Math.max(0, V.order.indexOf(uid));
         let si = 0;
         if (startId) si = Math.max(0, g.stories.findIndex(s => s.id === startId));
         else { const firstUnseen = g.stories.findIndex(s => !st.seen[s.id]); si = firstUnseen > -1 ? firstUnseen : 0; }
         V.si = si;
+        const o = originEl && originEl.getBoundingClientRect ? originEl.getBoundingClientRect() : findOrigin(uid);
         V.returnFocus = document.activeElement;
         V.el.hidden = false; V.open = true;
         document.documentElement.classList.add('st-lock');
         try { history.pushState({ stv: 1 }, ''); V.pushed = true; } catch (e) { /* ignore */ }
-        V.el.querySelector('[data-a=close]').focus({ preventScroll: true });
         renderSlide();
+        pause('anim');                                   // story clock starts when the grow animation ends
+        const { full, small } = frameState(o);
+        runAnim(small, full, 340, 0, 1, () => resume('anim'));
+        if (!V.anim) resume('anim');
+        V.el.querySelector('[data-a=close]').focus({ preventScroll: true });
     }
     function openById(id) {
         const s = st.stories.find(x => x.id === id);
         if (!s) { toast('This story has expired or is no longer available.', 'info'); return; }
         openUser(s.ownerUid, id);
     }
-    function close(fromPop) {
+    function close(fromPop, fromDrag) {
         if (!V.open) return;
-        teardownSlide();
-        V.open = false; V.el.hidden = true;
-        document.documentElement.classList.remove('st-lock');
-        if (V.pushed && !fromPop) { V.pushed = false; try { history.back(); } catch (e) { /* ignore */ } }
-        if (V.returnFocus && V.returnFocus.focus) { try { V.returnFocus.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
-        rebuild(rawCache);
+        const uid = V.order[V.gi];
+        teardownSlide();                                  // stops timer, video and music immediately
+        V.open = false; V.closing = true;
+        const fr = V.q.frame;
+        const finish = () => {
+            V.closing = false; V.el.hidden = true; stopAnims();
+            fr.style.transform = ''; V.q.bd.style.opacity = '';
+            document.documentElement.classList.remove('st-lock');
+            if (V.pushed && !fromPop) { V.pushed = false; try { history.back(); } catch (e) { /* ignore */ } }
+            if (V.returnFocus && V.returnFocus.focus) { try { V.returnFocus.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+            rebuild(rawCache);
+        };
+        const { full, small } = frameState(findOrigin(uid));
+        const cur = fromDrag ? { transform: fr.style.transform || full.transform, clipPath: full.clipPath, opacity: 1 } : full;
+        const bdo = fromDrag ? parseFloat(V.q.bd.style.opacity || '1') : 1;
+        fr.style.transform = ''; V.q.bd.style.opacity = '';
+        runAnim(cur, small, 280, bdo, 0, finish, true);
+        if (!V.anim) finish();
     }
     function curGroup() { return st.byOwner.get(V.order[V.gi]); }
     function next() {
@@ -373,12 +472,24 @@
     function prev() {
         if (V.si > 0) { V.si--; renderSlide(); return; }
         for (let i = V.gi - 1; i >= 0; i--) { const g = st.byOwner.get(V.order[i]); if (g) { V.gi = i; V.si = g.stories.length - 1; renderSlide(); return; } }
-        V.el_ms = 0; restartTimer();
+        restartSlide();
+    }
+    // Restart the CURRENT story from 0:00: progress bar, video AND music all go back together.
+    function restartSlide() {
+        V.el_ms = 0;
+        if (V.video) { try { V.video.currentTime = 0; } catch (e) { /* ignore */ } }
+        syncAudio(true);
+        const seg = V.q.prog.children[V.si]; if (seg && seg.firstChild) seg.firstChild.style.transform = 'scaleX(0)';
+        if (!V.paused.size && V.ready) { if (V.video) V.video.play().catch(() => {}); playMusic(); }
+        restartTimer();
     }
 
     function teardownSlide() {
         cancelAnimationFrame(V.raf); V.raf = 0;
         if (V.unsubR) { V.unsubR(); V.unsubR = null; }
+        if (V.unsubV) { V.unsubV(); V.unsubV = null; }
+        V.views = [];
+        if (V.q && V.q.vsheet) V.q.vsheet.hidden = true;
         if (V.video) { try { V.video.pause(); V.video.removeAttribute('src'); V.video.load(); } catch (e) { /* ignore */ } V.video = null; }
         stopMusic();
         V.paused.clear(); V.ready = false; V.reactions = [];
@@ -408,9 +519,11 @@
         // expired mid-view -> consistent fallback, no interactions
         if (!isActive(s)) {
             q.mw.innerHTML = ''; q.bg.innerHTML = ''; q.tx.innerHTML = ''; q.cap.textContent = ''; q.music.innerHTML = ''; q.sum.innerHTML = '';
-            q.load.hidden = true; q.exp.hidden = false; q.form.hidden = true; q.note.hidden = true; return;
+            q.load.hidden = true; q.exp.hidden = false; q.form.hidden = true; q.own.hidden = true; q.note.hidden = true; return;
         }
+        const firstSeen = !st.seen[s.id];
         markSeen(s.id);
+        if (!mine && firstSeen) recordView(s);
 
         // media (single photo | photo collage | one video)
         const collage = s.mediaType === 'image' && s.mediaItems.length > 1 ? s.mediaItems : null;
@@ -478,6 +591,7 @@
             const dt = t - V.last; V.last = t;
             if (!V.paused.size && V.ready) {
                 if (V.video) V.el_ms = V.video.currentTime * 1000; else V.el_ms += dt;
+                if (V.audio) syncAudio(false);            // music position = story position (never drifts)
             }
             const p = Math.min(1, V.el_ms / (V.dur || CFG.IMAGE_MS));
             if (seg) seg.style.transform = `scaleX(${p})`;
@@ -505,11 +619,18 @@
         const m = s.music; if (!m) return;
         const a = new Audio();
         a.preload = 'auto'; a.src = m.previewUrl; a.muted = V.userMuted;
-        const start = m.startSec, end = Math.min(m.startSec + m.clipSec, m.previewSec);
-        V.clip = { start, end };
-        a.addEventListener('loadedmetadata', () => { try { if (a.currentTime < start) a.currentTime = start; } catch (e) { /* ignore */ } });
-        V.stopLoop = S.attachClipLoop(a, start, end);
+        V.clip = { start: m.startSec, end: Math.min(m.startSec + m.clipSec, m.previewSec) };
+        a.addEventListener('loadedmetadata', () => syncAudio(true));
+        a.addEventListener('ended', () => { if (V.audio === a) { syncAudio(true); playMusic(); } });
         V.audio = a;
+    }
+    // The story clock is the master: the song position is always clipStart + (elapsed mod clipLength).
+    // So restarting the story, going back, pausing or looping can never leave the song out of step.
+    function syncAudio(force) {
+        const a = V.audio, c = V.clip; if (!a || !c) return;
+        const len = Math.max(1, c.end - c.start);
+        const want = c.start + ((V.el_ms / 1000) % len);
+        if (force || Math.abs(a.currentTime - want) > 0.45) { try { a.currentTime = want; } catch (e) { /* not seekable yet */ } }
     }
     function setBlocked(b) {
         V.musicBlocked = b;
@@ -518,11 +639,10 @@
     }
     function playMusic() {
         const a = V.audio; if (!a || V.paused.size || !V.ready) return;
-        try { if (a.currentTime < V.clip.start - 0.3 || a.currentTime >= V.clip.end) a.currentTime = V.clip.start; } catch (e) { /* ignore */ }
+        syncAudio(true);
         a.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
     }
     function stopMusic() {
-        if (V.stopLoop) { V.stopLoop(); V.stopLoop = null; }
         if (V.audio) { try { V.audio.pause(); V.audio.removeAttribute('src'); V.audio.load(); } catch (e) { /* ignore */ } V.audio = null; }
         V.musicBlocked = false; V.clip = null;
     }
@@ -563,27 +683,59 @@
     // ---- reactions + replies
     function renderInteract(s, mine) {
         const q = V.q;
-        q.form.hidden = false; q.note.hidden = true;
-        q.heart.hidden = mine; q.input.hidden = mine; q.send.hidden = mine;
-        if (mine) { q.form.hidden = true; }
+        q.form.hidden = mine; q.own.hidden = !mine; q.note.hidden = true;
+        q.input.hidden = false; q.heart.hidden = false; q.send.hidden = false;
         buildTray();
         V.unsubR = db.collection('stories').doc(s.id).collection('reactions').onSnapshot(snap => {
             V.reactions = snap.docs.map(d => d.data());
             renderSummary();
         }, err => { console.warn('reactions:', err.code); });
-        if (!mine) {
+        if (mine) {
+            V.views = []; renderViewers();
+            V.unsubV = db.collection('stories').doc(s.id).collection('views').orderBy('viewedAt', 'desc').limit(300).onSnapshot(snap => {
+                V.views = snap.docs.map(d => d.data()); renderViewers();
+            }, err => { console.warn('views:', err.code); });
+        } else {
+            q.input.disabled = true; q.send.disabled = true; q.input.placeholder = 'Reply to ' + (s.ownerName || 'story').split(' ')[0] + '…';
             chatEnabled().then(on => {
                 if (V.story !== s) return;
                 q.input.disabled = !on; q.send.disabled = !on;
-                q.input.placeholder = on ? 'Reply to ' + (s.ownerName || 'story').split(' ')[0] + '…' : 'Replies are unavailable';
-                if (!on) { q.note.hidden = false; q.note.textContent = 'Chat is turned off, so replies are unavailable.'; }
+                if (!on) { q.input.placeholder = 'Replies are unavailable'; q.note.hidden = false; q.note.textContent = 'Chat is turned off, so replies are unavailable.'; }
             });
         }
+    }
+    function recordView(s) {
+        if (!st.me) return;
+        db.collection('stories').doc(s.id).collection('views').doc(st.me.uid)
+            .set({ uid: st.me.uid, name: st.me.name, photo: st.me.photo || '', viewedAt: firebase.firestore.FieldValue.serverTimestamp() })
+            .catch(err => console.warn('view not recorded:', err.code || err.message));
+    }
+    // Story owner: who watched it, and which emoji they reacted with (badge on the avatar, like Instagram).
+    function renderViewers() {
+        const q = V.q, map = new Map(), ms = x => (x && x.toMillis ? x.toMillis() : 0);
+        V.views.forEach(v => { if (v.uid) map.set(v.uid, { uid: v.uid, name: v.name || 'Member', photo: v.photo || '', at: ms(v.viewedAt), emoji: '' }); });
+        V.reactions.forEach(r => {
+            const e = map.get(r.uid) || { uid: r.uid, name: r.name || 'Member', photo: r.photo || '', at: ms(r.createdAt), emoji: '' };
+            e.emoji = r.emoji; if (!e.photo && r.photo) e.photo = r.photo; map.set(r.uid, e);
+        });
+        if (st.me) map.delete(st.me.uid);
+        const list = [...map.values()].sort((a, b) => b.at - a.at);
+        q.vc.textContent = String(list.length); q.vl.textContent = list.length === 1 ? 'viewer' : 'viewers';
+        q.vlist.innerHTML = list.length ? list.map(v => `<li class="st-vi"><span class="st-vav"><span class="st-av">${avatarHtml(v.name, v.photo, 80)}</span>${v.emoji ? `<em class="st-vemo" aria-label="Reacted ${S.esc(v.emoji)}">${S.esc(v.emoji)}</em>` : ''}</span>
+            <div class="st-vn"><b>${S.esc(v.name)}</b><small>${v.at ? S.timeAgo(v.at) + ' ago' : 'viewed'}${v.emoji ? ' · reacted' : ''}</small></div></li>`).join('')
+            : '<li class="st-vempty">No views yet. Check back soon.</li>';
+    }
+    function toggleViewers(force) {
+        const open = typeof force === 'boolean' ? force : V.q.vsheet.hidden;
+        if (open === !V.q.vsheet.hidden) return;
+        V.q.vsheet.hidden = !open;
+        open ? pause('viewers') : resume('viewers');
     }
     function renderSummary() {
         const m = new Map(); let mineE = null;
         V.reactions.forEach(r => { m.set(r.emoji, (m.get(r.emoji) || 0) + 1); if (st.me && r.uid === st.me.uid) mineE = r.emoji; });
         V.mineEmoji = mineE;
+        if (V.story && st.me && V.story.ownerUid === st.me.uid) renderViewers();
         V.q.sum.innerHTML = [...m.entries()].map(([e, c]) => `<span class="${e === mineE ? 'mine' : ''}" title="${S.esc(V.reactions.filter(r => r.emoji === e).map(r => r.name || 'Member').join(', '))}">${S.esc(e)} ${c}</span>`).join('');
         V.q.heart.innerHTML = mineE ? `<span>${S.esc(mineE)}</span>` : '<i class="far fa-heart"></i>';
         buildTray();
@@ -605,7 +757,7 @@
         const ref = db.collection('stories').doc(s.id).collection('reactions').doc(st.me.uid);
         try {
             if (V.mineEmoji === emoji) await ref.delete();
-            else await ref.set({ uid: st.me.uid, name: st.me.name, emoji, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            else await ref.set({ uid: st.me.uid, name: st.me.name, photo: st.me.photo || '', emoji, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             V.q.heart.classList.remove('st-pop'); void V.q.heart.offsetWidth; V.q.heart.classList.add('st-pop');
             V.q.tray.hidden = true; V.q.heart.setAttribute('aria-expanded', 'false'); resume('tray');
         } catch (e) {
@@ -657,9 +809,7 @@
         if (!window.confirm('Delete this story? Replies already sent in chat will remain.')) return;
         pause('confirm');
         try {
-            const rs = await db.collection('stories').doc(s.id).collection('reactions').get();
-            const b = db.batch(); rs.forEach(d => b.delete(d.ref)); b.delete(db.collection('stories').doc(s.id));
-            await b.commit();
+            await deleteStoryDoc(db.collection('stories').doc(s.id));
             rawCache = rawCache.filter(x => x.id !== s.id); rebuild(rawCache);
             toast('Story deleted.', 'success');
             V.paused.delete('confirm');
@@ -701,9 +851,8 @@
 
     // ------------------------------------------------------------ composer (lazy)
     let compLoading = null;
-    function openComposer() {
-        if (!st.me) { toast('Sign in to share a story', 'warn'); return; }
-        if (window.StoriesComposer) { window.StoriesComposer.open(ctx()); return; }
+    function loadComposer() {
+        if (window.StoriesComposer) return Promise.resolve();
         if (!compLoading) {
             compLoading = new Promise((res, rej) => {
                 const sc = document.createElement('script');
@@ -711,7 +860,25 @@
                 document.head.appendChild(sc);
             });
         }
-        compLoading.then(() => window.StoriesComposer.open(ctx())).catch(() => toast('Could not load the story editor.', 'error'));
+        return compLoading;
+    }
+    // Instagram flow: tapping "Add story" opens the photo/video picker straight away (it must happen
+    // synchronously inside the tap or browsers block it); the editor appears once something is chosen.
+    function openComposer() {
+        if (!st.me) { toast('Sign in to share a story', 'warn'); return; }
+        document.querySelectorAll('input.st-picker').forEach(x => x.remove());
+        const inp = document.createElement('input');
+        inp.type = 'file'; inp.multiple = true; inp.hidden = true; inp.className = 'st-picker';
+        inp.accept = 'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime';
+        document.body.appendChild(inp);
+        inp.addEventListener('change', () => {
+            const files = [...inp.files]; inp.remove();
+            if (!files.length) return;
+            loadComposer().then(() => window.StoriesComposer.open(ctx(), files)).catch(() => toast('Could not load the story editor.', 'error'));
+        });
+        inp.addEventListener('cancel', () => inp.remove());
+        loadComposer().catch(() => { /* retried on selection */ });   // warm up while the dialog is open
+        inp.click();
     }
     function ctx() {
         return { db, me: st.me, cfg: CFG, toast, now, onPublished: skew => { if (typeof skew === 'number') st.skew = skew; } };
@@ -722,8 +889,8 @@
     // TTL can lag by up to a day, so each member's browser also removes THEIR OWN expired
     // stories (and the reactions under them) as a safety net; the admin page sweeps everyone's.
     async function deleteStoryDoc(ref) {
-        const rs = await ref.collection('reactions').get();
-        const b = db.batch(); rs.forEach(d => b.delete(d.ref)); b.delete(ref);
+        const [rs, vs] = await Promise.all([ref.collection('reactions').get(), ref.collection('views').get()]);
+        const b = db.batch(); rs.forEach(d => b.delete(d.ref)); vs.forEach(d => b.delete(d.ref)); b.delete(ref);
         await b.commit();
     }
     async function sweepMine() {
@@ -757,5 +924,5 @@
     function boot() { auth.onAuthStateChanged(onUser); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
-    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.2.0' };
+    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.3.0' };
 })();

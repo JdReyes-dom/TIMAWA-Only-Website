@@ -1973,7 +1973,7 @@
         ::-webkit-scrollbar-track { background: var(--admin-border); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: var(--admin-gradient); border-radius: 10px; }
     </style>
-    <link rel="stylesheet" href="stories.css?v=1.2.0" />
+    <link rel="stylesheet" href="stories.css?v=1.3.0" />
 </head>
 <body>
     <!-- ===== LOADING OVERLAY ===== -->
@@ -6493,8 +6493,8 @@
                 sweepTried.add(s.id);
                 try {
                     const ref = db.collection('stories').doc(s.id);
-                    const rs = await ref.collection('reactions').get();
-                    const b = db.batch(); rs.forEach(d => b.delete(d.ref)); b.delete(ref);
+                    const [rs, vs] = await Promise.all([ref.collection('reactions').get(), ref.collection('views').get()]);
+                    const b = db.batch(); rs.forEach(d => b.delete(d.ref)); vs.forEach(d => b.delete(d.ref)); b.delete(ref);
                     await b.commit();
                 } catch (e) { console.warn('Expired story cleanup failed:', s.id, e.code || e.message); }
             }
@@ -6587,8 +6587,8 @@
                         await ref.update({ status: 'active', removedAt: firebase.firestore.FieldValue.delete(), removedBy: firebase.firestore.FieldValue.delete(), removalReason: firebase.firestore.FieldValue.delete() });
                         showToast('Story restored.', 'success');
                     } else if (action === 'delete') {
-                        const rs = await ref.collection('reactions').get();
-                        const b = db.batch(); rs.forEach(d => b.delete(d.ref)); b.delete(ref);
+                        const [rs, vs] = await Promise.all([ref.collection('reactions').get(), ref.collection('views').get()]);
+                        const b = db.batch(); rs.forEach(d => b.delete(d.ref)); vs.forEach(d => b.delete(d.ref)); b.delete(ref);
                         await b.commit();
                         showToast('Story deleted permanently.', 'success');
                     }
@@ -6727,7 +6727,7 @@
     </script>
 
     <script src="idle-logout.js"></script>
-    <script src="stories-shared.js?v=1.2.0"></script>
-    <script src="stories.js?v=1.2.0"></script>
+    <script src="stories-shared.js?v=1.3.0"></script>
+    <script src="stories.js?v=1.3.0"></script>
 </body>
 </html>
