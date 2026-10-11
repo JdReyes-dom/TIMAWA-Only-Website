@@ -6,6 +6,10 @@
    ★ CONCEPTS ★  every theme is a different scene, except forest / sakura /
    aurora, which keep their concept and were upgraded.
 
+   ★ NEW CONCEPTS ★  Blossom "Bloom", Sunshine "Golden Hour", Café "Cozy Corner".
+   Shapes are tiny inline-SVG masks filled with theme variables; each of the
+   three themes animates exactly 3 elements (transform / opacity only).
+
    ★ LIGHTWEIGHT RULES ★
    - Scenes are gradients, clip-paths and tiny inline SVGs. No images, no filter:blur.
    - Only transform / opacity are animated, and only on a handful of elements
@@ -101,25 +105,23 @@
 @keyframes syBirds{0%{transform:translate3d(-20vw,0,0)}50%{transform:translate3d(45vw,-5vh,0)}100%{transform:translate3d(115vw,2vh,0)}}
 
 /* ================================================================
-   -------- PINK — "Balloon Sky" --------
+   -------- PINK — "Bloom" --------
+   Two giant mandala flowers turn against each other (moire) while
+   notched petals drift across; bokeh glows sit behind (::before).
+   SVG masks are filled with theme colours -> works in light + dark.
+   Animated (3): .bl-a + .bl-b rotate, ::after petals translate.
    ================================================================ */
-[data-timawa-theme="pink"] .theme-bg-base{background:linear-gradient(180deg,#fff3fa 0%,#ffe1f0 45%,#ffd0e8 100%)}
-[data-timawa-theme="pink"][data-timawa-mode="dark"] .theme-bg-base{background:linear-gradient(180deg,#1b0c18 0%,#2a1226 55%,#3a1a33 100%)}
-[data-timawa-theme="pink"] .theme-bg-shapes{--bl-c:#ffffff;--bl-c2:#ffeaf6;--bl-sp:rgba(236,72,153,.55);--bl-o:.9}
-[data-timawa-theme="pink"][data-timawa-mode="dark"] .theme-bg-shapes{--bl-c:#4a2444;--bl-c2:#3a1d37;--bl-sp:rgba(255,200,235,.7);--bl-o:.75}
-.bl-sparkle{top:0;left:0;right:0;height:60%;
- background:radial-gradient(2px 2px at 10% 20%,var(--bl-sp),transparent),radial-gradient(1.6px 1.6px at 24% 46%,var(--bl-sp),transparent),radial-gradient(2.2px 2.2px at 38% 12%,var(--bl-sp),transparent),radial-gradient(1.6px 1.6px at 52% 38%,var(--bl-sp),transparent),radial-gradient(2px 2px at 66% 18%,var(--bl-sp),transparent),radial-gradient(1.6px 1.6px at 78% 52%,var(--bl-sp),transparent),radial-gradient(2.2px 2.2px at 90% 26%,var(--bl-sp),transparent),radial-gradient(1.6px 1.6px at 6% 64%,var(--bl-sp),transparent)}
-.bl-b{top:0;width:clamp(46px,7vw,96px);opacity:var(--bl-o);left:var(--x);animation:blRise var(--d) linear var(--dl) infinite;will-change:transform}
-.bl-b svg{display:block;width:100%;height:auto}
-.bl-b .a{fill:var(--p1)}.bl-b .b{fill:var(--p2)}.bl-b .r{fill:none;stroke:var(--p1);stroke-width:1.2}.bl-b .k{fill:#b9855a}
-.bl-b.b1{--x:12%;--d:80s;--dl:-14s;--p1:#ff6fae;--p2:#ffd0e6}
-.bl-b.b2{--x:68%;--d:100s;--dl:-60s;--p1:#7fb6ff;--p2:#dcecff;width:clamp(38px,5.6vw,80px)}
-.bl-b.b3{--x:40%;--d:120s;--dl:-95s;--p1:#ffa85c;--p2:#ffe3c6;width:clamp(30px,4.4vw,64px)}
-.bl-clouds{left:-6%;right:-6%;bottom:-2%;height:30%;
- background:radial-gradient(ellipse 12% 58% at 6% 100%,var(--bl-c) 0 97%,transparent 100%),radial-gradient(ellipse 16% 80% at 20% 100%,var(--bl-c) 0 97%,transparent 100%),radial-gradient(ellipse 12% 52% at 34% 100%,var(--bl-c) 0 97%,transparent 100%),radial-gradient(ellipse 18% 90% at 50% 100%,var(--bl-c) 0 97%,transparent 100%),radial-gradient(ellipse 13% 60% at 66% 100%,var(--bl-c) 0 97%,transparent 100%),radial-gradient(ellipse 17% 82% at 80% 100%,var(--bl-c) 0 97%,transparent 100%),radial-gradient(ellipse 12% 56% at 94% 100%,var(--bl-c) 0 97%,transparent 100%)}
-.bl-clouds.back{bottom:6%;height:26%;left:-14%;right:-2%;
- background:radial-gradient(ellipse 14% 70% at 12% 100%,var(--bl-c2) 0 97%,transparent 100%),radial-gradient(ellipse 18% 90% at 40% 100%,var(--bl-c2) 0 97%,transparent 100%),radial-gradient(ellipse 15% 66% at 62% 100%,var(--bl-c2) 0 97%,transparent 100%),radial-gradient(ellipse 18% 84% at 88% 100%,var(--bl-c2) 0 97%,transparent 100%)}
-@keyframes blRise{0%{transform:translate3d(0,108vh,0)}50%{transform:translate3d(18px,50vh,0)}100%{transform:translate3d(-12px,-30vh,0)}}
+[data-timawa-theme="pink"] .theme-bg-base{background:linear-gradient(160deg,#fff7fb 0%,#ffe6f1 48%,#fdd3e5 100%)}
+[data-timawa-theme="pink"][data-timawa-mode="dark"] .theme-bg-base{background:linear-gradient(160deg,#1c0f18 0%,#2b1425 50%,#1a0e16 100%)}
+[data-timawa-theme="pink"] .theme-bg-shapes{--bl-a:.3;--bl-b:.24;--bl-p:.5;--bl-pm:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 320'%3E%3Cg fill='black'%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.75' transform='translate(70 60) rotate(77) scale(1.3)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.95' transform='translate(210 40) rotate(24) scale(0.7)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.95' transform='translate(360 90) rotate(48) scale(1.1)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.95' transform='translate(520 50) rotate(29) scale(0.9)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.55' transform='translate(120 170) rotate(44) scale(1.3)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.75' transform='translate(280 150) rotate(35) scale(0.9)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.55' transform='translate(450 200) rotate(282) scale(1.3)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.55' transform='translate(590 150) rotate(289) scale(0.7)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.55' transform='translate(60 270) rotate(322) scale(0.7)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.95' transform='translate(240 260) rotate(299) scale(1.3)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.55' transform='translate(400 285) rotate(113) scale(0.7)'/%3E%3Cpath d='M0,12 C-12,4 -12,-8 -5,-12 L0,-7 L5,-12 C12,-8 12,4 0,12Z' fill-opacity='0.95' transform='translate(560 270) rotate(68) scale(1.1)'/%3E%3C/g%3E%3C/svg%3E")}
+[data-timawa-theme="pink"][data-timawa-mode="dark"] .theme-bg-shapes{--bl-a:.34;--bl-b:.28;--bl-p:.42}
+.bl-a,.bl-b{width:var(--s);aspect-ratio:1;-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat;will-change:transform}
+.bl-a{--s:clamp(560px,105vmin,1000px);--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cg fill='black'%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(0 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(30 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(60 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(90 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(120 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(150 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(180 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(210 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(240 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(270 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(300 200 200)'/%3E%3Cpath d='M200,200 C168,150 172,70 200,22 C228,70 232,150 200,200Z' fill-opacity='.9' transform='rotate(330 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(15 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(45 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(75 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(105 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(135 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(165 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(195 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(225 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(255 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(285 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(315 200 200)'/%3E%3Cpath d='M200,200 C184,172 187,125 200,98 C213,125 216,172 200,200Z' fill-opacity='.55' transform='rotate(345 200 200)'/%3E%3Ccircle cx='249.2' cy='16.5' r='4' fill-opacity='.7'/%3E%3Ccircle cx='334.4' cy='65.6' r='4' fill-opacity='.7'/%3E%3Ccircle cx='383.5' cy='150.8' r='4' fill-opacity='.7'/%3E%3Ccircle cx='383.5' cy='249.2' r='4' fill-opacity='.7'/%3E%3Ccircle cx='334.4' cy='334.4' r='4' fill-opacity='.7'/%3E%3Ccircle cx='249.2' cy='383.5' r='4' fill-opacity='.7'/%3E%3Ccircle cx='150.8' cy='383.5' r='4' fill-opacity='.7'/%3E%3Ccircle cx='65.6' cy='334.4' r='4' fill-opacity='.7'/%3E%3Ccircle cx='16.5' cy='249.2' r='4' fill-opacity='.7'/%3E%3Ccircle cx='16.5' cy='150.8' r='4' fill-opacity='.7'/%3E%3Ccircle cx='65.6' cy='65.6' r='4' fill-opacity='.7'/%3E%3Ccircle cx='150.8' cy='16.5' r='4' fill-opacity='.7'/%3E%3Ccircle cx='200' cy='200' r='9'/%3E%3C/g%3E%3C/svg%3E");top:calc(var(--s)*-.34);right:calc(var(--s)*-.34);
+ background:radial-gradient(circle closest-side,var(--theme-accent),var(--theme-primary) 85%);opacity:var(--bl-a);animation:blSpin 160s linear infinite}
+.bl-b{--s:clamp(480px,88vmin,840px);--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cg fill='black'%3E%3Cellipse cx='200' cy='112' rx='36' ry='86' fill-opacity='.7' transform='rotate(0 200 200)'/%3E%3Cellipse cx='200' cy='112' rx='36' ry='86' fill-opacity='.7' transform='rotate(45 200 200)'/%3E%3Cellipse cx='200' cy='112' rx='36' ry='86' fill-opacity='.7' transform='rotate(90 200 200)'/%3E%3Cellipse cx='200' cy='112' rx='36' ry='86' fill-opacity='.7' transform='rotate(135 200 200)'/%3E%3Cellipse cx='200' cy='112' rx='36' ry='86' fill-opacity='.7' transform='rotate(180 200 200)'/%3E%3Cellipse cx='200' cy='112' rx='36' ry='86' fill-opacity='.7' transform='rotate(225 200 200)'/%3E%3Cellipse cx='200' cy='112' rx='36' ry='86' fill-opacity='.7' transform='rotate(270 200 200)'/%3E%3Cellipse cx='200' cy='112' rx='36' ry='86' fill-opacity='.7' transform='rotate(315 200 200)'/%3E%3Cellipse cx='200' cy='150' rx='19' ry='44' fill-opacity='.55' transform='rotate(22.5 200 200)'/%3E%3Cellipse cx='200' cy='150' rx='19' ry='44' fill-opacity='.55' transform='rotate(67.5 200 200)'/%3E%3Cellipse cx='200' cy='150' rx='19' ry='44' fill-opacity='.55' transform='rotate(112.5 200 200)'/%3E%3Cellipse cx='200' cy='150' rx='19' ry='44' fill-opacity='.55' transform='rotate(157.5 200 200)'/%3E%3Cellipse cx='200' cy='150' rx='19' ry='44' fill-opacity='.55' transform='rotate(202.5 200 200)'/%3E%3Cellipse cx='200' cy='150' rx='19' ry='44' fill-opacity='.55' transform='rotate(247.5 200 200)'/%3E%3Cellipse cx='200' cy='150' rx='19' ry='44' fill-opacity='.55' transform='rotate(292.5 200 200)'/%3E%3Cellipse cx='200' cy='150' rx='19' ry='44' fill-opacity='.55' transform='rotate(337.5 200 200)'/%3E%3Ccircle cx='236.6' cy='11.5' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='306' cy='39.9' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='359.2' cy='92.6' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='388.1' cy='161.7' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='388.5' cy='236.6' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='360.1' cy='306' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='307.4' cy='359.2' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='238.3' cy='388.1' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='163.4' cy='388.5' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='94' cy='360.1' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='40.8' cy='307.4' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='11.9' cy='238.3' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='11.5' cy='163.4' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='39.9' cy='94' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='92.6' cy='40.8' r='3.2' fill-opacity='.6'/%3E%3Ccircle cx='161.7' cy='11.9' r='3.2' fill-opacity='.6'/%3E%3C/g%3E%3C/svg%3E");left:calc(var(--s)*-.34);bottom:calc(var(--s)*-.34);
+ background:radial-gradient(circle closest-side,color-mix(in srgb,var(--theme-primary-dark) 85%,transparent),var(--theme-accent) 90%);opacity:var(--bl-b);animation:blSpin 210s linear infinite reverse}
+@keyframes blSpin{to{transform:rotate(360deg)}}
+@keyframes blDrift{to{transform:translate3d(640px,320px,0)}}
 
 /* ================================================================
    -------- ★ FOREST — "Canopy Window" (upgraded) --------
@@ -238,32 +240,29 @@
 }
 
 /* ================================================================
-   -------- SUNSHINE — "Sunny Beach" --------
+   -------- SUNSHINE — "Golden Hour" --------
+   Low sun top-right, a slowly turning sunburst, a breathing halo,
+   a lens-flare chain (::before), rising golden dust (::after) and
+   layered amber hills with a grass fringe. Centre stays calm.
+   Animated (3): .sn-rays rotate, .sn-halo breathe, ::after dust.
    ================================================================ */
-[data-timawa-theme="sunshine"] .theme-bg-base{background:linear-gradient(180deg,#9fdcff 0%,#d9f3ff 40%,#fff3c4 58%)}
-[data-timawa-theme="sunshine"][data-timawa-mode="dark"] .theme-bg-base{background:linear-gradient(180deg,#071a2e 0%,#0f2c4a 45%,#1c4568 58%)}
-[data-timawa-theme="sunshine"] .theme-bg-shapes{--sn-ray:rgba(255,196,0,.3);--sn-sun:radial-gradient(circle,#fff7b0 0,#ffd92e 55%,#ffb800 100%);--sn-cl:rgba(255,255,255,.92);--sn-s1:#52c8ec;--sn-s2:#1f95c9;--sn-wv:rgba(255,255,255,.75);--sn-sd1:#f8e1a6;--sn-sd2:#ecc57f;--sn-ca:#ff5a5a;--sn-st:#fff;--sn-po:#8b5a2b;--sn-gl:#5b6b7a}
-[data-timawa-theme="sunshine"][data-timawa-mode="dark"] .theme-bg-shapes{--sn-ray:rgba(255,236,170,.14);--sn-sun:radial-gradient(circle,#fffbe0 0,#ffe9a6 60%,#f3cf72 100%);--sn-cl:rgba(170,200,240,.14);--sn-s1:#14507a;--sn-s2:#09283f;--sn-wv:rgba(170,220,255,.4);--sn-sd1:#3d3a52;--sn-sd2:#272540;--sn-ca:#b03a46;--sn-st:#c9c4d6;--sn-po:#3f2a14;--sn-gl:#aab8c8}
-.sn-sun{top:7%;right:13%;width:clamp(90px,15vmin,180px);aspect-ratio:1;border-radius:50%;background:var(--sn-sun);isolation:isolate}
-.sn-sun::before{content:'';position:absolute;inset:-70%;z-index:-1;border-radius:50%;background:repeating-conic-gradient(var(--sn-ray) 0 6deg,transparent 6deg 18deg);-webkit-mask-image:radial-gradient(circle closest-side,transparent 0 38%,#000 42%,transparent 100%);mask-image:radial-gradient(circle closest-side,transparent 0 38%,#000 42%,transparent 100%);animation:snSpin 120s linear infinite;will-change:transform}
-.sn-cloud{left:0;width:clamp(120px,19vw,250px);height:clamp(34px,5vw,64px);background:radial-gradient(ellipse 36% 70% at 28% 66%,var(--sn-cl) 0 96%,transparent 100%),radial-gradient(ellipse 34% 100% at 52% 56%,var(--sn-cl) 0 96%,transparent 100%),radial-gradient(ellipse 30% 66% at 76% 68%,var(--sn-cl) 0 96%,transparent 100%);will-change:transform}
-.sn-cloud.c1{top:12%;animation:snCloud 140s linear infinite}
-.sn-cloud.c2{top:27%;opacity:.8;animation:snCloud 190s linear -80s infinite}
-.sn-gull{top:24%;left:0;width:clamp(26px,3.4vw,44px);fill:none;stroke:var(--sn-gl);stroke-width:2.2;stroke-linecap:round;animation:snGull 70s linear -20s infinite;will-change:transform}
-.sn-sea{left:0;right:0;top:52%;height:30%;background:linear-gradient(180deg,var(--sn-s1),var(--sn-s2))}
-.sn-wave{left:0;width:calc(100% + 120px);height:12%;will-change:transform;background:radial-gradient(circle at 50% 100%,transparent 0 11px,var(--sn-wv) 12px 14px,transparent 15px) 0 0/40px 16px repeat-x}
-.sn-wave.w1{top:60%;animation:snWave 6s linear infinite}
-.sn-wave.w2{top:70%;opacity:.7;background-size:56px 20px;animation:snWave2 9s linear infinite reverse}
-.sn-sand{left:0;right:0;bottom:0;height:22%;background:linear-gradient(180deg,var(--sn-sd1),var(--sn-sd2));clip-path:polygon(0 30%,10% 18%,22% 28%,36% 12%,50% 24%,64% 10%,78% 22%,90% 12%,100% 20%,100% 100%,0 100%)}
-.sn-umb{left:16%;bottom:5%;width:clamp(76px,11vw,150px);rotate:-8deg}
-.sn-umb .po{fill:var(--sn-po)}.sn-umb .ca{fill:var(--sn-ca)}.sn-umb .st{fill:var(--sn-st)}
-.sn-ball{left:34%;bottom:5%;width:clamp(22px,3vw,40px);aspect-ratio:1;border-radius:50%;background:conic-gradient(#ff5a5a 0 25%,#fff 0 37.5%,#ffd23f 0 62.5%,#fff 0 75%,#3a9cff 0);animation:snSpin 20s linear infinite;will-change:transform}
-.sn-sun{animation:twBreathe 6s ease-in-out infinite alternate}
+[data-timawa-theme="sunshine"] .theme-bg-base{background:radial-gradient(circle at 78% 17%,rgba(255,249,205,.95) 0%,rgba(255,228,135,.5) 20%,rgba(255,214,120,0) 58%),linear-gradient(180deg,#fff6d6 0%,#ffe9a8 50%,#ffd9a0 100%)}
+[data-timawa-theme="sunshine"][data-timawa-mode="dark"] .theme-bg-base{background:radial-gradient(circle at 78% 17%,rgba(255,190,70,.42) 0%,rgba(255,150,40,.16) 22%,rgba(255,140,30,0) 56%),linear-gradient(180deg,#120b03 0%,#2a1a07 55%,#4a2c0c 100%)}
+[data-timawa-theme="sunshine"] .theme-bg-shapes{--sn-r1:rgba(255,205,70,.34);--sn-r2:rgba(255,160,50,.22);--sn-ro:1;--sn-d:rgba(255,190,40,.95);--sn-do:.75;--sn-fo:1;--sn-ho:1;--sn-hl1:rgba(251,191,36,.22);--sn-hl2:rgba(245,158,11,.2);--sn-hl3:rgba(194,110,12,.2)}
+[data-timawa-theme="sunshine"][data-timawa-mode="dark"] .theme-bg-shapes{--sn-ro:.55;--sn-do:.7;--sn-fo:.7;--sn-ho:.8;--sn-hl1:rgba(251,191,36,.2);--sn-hl2:rgba(245,158,11,.18);--sn-hl3:rgba(180,90,10,.22)}
+.sn-rays,.sn-halo,.sn-sun{left:78%;top:17%;translate:-50% -50%;border-radius:50%}
+.sn-halo,.sn-sun{--sn-s:clamp(96px,15vmin,170px);width:var(--sn-s);aspect-ratio:1}
+.sn-rays{width:clamp(900px,140vmax,1800px);aspect-ratio:1;
+ background:repeating-conic-gradient(from 0deg,var(--sn-r1) 0deg 2.5deg,transparent 2.5deg 9deg),repeating-conic-gradient(from 4deg,var(--sn-r2) 0deg 5deg,transparent 5deg 31deg);
+ -webkit-mask-image:radial-gradient(circle closest-side,#000,rgba(0,0,0,.55) 30%,transparent);mask-image:radial-gradient(circle closest-side,#000,rgba(0,0,0,.55) 30%,transparent);
+ opacity:var(--sn-ro);animation:snSpin 180s linear infinite;will-change:transform}
+.sn-halo{width:calc(var(--sn-s)*3.4);background:radial-gradient(circle,rgba(255,232,130,.6) 0%,rgba(255,190,60,.26) 34%,transparent 70%);animation:twBreathe 7s ease-in-out infinite alternate;will-change:transform}
+.sn-sun{background:radial-gradient(circle,#fffef2 0%,#fff3b0 26%,#ffd84a 58%,#ffa726 100%)}
+.sn-hills{left:0;right:0;bottom:0;height:38%;opacity:var(--sn-ho);--sn-gm:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 60'%3E%3Cg fill='black'%3E%3Cpath d='M4,60 C6,43 5,32.8 2,26 C11,36.2 11,46.4 12,60Z'/%3E%3Cpath d='M18,60 C20,34 24.5,18.4 27,8 C25,23.6 25,39.2 26,60Z'/%3E%3Cpath d='M32,60 C34,40 34,28 32,20 C39,32 39,44 40,60Z'/%3E%3Cpath d='M46,60 C48,32 53,15.2 56,4 C53,20.8 53,37.6 54,60Z'/%3E%3Cpath d='M60,60 C62,45 61.5,36 59,30 C67,39 67,48 68,60Z'/%3E%3Cpath d='M74,60 C76,36 80,21.6 82,12 C81,26.4 81,40.8 82,60Z'/%3E%3Cpath d='M88,60 C90,41 89,29.6 86,22 C95,33.4 95,44.8 96,60Z'/%3E%3Cpath d='M102,60 C104,33 108.5,16.8 111,6 C109,22.2 109,38.4 110,60Z'/%3E%3C/g%3E%3C/svg%3E");
+ background:radial-gradient(ellipse 60% 55% at 45% 100%,var(--sn-hl3) 0 98.5%,transparent 100%),radial-gradient(ellipse 80% 70% at 75% 100%,var(--sn-hl2) 0 98.5%,transparent 100%),radial-gradient(ellipse 65% 85% at 18% 100%,var(--sn-hl1) 0 98.5%,transparent 100%)}
+.sn-hills::after{content:"";position:absolute;left:0;right:0;bottom:0;height:60px;background:color-mix(in srgb,var(--theme-primary-dark) 40%,transparent);
+ -webkit-mask:var(--sn-gm) bottom/120px 60px repeat-x;mask:var(--sn-gm) bottom/120px 60px repeat-x}
 @keyframes snSpin{to{transform:rotate(360deg)}}
-@keyframes snCloud{from{transform:translate3d(-30vw,0,0)}to{transform:translate3d(130vw,0,0)}}
-@keyframes snGull{0%{transform:translate3d(-10vw,0,0)}50%{transform:translate3d(50vw,-3vh,0)}100%{transform:translate3d(110vw,2vh,0)}}
-@keyframes snWave{to{transform:translate3d(-40px,0,0)}}
-@keyframes snWave2{to{transform:translate3d(-56px,0,0)}}
 
 /* ================================================================
    -------- STARRY — "Campsite" --------
@@ -293,54 +292,50 @@
 @keyframes stFire{from{opacity:.7;transform:scale(.94)}to{opacity:1;transform:scale(1.06)}}
 
 /* ================================================================
-   -------- CAFE — "Rainy Window" --------
+   -------- CAFE — "Cozy Corner" --------
+   A lamp-lit corner of a cosy cafe: warm wallpaper and wood panelling,
+   three pendant lamps spilling amber light, twinkling string lights,
+   a shelf of books and a plant, a wooden counter with a steaming latte
+   and croissant, and a cat asleep on a cushion. Centre stays calm.
+   Animated (3): .cf-lights twinkle, .cf-steam rise, .cf-cat breathe.
    ================================================================ */
-[data-timawa-theme="cafe"] .theme-bg-base{background:linear-gradient(180deg,#f8ecda 0%,#efd9bb 55%,#e5c8a0 100%)}
-[data-timawa-theme="cafe"][data-timawa-mode="dark"] .theme-bg-base{background:linear-gradient(180deg,#120b07 0%,#1f140c 60%,#2a1a10 100%)}
-[data-timawa-theme="cafe"] .theme-bg-shapes{--cf-b1:rgba(240,150,60,.5);--cf-b2:rgba(224,96,96,.4);--cf-b3:rgba(255,214,120,.55);--cf-rain:rgba(110,80,50,.4);--cf-rain2:rgba(110,80,50,.25);--cf-wood:rgba(150,104,62,.55);--cf-wood2:#b98a5a;--cf-mug:#fff7ea;--cf-mug2:#e7d3b8;--cf-cof:#6b4226;--cf-st:rgba(120,90,60,.35);--cf-drop:rgba(255,255,255,.7)}
-[data-timawa-theme="cafe"][data-timawa-mode="dark"] .theme-bg-shapes{--cf-b1:rgba(255,170,70,.55);--cf-b2:rgba(255,110,120,.38);--cf-b3:rgba(255,226,140,.5);--cf-rain:rgba(255,232,205,.38);--cf-rain2:rgba(255,232,205,.2);--cf-wood:rgba(44,27,16,.95);--cf-wood2:#3a2415;--cf-mug:#d9c4a8;--cf-mug2:#a88e6c;--cf-cof:#2a170b;--cf-st:rgba(255,235,210,.3);--cf-drop:rgba(255,235,210,.35)}
-.cf-bokeh{left:0;right:0;top:24%;bottom:0;
- background:radial-gradient(circle clamp(26px,5vw,60px) at 8% 68%,var(--cf-b1) 0 55%,transparent 100%),radial-gradient(circle clamp(18px,3vw,38px) at 16% 40%,var(--cf-b3) 0 55%,transparent 100%),radial-gradient(circle clamp(30px,6vw,72px) at 27% 74%,var(--cf-b2) 0 55%,transparent 100%),radial-gradient(circle clamp(16px,2.6vw,34px) at 36% 30%,var(--cf-b1) 0 55%,transparent 100%),radial-gradient(circle clamp(24px,4.4vw,52px) at 46% 58%,var(--cf-b3) 0 55%,transparent 100%),radial-gradient(circle clamp(20px,3.6vw,44px) at 55% 82%,var(--cf-b1) 0 55%,transparent 100%),radial-gradient(circle clamp(30px,5.6vw,66px) at 66% 46%,var(--cf-b2) 0 55%,transparent 100%),radial-gradient(circle clamp(16px,2.8vw,36px) at 74% 70%,var(--cf-b3) 0 55%,transparent 100%),radial-gradient(circle clamp(26px,5vw,60px) at 84% 34%,var(--cf-b1) 0 55%,transparent 100%),radial-gradient(circle clamp(18px,3.2vw,40px) at 92% 66%,var(--cf-b2) 0 55%,transparent 100%)}
-.cf-drops{left:0;right:0;top:0;bottom:0;
- background:radial-gradient(ellipse 3px 6px at 12% 22%,var(--cf-drop),transparent),radial-gradient(ellipse 4px 8px at 22% 52%,var(--cf-drop),transparent),radial-gradient(ellipse 3px 6px at 34% 18%,var(--cf-drop),transparent),radial-gradient(ellipse 4px 8px at 47% 66%,var(--cf-drop),transparent),radial-gradient(ellipse 3px 6px at 58% 30%,var(--cf-drop),transparent),radial-gradient(ellipse 4px 8px at 71% 56%,var(--cf-drop),transparent),radial-gradient(ellipse 3px 6px at 83% 24%,var(--cf-drop),transparent),radial-gradient(ellipse 4px 8px at 93% 62%,var(--cf-drop),transparent)}
-.cf-rain{left:0;right:0;top:-120px;height:calc(100% + 120px);will-change:transform;
- background:
- linear-gradient(0deg,var(--cf-rain) 0,transparent 34px) 6% 0px/1.5px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 26px) 15% 40px/1.5px 60px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 44px) 23% 10px/2px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 30px) 31% 70px/1.5px 40px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 38px) 40% 20px/1.5px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 28px) 48% 90px/2px 60px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 36px) 57% 5px/1.5px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 24px) 65% 55px/1.5px 40px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 42px) 73% 30px/2px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 30px) 82% 80px/1.5px 60px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 36px) 90% 12px/1.5px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain) 0,transparent 26px) 97% 50px/1.5px 40px repeat-y}
-.cf-rain.r2{
- background:
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 24px) 3% 10px/1px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 20px) 11% 60px/1px 60px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 30px) 19% 0px/1px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 22px) 27% 40px/1px 40px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 26px) 36% 85px/1px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 20px) 44% 25px/1px 60px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 28px) 52% 70px/1px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 22px) 61% 15px/1px 40px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 24px) 69% 95px/1px 60px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 28px) 78% 35px/1px 120px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 20px) 86% 60px/1px 40px repeat-y,
- linear-gradient(0deg,var(--cf-rain2) 0,transparent 26px) 94% 5px/1px 120px repeat-y;animation:cfRain 3.4s linear infinite}
-.cf-rain.r1{animation:cfRain 1.9s linear infinite}
-.cf-frame{inset:0;box-shadow:inset 0 0 0 clamp(8px,1.5vw,18px) var(--cf-wood);
- background:linear-gradient(var(--cf-wood),var(--cf-wood)) 50% 0/clamp(6px,1vw,12px) 100% no-repeat,linear-gradient(var(--cf-wood),var(--cf-wood)) 0 44%/100% clamp(6px,1vw,12px) no-repeat}
-.cf-sill{left:0;right:0;bottom:0;height:clamp(34px,8vh,84px);background:linear-gradient(180deg,var(--cf-wood2),color-mix(in srgb,var(--cf-wood2) 70%,#000))}
-.cf-mug{right:9%;bottom:calc(clamp(34px,8vh,84px) - 8px);width:clamp(64px,9vw,120px)}
-.cf-mug .m{fill:var(--cf-mug)}.cf-mug .h{fill:none;stroke:var(--cf-mug);stroke-width:8;stroke-linecap:round}.cf-mug .c{fill:var(--cf-cof)}.cf-mug .s{fill:var(--cf-mug2);opacity:.6}
-.cf-steam{right:calc(9% + clamp(14px,2vw,26px));bottom:calc(clamp(34px,8vh,84px) + clamp(56px,8vw,100px));width:clamp(26px,3.4vw,44px);height:clamp(50px,7vw,90px);
- background:radial-gradient(ellipse 40% 18% at 40% 85%,var(--cf-st),transparent),radial-gradient(ellipse 36% 18% at 62% 58%,var(--cf-st),transparent),radial-gradient(ellipse 34% 16% at 42% 30%,var(--cf-st),transparent);animation:cfSteam 5s ease-out infinite;will-change:transform,opacity}
-@keyframes cfRain{to{transform:translate3d(0,120px,0)}}
-@keyframes cfSteam{0%{transform:translate3d(0,14px,0);opacity:0}30%{opacity:1}100%{transform:translate3d(8px,-26px,0);opacity:0}}
+[data-timawa-theme="cafe"] .theme-bg-base{background:linear-gradient(180deg,#f9e9d0 0%,#f1d3a6 55%,#e6bb86 100%)}
+[data-timawa-theme="cafe"][data-timawa-mode="dark"] .theme-bg-base{background:linear-gradient(180deg,#140b06 0%,#22140a 60%,#2f1c0e 100%)}
+[data-timawa-theme="cafe"] .theme-bg-shapes{--cf-th:clamp(70px,15vh,150px);--cf-mw:clamp(120px,16vw,230px);
+ --cf-wood:#a56a3c;--cf-wood2:#7e4a24;--cf-hi:#c78a55;--cf-grain:rgba(70,35,10,.08);--cf-pan:#e8c99d;--cf-pan2:#d3ae7c;--cf-rail:#bd8a56;
+ --cf-glow:rgba(255,196,110,.5);--cf-amb:rgba(255,205,125,.38);--cf-shade:#d9803f;--cf-shade2:#a85a2a;--cf-cord:#6b4a2c;--cf-dot:rgba(150,100,50,.13);
+ --cf-mug:#fbf3e6;--cf-cof:#5a3520;--cf-st:rgba(140,100,60,.4);--cf-cat:#e9a65e;--cf-cat2:#b8742e;--cf-cu:#c46a52;--cf-cu2:#a3523d;--cf-obj:1}
+[data-timawa-theme="cafe"][data-timawa-mode="dark"] .theme-bg-shapes{--cf-wood:#4a2b16;--cf-wood2:#2e1a0d;--cf-hi:#6a4326;--cf-grain:rgba(0,0,0,.2);--cf-pan:#2a1a10;--cf-pan2:#20140b;--cf-rail:#3d2616;
+ --cf-glow:rgba(255,170,70,.5);--cf-amb:rgba(255,170,80,.2);--cf-shade:#b8682c;--cf-shade2:#7d421b;--cf-cord:#8a6a48;--cf-dot:rgba(255,200,130,.05);
+ --cf-mug:#e9dcc6;--cf-cof:#3a2012;--cf-st:rgba(255,235,205,.4);--cf-cat:#c98840;--cf-cat2:#8f5a24;--cf-cu:#8c4a3a;--cf-cu2:#6e3a2e;--cf-obj:.85}
+.cf-panel{left:0;right:0;bottom:var(--cf-th);height:24%;
+ background:linear-gradient(var(--cf-rail),var(--cf-rail)) 0 0/100% 8px no-repeat,linear-gradient(180deg,transparent 40%,rgba(0,0,0,.1)),repeating-linear-gradient(90deg,var(--cf-pan) 0 100px,var(--cf-pan2) 100px 103px)}
+.cf-counter{left:0;right:0;bottom:0;height:var(--cf-th);box-shadow:0 -10px 30px rgba(0,0,0,.16);
+ background:repeating-linear-gradient(90deg,transparent 0 46px,var(--cf-grain) 46px 48px,transparent 48px 120px),linear-gradient(180deg,var(--cf-hi) 0 6px,var(--cf-wood) 6px 34%,var(--cf-wood2))}
+.cf-lamp{--w:clamp(54px,6.4vw,92px);top:var(--c);width:var(--w);height:calc(var(--w)*.56);border-radius:50% 50% 8% 8%/92% 92% 10% 10%;
+ background:linear-gradient(90deg,var(--cf-shade2),var(--cf-shade) 38%,color-mix(in srgb,var(--cf-shade) 70%,#fff) 52%,var(--cf-shade2))}
+.cf-lamp::before{content:"";position:absolute;left:calc(50% - 1px);bottom:100%;width:2px;height:var(--c);background:var(--cf-cord)}
+.cf-lamp::after{content:"";position:absolute;left:50%;top:100%;width:calc(var(--w)*5);aspect-ratio:1;translate:-50% -50%;border-radius:50%;
+ background:radial-gradient(circle,rgba(255,244,200,.95) 0 2.2%,var(--cf-glow) 9%,transparent 62%)}
+.cf-lamp.l1{left:9%;--c:15vh}
+.cf-lamp.l2{left:21%;--c:7vh;--w:clamp(44px,5vw,72px)}
+.cf-lamp.l3{right:8%;--c:11vh}
+.cf-lights{left:0;right:0;top:0;height:clamp(34px,4.6vw,56px);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 46'%3E %3Cpath d='M0 4 Q70 44 140 4' fill='none' stroke='%236b4a2c' stroke-width='1.6'/%3E %3Cg%3E%3Ccircle cx='28' cy='17' r='9' fill='%23ffd27a' fill-opacity='.28'/%3E%3Ccircle cx='28' cy='17' r='3.6' fill='%23ffd27a'/%3E %3Ccircle cx='70' cy='24' r='9' fill='%23ffb4a0' fill-opacity='.28'/%3E%3Ccircle cx='70' cy='24' r='3.6' fill='%23ffb4a0'/%3E %3Ccircle cx='112' cy='17' r='9' fill='%23ffe9a8' fill-opacity='.3'/%3E%3Ccircle cx='112' cy='17' r='3.6' fill='%23ffe9a8'/%3E%3C/g%3E%3C/svg%3E") 0 0/clamp(110px,10vw,150px) auto repeat-x;animation:twOp 3.2s ease-in-out infinite alternate;will-change:opacity}
+.cf-shelf{right:4%;top:27%;width:clamp(150px,16vw,240px);opacity:var(--cf-obj)}
+.cf-shelf .w{fill:var(--cf-wood)}
+.cf-cat{left:8%;bottom:calc(var(--cf-th) - 8px);width:clamp(130px,17vw,250px)}
+.cf-cat .cu{fill:var(--cf-cu)}.cf-cat .cu2{fill:var(--cf-cu2)}.cf-cat .c{fill:var(--cf-cat)}
+.cf-cat .tl{fill:none;stroke:var(--cf-cat);stroke-width:15;stroke-linecap:round}
+.cf-cat .s{fill:none;stroke:var(--cf-cat2);stroke-width:5;stroke-linecap:round;opacity:.8}
+.cf-cat .e{fill:none;stroke:#5a3a1a;stroke-width:2.4;stroke-linecap:round}
+.cf-cat .b{transform-box:fill-box;transform-origin:50% 100%;animation:cfBreathe 4.5s ease-in-out infinite alternate;will-change:transform}
+.cf-mug{right:7%;bottom:calc(var(--cf-th) - 10px);width:var(--cf-mw)}
+.cf-mug .m{fill:var(--cf-mug)}.cf-mug .h{fill:none;stroke:var(--cf-mug);stroke-width:9;stroke-linecap:round}.cf-mug .c{fill:var(--cf-cof)}
+.cf-steam{width:calc(var(--cf-mw)*.3);height:calc(var(--cf-mw)*.8);right:calc(7% + var(--cf-mw)*.2);bottom:calc(var(--cf-th) - 10px + var(--cf-mw)*.34);
+ background:radial-gradient(ellipse 38% 16% at 42% 86%,var(--cf-st),transparent),radial-gradient(ellipse 34% 16% at 60% 58%,var(--cf-st),transparent),radial-gradient(ellipse 32% 15% at 44% 30%,var(--cf-st),transparent);
+ animation:cfSteam 5.5s ease-in-out infinite;will-change:transform,opacity}
+@keyframes cfBreathe{from{scale:1}to{scale:1.03 1.06}}
+@keyframes cfSteam{0%{transform:translate3d(0,16px,0);opacity:0}30%{opacity:1}100%{transform:translate3d(10px,-30px,0);opacity:0}}
 
 /* ================================================================
    -------- CRIMSON — "Poppy Meadow" --------
@@ -1029,9 +1024,6 @@
 .oc-jelly{animation:twBob 5s ease-in-out infinite alternate}
 /* sunset */
 /* blossom */
-.bl-sparkle{animation:twOp 3.5s ease-in-out infinite alternate}
-.bl-clouds{animation:twDrift 34s ease-in-out infinite alternate}
-.bl-clouds.back{animation-duration:46s;animation-direction:alternate-reverse}
 /* sunshine */
 /* starry */
 .st-flame{transform-origin:50% 100%;animation:twFlick .9s ease-in-out infinite}
@@ -1039,8 +1031,6 @@
 .st-pine.p2{animation-delay:-2s}.st-pine.p4{animation-delay:-4s}
 .st-milky{animation:twOpSoft 9s ease-in-out infinite alternate}
 /* café */
-.cf-bokeh{animation:twOpSoft 6s ease-in-out infinite alternate}
-.cf-drops{animation:twOp 5s ease-in-out infinite alternate}
 /* crimson */
 /* maroon */
 /* nebula */
@@ -1217,11 +1207,18 @@ html[data-tw-paused] .theme-bg-shapes .shape::before, html[data-tw-paused] .them
 /* ================= PINK ================= */
 [data-timawa-theme=pink] { --tw6-vig: rgba(236,72,153,.1); --tw6-grade: linear-gradient(180deg, rgba(255,255,255,.25), transparent 40%); }
 [data-timawa-theme=pink][data-timawa-mode=dark] { --tw6-vig: rgba(10,0,10,.45); --tw6-grade: linear-gradient(180deg, rgba(120,40,110,.15), transparent 60%); }
-[data-timawa-theme=pink] .theme-bg-shapes { --tw6-c: rgba(255,255,255,.95); }
-[data-timawa-theme=pink][data-timawa-mode=dark] .theme-bg-shapes { --tw6-c: rgba(255,200,235,.85); }
-[data-timawa-theme=pink] .theme-bg-shapes::before { background: radial-gradient(circle 38vmax at 15% 20%, rgba(255,170,215,.45), transparent 70%), radial-gradient(circle 34vmax at 85% 60%, rgba(190,170,255,.35), transparent 70%); animation: tw6Dr 24s ease-in-out infinite alternate; will-change: translate; }
-[data-timawa-theme=pink][data-timawa-mode=dark] .theme-bg-shapes::before { background: radial-gradient(circle 38vmax at 15% 20%, rgba(236,72,153,.2), transparent 70%), radial-gradient(circle 34vmax at 85% 60%, rgba(139,92,246,.18), transparent 70%); }
-[data-timawa-theme=pink] .theme-bg-shapes::after { bottom: 35%; background-image: var(--tw6-s); background-size: 34% 100%; animation: tw6Tw 3.5s ease-in-out infinite alternate; will-change: opacity; }
+[data-timawa-theme=pink] .theme-bg-shapes::before { background:
+    radial-gradient(circle 70px at 12% 74%, color-mix(in srgb, var(--theme-accent) 40%, transparent), color-mix(in srgb, var(--theme-accent) 14%, transparent) 70%, transparent),
+    radial-gradient(circle 46px at 30% 20%, color-mix(in srgb, var(--theme-primary) 24%, transparent), color-mix(in srgb, var(--theme-primary) 8%, transparent) 70%, transparent),
+    radial-gradient(circle 92px at 86% 62%, color-mix(in srgb, var(--theme-accent) 34%, transparent), color-mix(in srgb, var(--theme-accent) 12%, transparent) 70%, transparent),
+    radial-gradient(circle 34px at 63% 84%, color-mix(in srgb, var(--theme-primary) 26%, transparent), transparent),
+    radial-gradient(circle 56px at 50% 10%, color-mix(in srgb, var(--theme-accent) 30%, transparent), transparent),
+    radial-gradient(ellipse 60% 50% at 0 0, color-mix(in srgb, var(--theme-accent) 30%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 55% at 100% 100%, color-mix(in srgb, var(--theme-primary) 18%, transparent), transparent 70%); }
+[data-timawa-theme=pink] .theme-bg-shapes::after { top: -320px; left: -640px;
+    background: linear-gradient(135deg, var(--theme-accent), var(--theme-primary));
+    -webkit-mask: var(--bl-pm) 0 0/640px 320px repeat; mask: var(--bl-pm) 0 0/640px 320px repeat;
+    opacity: var(--bl-p); animation: blDrift 34s linear infinite; will-change: transform; }
 
 /* ================= FOREST ================= */
 [data-timawa-theme=forest] { --tw6-vig: rgba(5,50,25,.2); --tw6-grade: linear-gradient(180deg, rgba(255,250,200,.14), transparent 45%); }
@@ -1234,12 +1231,24 @@ html[data-tw-paused] .theme-bg-shapes .shape::before, html[data-tw-paused] .them
 
 /* ================= SUNSHINE ================= */
 [data-timawa-theme=sunshine] { --tw6-vig: rgba(255,170,40,.12); --tw6-grade: linear-gradient(180deg, rgba(255,240,170,.18), transparent 45%); }
-[data-timawa-theme=sunshine][data-timawa-mode=dark] { --tw6-vig: rgba(0,5,20,.5); --tw6-grade: linear-gradient(180deg, rgba(10,30,70,.25), transparent 60%); }
-[data-timawa-theme=sunshine] .theme-bg-shapes { --tw6-c: rgba(255,255,255,.95); }
-[data-timawa-theme=sunshine][data-timawa-mode=dark] .theme-bg-shapes { --tw6-c: rgba(190,225,255,.8); }
-[data-timawa-theme=sunshine] .theme-bg-shapes::before { background: radial-gradient(circle 55vmax at 85% 0, rgba(255,240,150,.55), transparent 65%); animation: tw6Pulse 7s ease-in-out infinite alternate; will-change: opacity; }
-[data-timawa-theme=sunshine][data-timawa-mode=dark] .theme-bg-shapes::before { background: radial-gradient(circle 55vmax at 85% 0, rgba(180,210,255,.16), transparent 65%); }
-[data-timawa-theme=sunshine] .theme-bg-shapes::after { top: 52%; bottom: 18%; background-image: var(--tw6-s); background-size: 25% 100%; animation: tw6Tw 2.6s ease-in-out infinite alternate; will-change: opacity; }
+[data-timawa-theme=sunshine][data-timawa-mode=dark] { --tw6-vig: rgba(20,8,0,.5); --tw6-grade: linear-gradient(180deg, rgba(255,150,40,.1), transparent 60%); }
+[data-timawa-theme=sunshine] .theme-bg-shapes::before { opacity: var(--sn-fo); background:
+    radial-gradient(circle 26px at 66% 31%, rgba(255,236,160,.2), transparent),
+    radial-gradient(circle 14px at 55% 44%, rgba(255,170,120,.26), transparent),
+    radial-gradient(circle 42px at 44% 57%, rgba(255,224,140,.15), transparent),
+    radial-gradient(circle 18px at 33% 70%, rgba(255,190,110,.22), transparent),
+    radial-gradient(circle 58px at 23% 81%, rgba(255,214,130,.12), transparent); }
+[data-timawa-theme=sunshine] .theme-bg-shapes::after { bottom: auto; height: 200%; background-size: 50% 50%; opacity: var(--sn-do);
+    background-image:
+    radial-gradient(circle 5px at 12% 14%, var(--sn-d), transparent),
+    radial-gradient(circle 3px at 31% 6%, var(--sn-d), transparent),
+    radial-gradient(circle 6px at 47% 31%, var(--sn-d), transparent),
+    radial-gradient(circle 3px at 22% 47%, var(--sn-d), transparent),
+    radial-gradient(circle 4px at 38% 66%, var(--sn-d), transparent),
+    radial-gradient(circle 5px at 8% 81%, var(--sn-d), transparent),
+    radial-gradient(circle 3px at 44% 92%, var(--sn-d), transparent),
+    radial-gradient(circle 4px at 27% 24%, var(--sn-d), transparent);
+    animation: tw6Up 70s linear infinite; will-change: transform; }
 
 /* ================= STARRY ================= */
 [data-timawa-theme=starry] { --tw6-vig: rgba(5,0,25,.4); --tw6-grade: linear-gradient(180deg, rgba(90,60,200,.12), transparent 60%); }
@@ -1250,10 +1259,11 @@ html[data-tw-paused] .theme-bg-shapes .shape::before, html[data-tw-paused] .them
 /* ================= CAFE ================= */
 [data-timawa-theme=cafe] { --tw6-vig: rgba(90,50,20,.2); --tw6-grade: linear-gradient(180deg, rgba(255,210,150,.14), transparent 50%); }
 [data-timawa-theme=cafe][data-timawa-mode=dark] { --tw6-vig: rgba(0,0,0,.6); --tw6-grade: linear-gradient(180deg, rgba(255,150,60,.06), transparent 60%); }
-[data-timawa-theme=cafe] .theme-bg-shapes::before { background: radial-gradient(ellipse 60% 50% at 0 0, rgba(255,200,120,.45), transparent 70%); animation: tw6Pulse 7s ease-in-out infinite alternate; will-change: opacity; }
-[data-timawa-theme=cafe][data-timawa-mode=dark] .theme-bg-shapes::before { background: radial-gradient(ellipse 60% 50% at 0 0, rgba(255,170,70,.28), transparent 70%); }
-[data-timawa-theme=cafe] .theme-bg-shapes::after { background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.2) 40%, transparent 50%), linear-gradient(115deg, transparent 60%, rgba(255,255,255,.12) 66%, transparent 72%), linear-gradient(0deg, rgba(255,255,255,.2), transparent 30%); }
-[data-timawa-theme=cafe][data-timawa-mode=dark] .theme-bg-shapes::after { background: linear-gradient(115deg, transparent 30%, rgba(255,235,210,.07) 40%, transparent 50%), linear-gradient(115deg, transparent 60%, rgba(255,235,210,.05) 66%, transparent 72%), linear-gradient(0deg, rgba(255,230,200,.08), transparent 30%); }
+[data-timawa-theme=cafe] .theme-bg-shapes::before { background:
+    radial-gradient(ellipse 30% 46% at 12% 0, var(--cf-amb), transparent 72%),
+    radial-gradient(ellipse 24% 36% at 24% 0, var(--cf-amb), transparent 72%),
+    radial-gradient(ellipse 28% 42% at 92% 0, var(--cf-amb), transparent 72%),
+    radial-gradient(circle 1.6px at 50% 50%, var(--cf-dot), transparent) 0 0/34px 34px; }
 
 /* ================= CRIMSON ================= */
 [data-timawa-theme=crimson] { --tw6-vig: rgba(150,20,40,.16); --tw6-grade: linear-gradient(180deg, rgba(255,220,170,.14), transparent 50%); }

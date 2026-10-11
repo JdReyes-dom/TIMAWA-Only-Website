@@ -3,6 +3,8 @@
    TIMAWA — Shared theme system
    Loaded SYNCHRONOUSLY in <head> after theme.css, before page render.
 
+   ★ v6.1 ★ NEW scenes for Blossom ("Bloom"), Sunshine ("Golden Hour") and Café ("Cozy Corner").
+   Palettes unchanged; only their `sub` taglines were reworded.
    ★ v6 ★ Matches theme.css (modern depth layer: atmosphere, particles, colour grade).
    - NEW: soft scene cross-fade on theme switch, color-scheme sync, stricter lite-mode detection.
    ★ v5 ★ Matches theme.css.
@@ -46,14 +48,10 @@
             <div class="shape sy-grass"></div>
         `,
 
-        // ★ PINK — "Balloon Sky"
+        // ★ PINK — "Bloom" (counter-rotating mandala flowers; bokeh = ::before, petals = ::after)
         pink: `
-            <div class="shape bl-sparkle"></div>
-            <div class="shape bl-b b1"><svg viewBox="0 0 60 92"><path class="a" d="M30 2C8 2 2 24 12 42C18 52 24 58 24 62H36C36 58 42 52 48 42C58 24 52 2 30 2Z"/><path class="b" d="M30 2C20 18 20 48 24 62H36C40 48 40 18 30 2Z"/><path class="r" d="M24 62L27 76M36 62L33 76"/><rect class="k" x="26" y="76" width="8" height="7" rx="1.5"/></svg></div>
-            <div class="shape bl-b b2"><svg viewBox="0 0 60 92"><path class="a" d="M30 2C8 2 2 24 12 42C18 52 24 58 24 62H36C36 58 42 52 48 42C58 24 52 2 30 2Z"/><path class="b" d="M30 2C20 18 20 48 24 62H36C40 48 40 18 30 2Z"/><path class="r" d="M24 62L27 76M36 62L33 76"/><rect class="k" x="26" y="76" width="8" height="7" rx="1.5"/></svg></div>
-            <div class="shape bl-b b3 opt"><svg viewBox="0 0 60 92"><path class="a" d="M30 2C8 2 2 24 12 42C18 52 24 58 24 62H36C36 58 42 52 48 42C58 24 52 2 30 2Z"/><path class="b" d="M30 2C20 18 20 48 24 62H36C40 48 40 18 30 2Z"/><path class="r" d="M24 62L27 76M36 62L33 76"/><rect class="k" x="26" y="76" width="8" height="7" rx="1.5"/></svg></div>
-            <div class="shape bl-clouds back"></div>
-            <div class="shape bl-clouds"></div>
+            <div class="shape bl-a"></div>
+            <div class="shape bl-b opt"></div>
         `,
 
         // ★ FOREST — "Canopy Window (upgraded)"
@@ -78,18 +76,12 @@
             <div class="shape forest-firefly f3 opt"></div>
         `,
 
-        // ★ SUNSHINE — "Sunny Beach"
+        // ★ SUNSHINE — "Golden Hour" (sunburst + halo + hills; flare = ::before, dust = ::after)
         sunshine: `
+            <div class="shape sn-rays"></div>
+            <div class="shape sn-halo"></div>
             <div class="shape sn-sun"></div>
-            <div class="shape sn-cloud c1"></div>
-            <div class="shape sn-cloud c2 opt"></div>
-            <svg class="shape sn-gull" viewBox="0 0 40 16"><path d="M1 12Q10 -2 20 10Q30 -2 39 12"/></svg>
-            <div class="shape sn-sea"></div>
-            <div class="shape sn-wave w1"></div>
-            <div class="shape sn-wave w2"></div>
-            <div class="shape sn-sand"></div>
-            <svg class="shape sn-umb" viewBox="0 0 120 140"><rect class="po" x="58.5" y="56" width="3.5" height="82" rx="1.5"/><path class="ca" d="M6 62A54 54 0 0 1 114 62Z"/><path class="st" d="M60 8Q28 22 34 62H60ZM60 8Q92 22 86 62H60Z"/><path class="ca" d="M6 62Q20 72 33 62Q46 72 60 62Q74 72 87 62Q100 72 114 62Z"/></svg>
-            <div class="shape sn-ball opt"></div>
+            <div class="shape sn-hills"></div>
         `,
 
         // ★ STARRY — "Campsite"
@@ -110,16 +102,18 @@
             <svg class="shape st-flame" viewBox="0 0 30 40"><path class="f1" d="M15 2C22 14 28 20 26 30C24 38 6 38 4 30C2 22 10 18 15 2Z"/><path class="f2" d="M15 18C19 24 22 28 20 33C18 37 12 37 10 33C8 28 13 26 15 18Z"/></svg>
         `,
 
-        // ★ CAFE — "Rainy Window"
+        // ★ CAFE — "Cozy Corner" (lamps, string lights, shelf, counter, latte, sleeping cat; light spill = ::before)
         cafe: `
-            <div class="shape cf-bokeh"></div>
-            <div class="shape cf-drops opt"></div>
-            <div class="shape cf-rain r2"></div>
-            <div class="shape cf-rain r1"></div>
-            <div class="shape cf-frame"></div>
-            <div class="shape cf-sill"></div>
+            <div class="shape cf-panel"></div>
+            <div class="shape cf-lights"></div>
+            <svg class="shape cf-shelf opt" viewBox="0 0 240 150"><rect class="w" x="0" y="116" width="240" height="12" rx="3"/><path class="w" d="M20 128V146L44 128ZM196 128V146L220 128Z"/><rect x="14" y="52" width="17" height="64" rx="2" fill="#b5543c"/><rect x="33" y="64" width="14" height="52" rx="2" fill="#5f7f6a"/><rect x="49" y="46" width="18" height="70" rx="2" fill="#d9a441"/><rect x="69" y="60" width="13" height="56" rx="2" fill="#7a5a8c"/><rect x="86" y="56" width="13" height="60" rx="2" fill="#c97c5d" transform="rotate(-14 98 116)"/><path d="M152 116L188 116L182 88L158 88Z" fill="#c9784f"/><g fill="#5f9a5a"><ellipse cx="170" cy="62" rx="7" ry="24" transform="rotate(-24 170 88)"/><ellipse cx="170" cy="60" rx="7" ry="26"/><ellipse cx="170" cy="62" rx="7" ry="24" transform="rotate(26 170 88)"/><ellipse cx="170" cy="70" rx="6" ry="18" transform="rotate(52 170 88)" fill="#74b06b"/></g><rect x="204" y="98" width="22" height="18" rx="4" fill="#f3e9db"/><path d="M226 103H232C238 103 238 113 230 113H226" fill="none" stroke="#f3e9db" stroke-width="3"/></svg>
+            <div class="shape cf-lamp l1"></div>
+            <div class="shape cf-lamp l2 opt"></div>
+            <div class="shape cf-lamp l3"></div>
+            <div class="shape cf-counter"></div>
+            <svg class="shape cf-cat" viewBox="0 0 250 120"><path class="cu" d="M8 98C8 84 32 80 125 80C218 80 242 84 242 98C242 112 218 118 125 118C32 118 8 112 8 98Z"/><circle class="cu2" cx="125" cy="99" r="3"/><g class="b"><path class="tl" d="M208 90C238 88 240 62 214 56"/><path class="c" d="M34 90C34 56 82 40 134 46C188 52 220 70 214 90C206 96 64 98 34 90Z"/><path class="s" d="M104 47Q110 62 102 78M130 46Q136 62 128 80M156 49Q162 64 154 80M182 56Q186 68 180 82"/><path class="c" d="M44 56L42 32L62 48ZM72 48L88 32L84 58Z"/><circle class="c" cx="62" cy="72" r="24"/><ellipse class="c" cx="48" cy="92" rx="13" ry="7"/><ellipse class="c" cx="74" cy="94" rx="11" ry="6"/><path class="e" d="M50 72Q55 77 60 72M66 72Q71 77 76 72"/><path d="M60 80L65 80L62.5 83Z" fill="#d98a8a"/></g></svg>
+            <svg class="shape cf-mug" viewBox="0 0 230 130"><ellipse cx="52" cy="119" rx="48" ry="8" fill="#f3e9db"/><path d="M18 112C20 88 46 80 62 84C80 88 90 100 88 112C78 106 70 102 60 102C46 102 30 106 18 112Z" fill="#d79a4b"/><path d="M34 100L38 108M48 96L50 106M62 98L62 106M74 102L72 108" stroke="#a8692a" stroke-width="2" stroke-linecap="round" fill="none"/><ellipse cx="150" cy="120" rx="62" ry="9" fill="#f3e9db"/><path class="m" d="M104 52H196V88C196 108 182 118 150 118C118 118 104 108 104 88Z"/><path class="h" d="M196 62H208C226 62 226 98 204 98H196"/><ellipse class="c" cx="150" cy="52" rx="46" ry="9"/><path d="M140 52C140 47 148 47 150 51C152 47 160 47 160 52C160 56 150 60 150 60C150 60 140 56 140 52Z" fill="#f4e2c4" fill-opacity=".85"/><path d="M114 62V88" stroke="#fff" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/></svg>
             <div class="shape cf-steam"></div>
-            <svg class="shape cf-mug" viewBox="0 0 120 110"><path class="m" d="M14 28H88V72C88 94 74 104 51 104C28 104 14 94 14 72Z"/><path class="h" d="M88 40H98C112 40 112 74 94 74H88"/><ellipse class="c" cx="51" cy="29" rx="37" ry="7"/><ellipse class="s" cx="51" cy="106" rx="50" ry="6"/></svg>
         `,
 
         // ★ CRIMSON — "Poppy Meadow"
@@ -326,7 +320,7 @@
             }
         },
         pink: {
-            name: 'Blossom', sub: 'Balloons · Sweet', emoji: '🌸',
+            name: 'Blossom', sub: 'Bloom · Dreamy', emoji: '🌸',
             preview: { primary: '#ec4899', gradient: 'linear-gradient(135deg, #ec4899 0%, #f9a8d4 100%)' },
             light: {
                 '--theme-primary': '#ec4899', '--theme-accent': '#f9a8d4', '--theme-primary-dark': '#be185d',
@@ -374,7 +368,7 @@
             }
         },
         sunshine: {
-            name: 'Sunshine', sub: 'Beach · Cheery', emoji: '☀️',
+            name: 'Sunshine', sub: 'Golden · Cheery', emoji: '☀️',
             preview: { primary: '#f59e0b', gradient: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)' },
             light: {
                 '--theme-primary': '#f59e0b', '--theme-accent': '#fbbf24', '--theme-primary-dark': '#d97706',
@@ -422,7 +416,7 @@
             }
         },
         cafe: {
-            name: 'Café', sub: 'Rainy · Cozy', emoji: '☕',
+            name: 'Café', sub: 'Lamplit · Cozy', emoji: '☕',
             preview: { primary: '#8B5E3C', gradient: 'linear-gradient(135deg, #8B5E3C 0%, #D2B48C 100%)' },
             light: {
                 '--theme-primary': '#8B5E3C', '--theme-accent': '#D2B48C', '--theme-primary-dark': '#6B4226',
