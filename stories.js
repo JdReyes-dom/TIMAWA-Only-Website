@@ -32,8 +32,10 @@
     const CFG = Object.assign({
         IMAGE_MS: 6000,
         MAX_REPLY: 300,
-        composerSrc: 'stories-composer.js?v=1.8.0',
-        spotifySearchUrl: ''          // optional Cloud Function URL (see STORIES_SETUP.md)
+        composerSrc: 'stories-composer.js?v=1.9.0',
+        spotifySearchUrl: '',
+        allowStoryDelete: true,        // pages can override via window.STORIES_CONFIG
+        allowStoryViews: true          // pages can override via window.STORIES_CONFIG
     }, window.STORIES_CONFIG || {});
 
     const auth = firebase.auth();
@@ -513,7 +515,9 @@
         q.who.textContent = mine ? 'Your story' : g.name;
         q.when.textContent = S.timeAgo(s.createdAtMs) + ' · expires in ' + Math.max(1, Math.ceil((s.expiresAtMs - now()) / 3600000)) + 'h';
         q.prog.innerHTML = g.stories.map((x, i) => `<div class="st-seg ${i < V.si ? 'done' : ''}"><i></i></div>`).join('');
-        q.delB.hidden = !mine; q.muteB.hidden = true; syncPauseIcon();
+        q.delB.hidden = !mine || !CFG.allowStoryDelete;
+        q.muteB.hidden = true;
+        syncPauseIcon();
         q.exp.hidden = true; q.err.hidden = true;
         q.input.value = ''; q.tray.hidden = true; V.trayMore = false; q.heart.setAttribute('aria-expanded', 'false');
 
@@ -692,11 +696,27 @@
             V.reactions = snap.docs.map(d => d.data());
             renderSummary();
         }, err => { console.warn('reactions:', err.code); });
-        if (mine) {
+        if (mine && CFG.allowStoryViews !== false) {
             V.views = []; renderViewers();
-            V.unsubV = db.collection('stories').doc(s.id).collection('views').orderBy('viewedAt', 'desc').limit(300).onSnapshot(snap => {
-                V.views = snap.docs.map(d => d.data()); renderViewers();
-            }, err => { console.warn('views:', err.code); });
+            try {
+                V.unsubV = db.collection('stories').doc(s.id).collection('views')
+                    .orderBy('viewedAt', 'desc').limit(300)
+                    .onSnapshot(
+                        snap => { V.views = snap.docs.map(d => d.data()); renderViewers(); },
+                        err => {
+                            if (err.code === 'permission-denied') {
+                                // Rules don't allow this user to read views — just show 0.
+                                V.views = [];
+                                V.unsubV = null;
+                                try { renderViewers(); } catch (e) {}
+                            } else {
+                                console.warn('views listener:', err.code || err.message);
+                            }
+                        }
+                    );
+            } catch (e) {
+                V.unsubV = null;
+            }
         } else {
             q.input.disabled = true; q.send.disabled = true; q.input.placeholder = 'Reply to ' + (s.ownerName || 'story').split(' ')[0] + '…';
             chatEnabled().then(on => {
@@ -806,6 +826,7 @@
     }
 
     async function deleteOwn() {
+        if (!CFG.allowStoryDelete) return;
         const s = V.story;
         if (!s || s.ownerUid !== st.me.uid) return;
         if (!window.confirm('Delete this story? Replies already sent in chat will remain.')) return;
