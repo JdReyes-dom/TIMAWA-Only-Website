@@ -2437,15 +2437,21 @@
                             <i class="fas fa-search search-icon"></i>
                             <input type="text" id="storiesSearchInput" placeholder="Search by owner, caption or text..." oninput="renderStoriesAdmin()" />
                         </div>
-                        <select id="storiesStatusFilter" onchange="renderStoriesAdmin()">
-                            <option value="active">🟢 Active (24h)</option>
-                            <option value="removed">🚫 Removed</option>
-                            <option value="expired">⌛ Expired</option>
-                            <option value="all">All</option>
-                        </select>
                         <span class="count" id="storiesCount">0 stories</span>
                     </div>
                 </div>
+
+                <!-- Enhanced filter bar matching the style of Highlights / Comments / Chats -->
+                <div class="comments-filter-bar">
+                    <label><i class="fas fa-filter"></i> Filter:</label>
+                    <select id="storiesStatusFilter" onchange="renderStoriesAdmin()">
+                        <option value="active">🟢 Active (24h)</option>
+                        <option value="removed">🚫 Removed</option>
+                        <option value="expired">⌛ Expired</option>
+                        <option value="all">📋 All Stories</option>
+                    </select>
+                </div>
+
                 <p style="font-size:12.5px;color:var(--admin-text-dim);margin:4px 0 14px;">
                     <b>Remove</b> hides a story from every member immediately and keeps the record (reversible).
                     <b>Delete</b> removes the record permanently. Uploaded media stays on Cloudinary until your cleanup job runs.
