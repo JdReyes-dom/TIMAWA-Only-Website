@@ -1,5 +1,5 @@
 /* ================================================================
-   stories-composer.js · TIMAWA / Barkada Stories  (lazy-loaded, v1.8)
+   stories-composer.js · TIMAWA / Barkada Stories  (lazy-loaded, v1.10)
    ================================================================ */
 (function () {
     'use strict';
@@ -20,6 +20,7 @@
         sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
         texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar',
         mpos: { x: 0.5, y: 0.54, scale: 1, rot: 0 },
+        mt: { scale: 1, x: 0, y: 0 }, pan: null,
         mSel: false, dragS: null,
         query: '', spq: '', changing: false,
         hist: [], preview: false, xhr: null, busy: false, results: [], msg: '', searching: false, playing: '', drag: null, lastTap: null, tl: null
@@ -31,6 +32,9 @@
     const selT = () => find(M.sel);
     const hex = v => { v = (v || '').trim(); return /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : null; };
     const hasMedia = () => M.items.length > 0 || !!M.video;
+    // touch screens: pinch / twist + drag. Mouse screens: sliders (size, rotate, zoom) in the sheets.
+    const coarse = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+    const canMT = () => !!M.video || M.items.length === 1;     // size/position only applies to single photo or video
     const vidSec = () => M.video ? Math.min(MAX_DUR, Math.round(M.video.dur || 0)) : 0;
     const storyDur = () => M.video ? vidSec() : (M.track ? M.track.clipSec : M.dur);
     const clampStickerX = v => S.clamp(v, STICKER_X_MIN, STICKER_X_MAX);
@@ -76,6 +80,7 @@
               <div class="st-safe" style="top:14%"></div><div class="st-safe" style="top:80%"></div>
               <div class="st-scrim-t" hidden></div><div class="st-scrim-b" hidden></div>
               <div class="st-song" hidden></div>
+              <div class="st-capv" hidden></div>
               <div class="st-tools" role="toolbar" aria-label="Story tools"></div>
               <div class="st-pv" hidden style="position:absolute;left:12px;right:12px;bottom:12px;z-index:4;color:#fff;display:flex;flex-direction:column;gap:8px;pointer-events:none"></div>
             </div></div>
@@ -86,7 +91,7 @@
         document.body.appendChild(root);
         q = { head: $('.st-ch'), stage: $('.st-cstage'), mw: $('.st-media-wrap'), bg: $('.st-bgblur'), tx: $('.st-texts'), tools: $('.st-tools'), sheet: $('.st-sheet'),
               sht: $('.st-sh-h b'), shb: $('.st-sh-b'), file: $('input[type=file]'), bar: $('.st-bar'), barI: $('.st-bar i'), pub: $('[data-k=publish]'),
-              pv: $('.st-pv'), msk: $('.st-msticker'), song: $('.st-song'), sT: $('.st-scrim-t'), sB: $('.st-scrim-b'), prevB: $('[data-k=preview]') };
+              pv: $('.st-pv'), msk: $('.st-msticker'), song: $('.st-song'), capv: $('.st-capv'), sT: $('.st-scrim-t'), sB: $('.st-scrim-b'), prevB: $('[data-k=preview]') };
         S.observeStage(q.stage);
         if ('ResizeObserver' in window) new ResizeObserver(measure).observe(q.sheet);
 
@@ -107,6 +112,7 @@
         });
         wireStage();
         wireStickerInteraction();
+        wirePinch();
         wireTimeline();
         document.addEventListener('keydown', e => {
             if (!root || root.hidden || e.key !== 'Escape' || e.target.isContentEditable) return;
@@ -136,16 +142,28 @@
             sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
             texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar',
             mpos: { x: 0.5, y: 0.54, scale: 1, rot: 0 },
+            mt: { scale: 1, x: 0, y: 0 }, pan: null,
             mSel: false, dragS: null,
             query: '', spq: '', changing: false,
             hist: [], preview: false, busy: false, results: [], msg: '', searching: false, playing: '', tl: null
         });
     }
     function dirty() { return !!(hasMedia() || M.texts.length || M.track || M.spotify); }
-    function tryClose() {
-        if (M.busy) { if (!confirm('Cancel the upload?')) return; if (M.xhr) M.xhr.abort(); }
-        else if (dirty() && !confirm('Discard this story? Your photos or video and edits will be removed.')) return;
-        closeNow();
+    let closing = false;
+    async function tryClose() {
+        if (closing) return;
+        closing = true;
+        try {
+            if (M.busy) {
+                const ok = await S.confirm({ title: 'Cancel the upload?', message: 'Your story is still uploading. If you cancel now it will not be shared.', confirmLabel: 'Cancel upload', cancelLabel: 'Keep uploading', type: 'warn', confirmIcon: 'fa-xmark' });
+                if (!ok) return;
+                if (M.xhr) M.xhr.abort();
+            } else if (dirty()) {
+                const ok = await S.confirm({ title: 'Discard this story?', message: 'Your photos or video and all your edits will be removed. This can\u2019t be undone.', confirmLabel: 'Discard', cancelLabel: 'Keep editing', type: 'danger' });
+                if (!ok) return;
+            }
+            closeNow();
+        } finally { closing = false; }
     }
     function closeNow() {
         reset(); root.hidden = true; root.classList.remove('sheet'); document.documentElement.classList.remove('st-lock');
@@ -205,9 +223,14 @@
             q.mw.innerHTML = S.collageHtml(M.items, M.layout, true);
         } else if (n === 1) {
             const i = new Image(); i.src = M.items[0].url; i.alt = ''; q.mw.appendChild(i);
-            if (M.fit === 'fit') { const b = new Image(); b.src = M.items[0].url; b.alt = ''; q.bg.appendChild(b); }
+            const b = new Image(); b.src = M.items[0].url; b.alt = ''; q.bg.appendChild(b);
         }
-        renderTexts(); renderPv();
+        applyMT(); renderCaption(); renderTexts(); renderPv();
+    }
+    function applyMT() { S.applyMediaTransform(q.mw, canMT() ? M.mt : null); }
+    function renderCaption() {
+        const c = (M.caption || '').trim();
+        q.capv.textContent = c; q.capv.hidden = !c;
     }
     function renderTexts() {
         q.tx.innerHTML = M.texts.map(t => S.textHtml(t, t.id === M.sel && !M.preview ? 'sel' : '', `data-id="${t.id}"`)).join('');
@@ -238,8 +261,7 @@
         q.sT.hidden = q.sB.hidden = q.pv.hidden = !M.preview;
         q.tx.style.pointerEvents = M.preview ? 'none' : '';
         if (!M.preview) { q.pv.innerHTML = ''; return; }
-        q.pv.innerHTML = (M.caption ? `<div style="text-align:center;font-size:14px;text-shadow:0 1px 6px #000">${S.esc(M.caption)}</div>` : '') +
-            (M.spotify && !M.track ? musicCard(M.spotify, true) : '');
+        q.pv.innerHTML = (M.spotify && !M.track ? musicCard(M.spotify, true) : '');
     }
     function setPreview(on) {
         M.preview = on;
@@ -307,16 +329,15 @@
             <button class="st-btn danger sm" type="button" data-k="del" ${t ? '' : 'disabled'} aria-label="Delete text"><i class="fas fa-trash"></i></button>
             <button class="st-btn ghost sm" type="button" data-k="undo" ${M.hist.length > 1 ? '' : 'disabled'}><i class="fas fa-rotate-left"></i> Undo</button>
             <button class="st-btn ghost sm" type="button" data-k="resetText" ${M.texts.length ? '' : 'disabled'}>Reset</button></div>`;
-        if (!t) return h + `<p class="st-hint">Tap a text on the story to style it. Double-tap a text to edit it, drag to move it.</p>`;
+        if (!t) return h + `<p class="st-hint">Tap a text on the story to style it. Double-tap a text to edit it, drag to move it${coarse() ? ', pinch to resize and rotate it' : ''}.</p>`;
         return h + `<div class="st-lab">Font</div><div class="st-row2">${Object.entries(S.FONTS).map(([k, f]) => `<button type="button" class="st-chip ${t.font === k ? 'on' : ''}" data-k="font" data-v="${k}" style="font-family:${f.css}">${f.label}</button>`).join('')}</div>
-          <div class="st-row2"><label class="st-range">Size <input type="range" min="35" max="180" value="${Math.round(t.size * 1000)}" data-in="size"></label>
-            <label class="st-range">Rotate <input type="range" min="-45" max="45" value="${Math.round(t.rot)}" data-in="rot"></label></div>
+          ${coarse() ? '' : `<div class="st-row2 st-desk-only"><label class="st-range">Size <input type="range" min="35" max="180" value="${Math.round(t.size * 1000)}" data-in="size"></label>
+            <label class="st-range">Rotate <input type="range" min="-180" max="180" value="${Math.round(t.rot)}" data-in="rot"></label></div>`}
           <div class="st-row2">${chips([['left', '<i class="fas fa-align-left"></i>'], ['center', '<i class="fas fa-align-center"></i>'], ['right', '<i class="fas fa-align-right"></i>']], t.align, 'align')}
             <button type="button" class="st-chip ${t.bold ? 'on' : ''}" data-k="bold"><b>B</b></button><button type="button" class="st-chip ${t.italic ? 'on' : ''}" data-k="italic"><i>I</i></button></div>
           <div class="st-lab">Text colour</div><div class="st-row2">${sw(PALETTE, t.color, 'color')}</div>
           <div class="st-lab">Background</div><div class="st-row2">${chips([['none', 'None'], ['semi', 'Soft'], ['solid', 'Solid'], ['pill', 'Pill']], t.bg, 'bg')}</div>
-          ${t.bg !== 'none' ? `<div class="st-row2">${sw(PALETTE, t.bgColor, 'bgColor')}</div>` : ''}
-          <div class="st-lab">Position</div><div class="st-row2">${chips([['top', 'Top'], ['mid', 'Middle'], ['bot', 'Bottom']], '', 'place')}</div>`;
+          ${t.bg !== 'none' ? `<div class="st-row2">${sw(PALETTE, t.bgColor, 'bgColor')}</div>` : ''}`;
     }
 
     function waveHtml(seed, n) {
@@ -340,22 +361,20 @@
               <div class="st-tlab"><span>0:00</span><b class="st-cliplabel">${S.fmtSec(tr.startSec)} – ${S.fmtSec(tr.startSec + tr.clipSec)} · ${tr.clipSec}s</b><span>${S.fmtSec(P)}</span></div>
               ${M.video ? `<p class="st-note2">Your video is ${S.fmtSec(vidSec())} long, so the clip follows it (${tr.clipSec}s). The video's own sound is muted while a song is attached.</p>`
                 : `<div class="st-lab" style="margin-top:10px">Clip length = story length</div><div class="st-lenrow">${lens.map(v => `<button type="button" class="st-chip ${tr.clipSec === v ? 'on' : ''}" data-k="clipLen" data-v="${v}">${v}s</button>`).join('')}</div>`}
-              <p class="st-note2">Drag the window to pick where the song starts. Your story lasts exactly as long as the clip and the song stays in sync. Library previews are ${P}s long.</p>
               ${M.changing ? '' : `<div class="st-lab" style="margin-top:12px">Show on story</div>
               <div class="st-row2">${chips(S.MUSIC_STYLES, S.normStyle(M.mstyle), 'mstyle')}</div>`}
               ${M.changing ? '' : `
                 <div class="st-lab" style="margin-top:12px">Sticker on story</div>
-                <p class="st-note2" style="margin-top:0">The sticker can be dragged anywhere on the story. Tap it once to show the handles: corners resize, the top dot rotates, the red × removes it.</p>
                 <div class="st-row2" style="margin-top:6px">
                   <button type="button" class="st-btn ghost sm" data-k="resetSticker"><i class="fas fa-rotate-left"></i> Reset position & size</button>
                   <button type="button" class="st-btn ghost sm" data-k="centerSticker"><i class="fas fa-crosshairs"></i> Center</button>
                 </div>
-                <div class="st-row2" style="margin-top:6px">
+                ${coarse() ? '' : `<div class="st-row2 st-desk-only" style="margin-top:6px">
                   <label class="st-range">Size <input type="range" min="25" max="400" step="1" value="${Math.round(M.mpos.scale * 100)}" data-in="stickerScale"></label>
                 </div>
-                <div class="st-row2">
+                <div class="st-row2 st-desk-only">
                   <label class="st-range">Rotate <input type="range" min="-180" max="180" step="1" value="${Math.round(M.mpos.rot)}" data-in="stickerRot"></label>
-                </div>
+                </div>`}
                 <div class="st-row2" style="margin-top:10px"><button class="st-btn ghost sm" type="button" data-k="changeSong"><i class="fas fa-arrows-rotate"></i> Change song</button></div>`}`;
         }
         if (searching) {
@@ -384,8 +403,10 @@
         const n = M.items.length;
         if (n >= 2) return `<div class="st-row2">${S.layoutsFor(n).map(L => `<button type="button" class="st-lay ${L.id === M.layout ? 'on' : ''}" data-k="layout" data-v="${L.id}" title="${S.esc(L.label)}" aria-label="Layout: ${S.esc(L.label)}">${S.miniLayoutHtml(L)}</button>`).join('')}</div>
             <p class="st-hint">Photos appear in the order you selected them. To change photos, discard this story and pick again.</p>`;
+        const z = Math.round(M.mt.scale * 100);
         return `<div class="st-row2">${chips([['fill', 'Fill screen'], ['fit', 'Fit whole']], M.fit, 'fit')}</div>
-            <p class="st-hint">"Fit whole" shows the entire ${M.video ? 'video' : 'photo'} with a soft background.</p>`;
+            ${coarse() ? '' : `<div class="st-lab">Zoom</div><div class="st-row2 st-desk-only"><label class="st-range">Size <input type="range" min="50" max="300" step="1" value="${z}" data-in="mediaScale" aria-label="Zoom"><b class="st-zoomv" style="min-width:42px">${z}%</b></label><button type="button" class="st-btn ghost sm" data-k="resetMedia">Reset</button></div>`}
+            <p class="st-hint">"Fit whole" shows the entire ${M.video ? 'video' : 'photo'} with a soft background.${coarse() ? ' Pinch to resize it, then drag to move it.' : ' Zoom, then drag the ' + (M.video ? 'video' : 'photo') + ' to move it.'}</p>`;
     }
     function timeSheet() {
         if (M.track) return `<p class="st-hint" style="margin:0">With music attached your story lasts exactly as long as the song clip: <b>${M.track.clipSec}s</b>. Change the clip length in <b>Music</b>.</p>`;
@@ -560,6 +581,9 @@
             endSession(e);
         }
 
+        M.stickerCancel = () => { if (!session) return; session = null; detach(); };
+        M.stickerOn = () => !!session;
+
         st.addEventListener('pointerdown', e => {
             if (M.preview) return;
             if (!M.track || S.normStyle(M.mstyle) === 'none') return;
@@ -611,6 +635,79 @@
         }, { passive: false });
     }
 
+    // ---------------- pinch / twist / pan ----------------
+    // Two fingers on the story: pinch = size, twist = rotate. The target is whatever the first finger
+    // is holding (a text or the song sticker); otherwise the photo / video itself.
+    // One finger on the bare photo / video moves it once it has been resized or set to "Fit whole".
+    function wirePinch() {
+        const st = q.stage, ptrs = new Map();
+        let P = null;
+        const pts = () => [...ptrs.values()];
+        const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+        const ang = (a, b) => Math.atan2(b.y - a.y, b.x - a.x);
+        const wrap = d => ((d + 180) % 360 + 360) % 360 - 180;
+        const targetOf = el => {
+            const t = el.closest && el.closest('.st-t'); if (t) return { k: 'text', id: t.dataset.id };
+            if (el.closest && el.closest('.st-mwrap')) return { k: 'sticker' };
+            return { k: 'bg' };
+        };
+        function begin() {
+            const [a, b] = pts();
+            let tg = [a.tgt, b.tgt].find(x => x.k !== 'bg') || (canMT() ? { k: 'media' } : null);
+            if (!tg) return false;
+            M.drag = null; q.stage.classList.remove('drag'); M.pan = null;
+            if (M.stickerCancel) M.stickerCancel();
+            const t = tg.k === 'text' ? find(tg.id) : null;
+            if (tg.k === 'text' && !t) return false;
+            P = { tg, d0: dist(a, b) || 1, a0: ang(a, b), size0: t ? t.size : 0, rot0: t ? t.rot : 0, sc0: tg.k === 'sticker' ? M.mpos.scale : M.mt.scale, sr0: M.mpos.rot };
+            if (t && M.sel !== t.id) { M.sel = t.id; q.tx.querySelectorAll('.st-t').forEach(el => el.classList.toggle('sel', el.dataset.id === t.id)); }
+            return true;
+        }
+        function apply() {
+            const [a, b] = pts();
+            const k = dist(a, b) / P.d0, dr = (ang(a, b) - P.a0) * 180 / Math.PI;
+            if (P.tg.k === 'text') {
+                const t = find(P.tg.id); if (!t) return;
+                t.size = S.clamp(P.size0 * k, 0.035, 0.18); t.rot = S.clamp(Math.round(wrap(P.rot0 + dr)), -180, 180); refreshEl(t);
+            } else if (P.tg.k === 'sticker') {
+                M.mpos.scale = S.clamp(P.sc0 * k, 0.25, 4); M.mpos.rot = S.clamp(Math.round(wrap(P.sr0 + dr)), -180, 180); renderSticker();
+            } else { M.mt.scale = S.clamp(P.sc0 * k, 0.5, 3); applyMT(); }
+        }
+        st.addEventListener('pointerdown', e => {
+            if (M.preview || e.target.closest('.st-tools')) return;
+            ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, tgt: targetOf(e.target) });
+            if (ptrs.size === 2 && !P) { if (begin()) { e.stopPropagation(); e.preventDefault(); } return; }
+            if (P) { e.stopPropagation(); e.preventDefault(); return; }
+            // first finger on the bare photo / video: prepare to move it (only when it has been resized or is "Fit whole")
+            const p = ptrs.get(e.pointerId);
+            if (p.tgt.k === 'bg' && canMT() && (M.mt.scale !== 1 || M.fit === 'fit')) {
+                const r = st.getBoundingClientRect();
+                M.pan = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: M.mt.x, oy: M.mt.y, w: r.width, h: r.height, moved: false };
+            }
+        }, true);
+        st.addEventListener('pointermove', e => {
+            const p = ptrs.get(e.pointerId); if (!p) return;
+            p.x = e.clientX; p.y = e.clientY;
+            if (P) { if (ptrs.size >= 2) apply(); e.stopPropagation(); e.preventDefault(); return; }
+            const pn = M.pan;
+            if (pn && pn.id === e.pointerId) {
+                const dx = e.clientX - pn.sx, dy = e.clientY - pn.sy;
+                if (!pn.moved && Math.hypot(dx, dy) < 5) return;
+                pn.moved = true; st.classList.add('drag');
+                M.mt.x = S.clamp(pn.ox + dx / pn.w, -1, 1); M.mt.y = S.clamp(pn.oy + dy / pn.h, -1, 1); applyMT();
+                e.preventDefault();
+            }
+        }, true);
+        const up = e => {
+            if (!ptrs.has(e.pointerId)) return;
+            ptrs.delete(e.pointerId);
+            if (M.pan && M.pan.id === e.pointerId) { M.pan = null; st.classList.remove('drag'); }
+            if (P && ptrs.size < 2) { const was = P; P = null; pushHist(); if (was.tg.k !== 'media') renderSheet(); else if (M.sheet === 'layout') renderSheet(); }
+        };
+        st.addEventListener('pointerup', up, true);
+        st.addEventListener('pointercancel', up, true);
+    }
+
     function deleteSticker() {
         if (!M.track) return;
         stopAudio();
@@ -651,7 +748,8 @@
 
     function onInput(e) {
         const k = e.target.dataset.in, t = selT();
-        if (k === 'caption') { M.caption = e.target.value.slice(0, MAX_CAPTION); renderTools(); }
+        if (k === 'caption') { M.caption = e.target.value.slice(0, MAX_CAPTION); renderTools(); renderCaption(); }
+        else if (k === 'mediaScale') { M.mt.scale = S.clamp(Number(e.target.value) / 100, 0.5, 3); applyMT(); const z = $('.st-zoomv'); if (z) z.textContent = Math.round(M.mt.scale * 100) + '%'; }
         else if (k === 'music') { M.query = e.target.value; }
         else if (k === 'spotify') { M.spq = e.target.value; }
         else if (k === 'dur') { M.dur = S.clamp(Math.round(e.target.value), MIN_DUR, MAX_DUR); const b = $('.st-durv'); if (b) b.textContent = M.dur + 's'; }
@@ -670,6 +768,7 @@
             case 'tool': M.sheet === v ? closeSheet() : openSheet(v); break;
             case 'preview': setPreview(!M.preview); break;
             case 'layout': M.layout = v; renderStage(); renderSheet(); break;
+            case 'resetMedia': M.mt = { scale: 1, x: 0, y: 0 }; applyMT(); renderSheet(); break;
             case 'fit': M.fit = v; renderStage(); renderSheet(); break;
             case 'dur': M.dur = S.clamp(Number(v), MIN_DUR, MAX_DUR); renderSheet(); break;
             case 'addText': addText(); break;
@@ -677,7 +776,7 @@
             case 'dup': dup(); break;
             case 'del': del(); break;
             case 'undo': undo(); break;
-            case 'resetText': if (M.texts.length && confirm('Remove all text from this story?')) { if (!M.hist.length) M.hist.push(snap()); M.texts = []; M.sel = null; renderTexts(); renderSheet(); pushHist(); } break;
+            case 'resetText': if (M.texts.length) S.confirm({ title: 'Remove all text?', message: 'Every text on this story will be removed.', confirmLabel: 'Remove all', cancelLabel: 'Keep text', type: 'warn', confirmIcon: 'fa-eraser' }).then(ok => { if (!ok) return; if (!M.hist.length) M.hist.push(snap()); M.texts = []; M.sel = null; renderTexts(); renderSheet(); pushHist(); }); break;
             case 'font': style(x => { x.font = v; }); break;
             case 'align': style(x => { x.align = v; }); break;
             case 'bold': style(x => { x.bold = !x.bold; }); break;
@@ -685,7 +784,6 @@
             case 'color': style(x => { x.color = v; }); break;
             case 'bg': style(x => { x.bg = v; }); break;
             case 'bgColor': style(x => { x.bgColor = v; }); break;
-            case 'place': style(x => { x.y = v === 'top' ? 0.2 : v === 'mid' ? 0.5 : 0.74; x.x = 0.5; }); break;
             case 'mstyle': M.mstyle = v; renderPv(); renderSheet(); break;
             case 'musicGo': musicSearch(); break;
             case 'playRes': {
@@ -799,6 +897,7 @@
                 ownerUid: C.me.uid, ownerName: C.me.name, ownerPhoto: C.me.photo || '',
                 mediaType: isV ? 'video' : 'image', mediaUrl: url, mediaPublicId: first.public_id || '', thumbUrl: S.safeMediaUrl(thumb),
                 mediaFit: M.fit, mediaW: first.width || 0, mediaH: first.height || 0,
+                mediaTransform: canMT() ? { scale: +M.mt.scale.toFixed(3), x: +M.mt.x.toFixed(4), y: +M.mt.y.toFixed(4) } : { scale: 1, x: 0, y: 0 },
                 durationMs: isV ? Math.round(vSec * 1000) : Math.round(storyDur() * 1000),
                 caption: M.caption.trim().slice(0, MAX_CAPTION),
                 textOverlays: M.texts.slice(0, MAX_TEXTS).map(t => ({ id: t.id, text: t.text.slice(0, MAX_TEXT_LEN), x: +t.x.toFixed(4), y: +t.y.toFixed(4), size: +t.size.toFixed(4), rot: Math.round(t.rot), font: t.font, color: t.color, bg: t.bg, bgColor: t.bgColor, align: t.align, bold: !!t.bold, italic: !!t.italic })),

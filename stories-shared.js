@@ -260,11 +260,78 @@
         return () => { clearInterval(timer); audio.removeEventListener('ended', onEnded); };
     }
 
+
+    // ------------------------------------------------------------ media size / position (photo or video, single-media stories)
+    // scale 0.5-3, x / y = offset as a fraction of the story frame. Applied through CSS variables so the
+    // composer preview, the viewer and the admin preview all draw it identically.
+    function cleanMediaTransform(t) {
+        t = t && typeof t === 'object' ? t : {};
+        return { scale: clamp(t.scale || 1, 0.5, 3), x: clamp(t.x, -1, 1), y: clamp(t.y, -1, 1) };
+    }
+    function applyMediaTransform(el, t) {
+        if (!el) return;
+        const m = cleanMediaTransform(t);
+        el.style.setProperty('--ms', m.scale.toFixed(3));
+        el.style.setProperty('--mx', m.x.toFixed(4));
+        el.style.setProperty('--my', m.y.toFixed(4));
+    }
+
+    // ------------------------------------------------------------ themed confirmation dialog
+    // Replaces window.confirm everywhere in Stories (discard, delete, ...). Uses the site theme tokens,
+    // sits above the viewer / composer, supports Esc, backdrop click, focus trap and returns a Promise<boolean>.
+    let dlgActive = null;
+    function confirmDialog(opts) {
+        opts = opts || {};
+        if (dlgActive) return dlgActive;
+        const type = ['danger', 'warn', 'info'].includes(opts.type) ? opts.type : 'info';
+        const icons = { danger: 'fa-trash-can', warn: 'fa-triangle-exclamation', info: 'fa-circle-info' };
+        const okIcon = opts.confirmIcon || (type === 'danger' ? 'fa-trash-can' : 'fa-check');
+        dlgActive = new Promise(resolve => {
+            const prev = document.activeElement;
+            const el = document.createElement('div');
+            el.className = 'st-dlg';
+            el.innerHTML = `<div class="st-dlg-bd"></div>
+              <div class="st-dlg-card st-dlg-${type}" role="alertdialog" aria-modal="true" aria-labelledby="stDlgT" aria-describedby="stDlgM">
+                <div class="st-dlg-ic" aria-hidden="true"><i class="fas ${opts.icon || icons[type]}"></i></div>
+                <h3 id="stDlgT">${esc(opts.title || 'Are you sure?')}</h3>
+                <p id="stDlgM">${esc(opts.message || '')}</p>
+                <div class="st-dlg-act">
+                  <button type="button" class="st-dlg-no">${esc(opts.cancelLabel || 'Cancel')}</button>
+                  <button type="button" class="st-dlg-ok ${type === 'danger' ? 'danger' : ''}"><i class="fas ${okIcon}"></i> ${esc(opts.confirmLabel || 'Confirm')}</button>
+                </div></div>`;
+            document.body.appendChild(el);
+            const no = el.querySelector('.st-dlg-no'), ok = el.querySelector('.st-dlg-ok');
+            requestAnimationFrame(() => el.classList.add('in'));
+            const finish = v => {
+                window.removeEventListener('keydown', onKey, true);
+                el.classList.remove('in');
+                dlgActive = null;
+                setTimeout(() => el.remove(), 180);
+                if (prev && prev.focus) { try { prev.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+                resolve(v);
+            };
+            function onKey(e) {
+                if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+                else if (e.key === 'Tab') {                       // keep focus inside the dialog
+                    e.preventDefault(); e.stopPropagation();
+                    (document.activeElement === ok ? no : ok).focus();
+                } else if (e.key.startsWith('Arrow') || e.key === ' ' || e.key === 'Enter') e.stopPropagation();   // never reach the viewer behind
+            }
+            window.addEventListener('keydown', onKey, true);
+            no.addEventListener('click', () => finish(false));
+            ok.addEventListener('click', () => finish(true));
+            el.querySelector('.st-dlg-bd').addEventListener('click', () => finish(false));
+            (type === 'danger' ? no : ok).focus({ preventScroll: true });   // destructive actions never default to "yes"
+        });
+        return dlgActive;
+    }
+
     window.StoriesShared = {
         FONTS, SAFE, LAYOUTS, MAX_PHOTOS, loadFonts, esc, clamp, safeMediaUrl, safeSpotifyUrl, safeImgUrl, safeAudioUrl, safeColor, rgba,
         textStyle, textHtml, renderTexts, observeStage, timeAgo, cloudAvatar, cloudResize, fmtSec,
         layoutsFor, getLayout, collageHtml, miniLayoutHtml, searchMusic, cleanMusic, attachClipLoop,
         MUSIC_STYLES, normStyle, musicSticker, musicStickerInner, cleanSticker, musicLine,
+        cleanMediaTransform, applyMediaTransform, confirm: confirmDialog,
         DURATION_MS: 24 * 60 * 60 * 1000,
         MIN_SHOW_MS: 15 * 1000, MAX_SHOW_MS: 60 * 1000
     };

@@ -509,3 +509,63 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
 /* While a sticker drag / resize / rotate session is active */
 .st-cstage.sticker-dragging { cursor: grabbing; }
 .st-cstage.sticker-dragging .st-mwrap { cursor: grabbing; }
+
+/* ================================================================
+   v1.10 additions
+   ================================================================ */
+
+/* ---------- Photo / video size + position chosen in the editor (--ms scale, --mx / --my offset as a fraction of the frame) ---------- */
+.st-media-wrap:not(.collage) img,
+.st-media-wrap:not(.collage) video {
+    transform: translate(calc(var(--mx, 0) * 100%), calc(var(--my, 0) * 100%)) scale(var(--ms, 1));
+    transform-origin: 50% 50%;
+}
+.st-cstage .st-media-wrap:not(.collage) img, .st-cstage .st-media-wrap:not(.collage) video { pointer-events: none; -webkit-user-drag: none; }
+.st-cstage.drag { cursor: grabbing; }
+
+/* ---------- Caption: bottom-left corner of the story (viewer + editor look identical) ---------- */
+.st-bottom .st-caption, .st-capv {
+    font-size: clamp(12px, calc(var(--stw, 360px) * .04), 17px); line-height: 1.35; text-align: left; color: #fff; overflow-wrap: anywhere;
+    background: rgba(0, 0, 0, .42); padding: .45em .8em; border-radius: 1em; max-width: 80%; text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+.st-bottom .st-caption { align-self: flex-start; position: static; margin: 0; max-height: 84px; overflow: auto; }
+.st-bottom .st-caption[style*="display: none"] { display: none !important; }
+.st-capv { position: absolute; left: 12px; bottom: 12px; z-index: 4; pointer-events: none; max-height: 30%; overflow: hidden; }
+.st-capv[hidden] { display: none; }
+.st-cstage.pv .st-capv { bottom: 14px; }
+
+/* ---------- Touch screens use pinch / twist, so the size + rotate + zoom sliders are mouse-only ---------- */
+@media (pointer: coarse) { .st-desk-only { display: none !important; } }
+
+/* ---------- Themed confirmation dialog (discard story, delete story, ...) ---------- */
+.st-dlg { position: fixed; inset: 0; z-index: 10300; display: flex; align-items: center; justify-content: center; padding: 20px; font-family: inherit; }
+.st-dlg-bd { position: absolute; inset: 0; background: rgba(8, 8, 14, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity .2s ease; }
+.st-dlg.in .st-dlg-bd { opacity: 1; }
+.st-dlg-card {
+    position: relative; width: min(400px, 100%); box-sizing: border-box; text-align: center; padding: 26px 24px 20px;
+    background: var(--theme-card, #fff); color: var(--theme-text, #1a1a2e); border: 1px solid var(--theme-border, #eef2f7); border-radius: 22px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .35), 0 0 0 1px color-mix(in srgb, var(--theme-primary, #1089d3) 8%, transparent);
+    opacity: 0; transform: translateY(14px) scale(.96); transition: transform .26s cubic-bezier(.22, .9, .28, 1), opacity .2s ease;
+}
+.st-dlg.in .st-dlg-card { opacity: 1; transform: none; }
+.st-dlg-ic { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; background: var(--theme-primary-soft, #e0f2fe); color: var(--theme-primary, #1089d3); }
+.st-dlg-danger .st-dlg-ic { background: #fee2e2; color: #dc2626; }
+.st-dlg-warn .st-dlg-ic { background: #fef3c7; color: #d97706; }
+.st-dlg-card h3 { margin: 0 0 6px; font-size: 19px; font-weight: 800; }
+.st-dlg-card p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--theme-text-muted, #555); }
+.st-dlg-act { display: flex; gap: 10px; margin-top: 22px; }
+.st-dlg-act button {
+    flex: 1; padding: 12px 14px; border-radius: 14px; font-weight: 700; font-size: 14px; font-family: inherit; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform .15s, box-shadow .15s, background .15s;
+}
+.st-dlg-act button:hover { transform: translateY(-1px); }
+.st-dlg-act button:focus-visible { outline: 2px solid var(--theme-primary, #1089d3); outline-offset: 2px; }
+.st-dlg-no { background: var(--theme-bg-soft, #f3f4f6); color: var(--theme-text-muted, #555); border: 1px solid var(--theme-border, #e5e7eb); }
+.st-dlg-ok { background: var(--theme-gradient, #1089d3); color: #fff; border: 0; box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-primary, #1089d3) 35%, transparent); }
+.st-dlg-ok.danger { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 6px 18px rgba(220, 38, 38, .35); }
+@media (max-width: 480px) {
+    .st-dlg { align-items: flex-end; padding: 12px; }
+    .st-dlg-card { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+    .st-dlg-card { transform: translateY(40px); }
+}
+@media (prefers-reduced-motion: reduce) { .st-dlg-bd, .st-dlg-card, .st-dlg-act button { transition: none !important; } }

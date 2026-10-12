@@ -32,7 +32,7 @@
     const CFG = Object.assign({
         IMAGE_MS: 6000,
         MAX_REPLY: 300,
-        composerSrc: 'stories-composer.js?v=1.9.0',
+        composerSrc: 'stories-composer.js?v=1.10.0',
         spotifySearchUrl: '',
         allowStoryDelete: true,        // pages can override via window.STORIES_CONFIG
         allowStoryViews: true          // pages can override via window.STORIES_CONFIG
@@ -98,7 +98,7 @@
         return {
             id: doc.id, ownerUid: d.ownerUid, ownerName: d.ownerName || 'Member', ownerPhoto: d.ownerPhoto || '',
             mediaType: d.mediaType === 'video' ? 'video' : 'image', mediaUrl: S.safeMediaUrl(d.mediaUrl), thumbUrl: S.safeMediaUrl(d.thumbUrl),
-            mediaFit: d.mediaFit === 'fit' ? 'fit' : 'fill', durationMs: Number(d.durationMs) || 0,
+            mediaFit: d.mediaFit === 'fit' ? 'fit' : 'fill', mediaTransform: S.cleanMediaTransform(d.mediaTransform), durationMs: Number(d.durationMs) || 0,
             mediaItems: Array.isArray(d.mediaItems) ? d.mediaItems.map(x => ({ url: S.safeMediaUrl(x && x.url) })).filter(x => x.url).slice(0, S.MAX_PHOTOS) : [],
             layout: typeof d.layout === 'string' ? d.layout.slice(0, 12) : '', muteVideo: !!d.muteVideo, music: S.cleanMusic(d.music),
             caption: d.caption || '', textOverlays: Array.isArray(d.textOverlays) ? d.textOverlays : [],
@@ -139,10 +139,21 @@
                 st.loaded = true; st.error = null;
                 rawCache = snap.docs.map(norm);
                 rebuild(rawCache);
+                handleDeepLink();
             }, err => {
                 console.warn('Stories listener:', err.code || err.message);
                 st.loaded = true; st.error = err; renderRow();
             });
+    }
+    let deepDone = false;
+    function handleDeepLink() {
+        if (deepDone) return;
+        deepDone = true;
+        let id = null;
+        try { id = new URLSearchParams(location.search).get('story'); } catch (e) { /* ignore */ }
+        if (!id) return;
+        try { const u = new URL(location.href); u.searchParams.delete('story'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } catch (e) { /* ignore */ }
+        setTimeout(() => openById(id), 400);
     }
     function stopListener() { if (st.unsub) { st.unsub(); st.unsub = null; } }
     // drop expired stories from the UI without waiting for a snapshot
@@ -534,6 +545,7 @@
         const collage = s.mediaType === 'image' && s.mediaItems.length > 1 ? s.mediaItems : null;
         q.mw.className = 'st-media-wrap' + (collage ? ' collage' : (s.mediaFit === 'fit' ? ' fit' : ''));
         q.mw.innerHTML = ''; q.bg.innerHTML = ''; q.load.hidden = false;
+        S.applyMediaTransform(q.mw, collage ? null : s.mediaTransform);     // size / position chosen in the editor
         S.renderTexts(q.tx, s.textOverlays);
         q.cap.textContent = s.caption; q.cap.style.display = s.caption ? '' : 'none';
         V.muteVid = !!(s.music || s.muteVideo);          // music added to a video mutes the video's own audio
@@ -556,7 +568,7 @@
                 const im = new Image(); im.alt = s.caption || 'Story';
                 im.onload = () => onReady(null); im.onerror = onError;
                 im.src = s.mediaUrl; q.mw.appendChild(im);
-                if (s.mediaFit === 'fit') { const b = new Image(); b.src = s.mediaUrl; b.alt = ''; q.bg.appendChild(b); }
+                const b = new Image(); b.src = s.mediaUrl; b.alt = ''; q.bg.appendChild(b);       // soft backdrop shows when the photo is shrunk / moved
             }
         }
         setupMusic(s);
@@ -772,6 +784,30 @@
         V.q.tray.hidden = !open; V.q.heart.setAttribute('aria-expanded', String(open));
         open ? pause('tray') : resume('tray');
     }
+    // ------------------------------------------------------------ notifications
+    // Same collection / shape the site already uses for highlight reactions and chat messages, so the owner
+    // sees them in the normal notification list on every page. One document per (story, member): a changed
+    // reaction or a new reply refreshes it (and marks it unread again) instead of piling up duplicates.
+    async function notifyOwner(kind, s, opts) {
+        try {
+            if (!st.me || !s || !s.ownerUid || s.ownerUid === st.me.uid) return;
+            opts = opts || {};
+            const me = st.me, who = String(me.name || 'Someone').slice(0, 60);
+            const id = `story_${kind}_${s.id}_${me.uid}`;
+            const base = { priority: 'info', targetUid: s.ownerUid, referenceId: id, readBy: [], createdBy: 'system', createdByName: 'System',
+                           createdAt: firebase.firestore.FieldValue.serverTimestamp(), expiresAt: new Date(Date.now() + 24 * 3600 * 1000) };
+            let data;
+            if (kind === 'reaction') {
+                const e = opts.emoji || '❤️';
+                data = { type: 'reaction', title: `${e} ${who} reacted to your story`, message: `${who} reacted ${e} to your story.`, icon: e, link: `index.html?story=${encodeURIComponent(s.id)}`, linkLabel: 'View Story' };
+            } else {
+                const t = String(opts.text || '').slice(0, 80) + (String(opts.text || '').length > 80 ? '...' : '');
+                data = { type: 'chat', title: `💬 ${who} replied to your story`, message: `"${t}"`, icon: '💬', link: 'dashboard.html', linkLabel: 'Open Chat' };
+            }
+            await db.collection('announcements').doc(id).set(Object.assign(base, data));
+        } catch (err) { console.warn('story notification not sent:', err.code || err.message); }
+    }
+
     async function setReaction(emoji) {
         const s = V.story;
         if (!s || !st.me) return;
@@ -779,7 +815,7 @@
         const ref = db.collection('stories').doc(s.id).collection('reactions').doc(st.me.uid);
         try {
             if (V.mineEmoji === emoji) await ref.delete();
-            else await ref.set({ uid: st.me.uid, name: st.me.name, photo: st.me.photo || '', emoji, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            else { await ref.set({ uid: st.me.uid, name: st.me.name, photo: st.me.photo || '', emoji, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); notifyOwner('reaction', s, { emoji }); }
             V.q.heart.classList.remove('st-pop'); void V.q.heart.offsetWidth; V.q.heart.classList.add('st-pop');
             V.q.tray.hidden = true; V.q.heart.setAttribute('aria-expanded', 'false'); resume('tray');
         } catch (e) {
@@ -813,9 +849,7 @@
                 type: 'story_reply', storyRef: ref
             };
             await db.collection('chatMessages').doc().set(msg);
-            if (typeof window.createDirectMessageNotification === 'function') {
-                try { window.createDirectMessageNotification({ receiverUid: s.ownerUid, senderUid: me.uid, senderName: me.name, text: 'Replied to your story: ' + text }); } catch (e) { /* ignore */ }
-            }
+            notifyOwner('reply', s, { text });
             V.q.input.value = '';
             toast('Reply sent! Find it in your Chat tab.', 'success');
             V.q.input.blur();
@@ -829,8 +863,9 @@
         if (!CFG.allowStoryDelete) return;
         const s = V.story;
         if (!s || s.ownerUid !== st.me.uid) return;
-        if (!window.confirm('Delete this story? Replies already sent in chat will remain.')) return;
         pause('confirm');
+        const ok = await S.confirm({ title: 'Delete this story?', message: 'It disappears for everyone right away. Replies already sent in chat will stay.', confirmLabel: 'Delete story', cancelLabel: 'Keep it', type: 'danger' });
+        if (!ok) { resume('confirm'); return; }
         try {
             await deleteStoryDoc(db.collection('stories').doc(s.id));
             rawCache = rawCache.filter(x => x.id !== s.id); rebuild(rawCache);
@@ -947,5 +982,5 @@
     function boot() { auth.onAuthStateChanged(onUser); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
-    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.8.0' };
+    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.10.0' };
 })();
