@@ -569,3 +569,38 @@ html.st-lock .toast-stack { z-index: 10200 !important; }
     .st-dlg-card { transform: translateY(40px); }
 }
 @media (prefers-reduced-motion: reduce) { .st-dlg-bd, .st-dlg-card, .st-dlg-act button { transition: none !important; } }
+
+
+/* ================================================================
+   v1.11
+   ================================================================ */
+
+/* ---------- viewer: lighter open / close (nothing here repaints per frame) ---------- */
+.st-viewer { contain: layout paint style; overscroll-behavior: contain; touch-action: none; }
+.st-bd { background: rgba(8, 8, 14, .94); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.st-viewer .st-bgblur img { filter: none; transform: none; opacity: .6; }       /* tiny image scaled up = free blur */
+.st-viewer.anim .st-music-card, .st-viewer.anim .st-act, .st-viewer.anim .st-tray { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.st-vlist, .st-bottom .st-caption { touch-action: pan-y; }
+.st-frame { backface-visibility: hidden; }
+
+/* ---------- touch and hold: pause and hide every control to see the whole story ---------- */
+.st-top, .st-bottom, .st-scrim-t, .st-scrim-b, .st-vsheet, .st-nav { transition: opacity .16s ease; }
+.st-viewer.clean .st-top, .st-viewer.clean .st-bottom, .st-viewer.clean .st-scrim-t, .st-viewer.clean .st-scrim-b,
+.st-viewer.clean .st-vsheet, .st-viewer.clean .st-nav { opacity: 0; pointer-events: none; }
+
+/* ---------- editor: moving / scaling / rotating shows the whole element ---------- */
+.st-tools { transition: opacity .15s ease; }
+.st-cstage.drag .st-tools, .st-cstage.sticker-dragging .st-tools { opacity: 0; pointer-events: none; }
+.st-cstage.drag .st-t.sel { outline-color: transparent; }
+.st-cstage.sticker-dragging .st-h { opacity: 0; }
+.st-safe { display: none; }
+
+/* ---------- collapsible option panel (small screens) ---------- */
+.st-sh-h .st-col { padding: 7px 11px; }
+.st-sheet.collapsed .st-sh-b { display: none; }
+.st-sheet.collapsed { max-height: none; }
+@media (min-width: 900px) { .st-col { display: none !important; } .st-sheet.collapsed .st-sh-b { display: block; } }
+@media (prefers-reduced-motion: reduce) { .st-top, .st-bottom, .st-scrim-t, .st-scrim-b, .st-vsheet, .st-nav, .st-tools { transition: none !important; } }
+
+.st-frame.blank .st-media-wrap, .st-frame.blank .st-bgblur, .st-frame.blank .st-texts, .st-frame.blank .st-top, .st-frame.blank .st-bottom, .st-frame.blank .st-msticker { visibility: hidden; }
+.st-stagewrap { transition: none; }

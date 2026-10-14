@@ -1,5 +1,5 @@
 /* ================================================================
-   stories-composer.js · TIMAWA / Barkada Stories  (lazy-loaded, v1.10)
+   stories-composer.js · TIMAWA / Barkada Stories  (lazy-loaded, v1.11)
    ================================================================ */
 (function () {
     'use strict';
@@ -12,15 +12,15 @@
     const TAP_SLOP = 6;
     const TAP_MS = 220;
     // Wide bounds: the sticker can be pushed past the edges; only the centre stays reachable.
-    const STICKER_X_MIN = -0.25, STICKER_X_MAX = 1.25;
-    const STICKER_Y_MIN = -0.25, STICKER_Y_MAX = 1.25;
+    const STICKER_X_MIN = 0, STICKER_X_MAX = 1;
+    const STICKER_Y_MIN = 0, STICKER_Y_MAX = 1;
 
     let C = null, root = null, q = {};
     const M = {
         sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
         texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar',
         mpos: { x: 0.5, y: 0.54, scale: 1, rot: 0 },
-        mt: { scale: 1, x: 0, y: 0 }, pan: null,
+        mt: { scale: 1, x: 0, y: 0 }, pan: null, shCollapsed: false,
         mSel: false, dragS: null,
         query: '', spq: '', changing: false,
         hist: [], preview: false, xhr: null, busy: false, results: [], msg: '', searching: false, playing: '', drag: null, lastTap: null, tl: null
@@ -77,8 +77,7 @@
           <div class="st-cbody">
             <div class="st-stagewrap"><div class="st-cstage">
               <div class="st-bgblur"></div><div class="st-media-wrap"></div><div class="st-texts"></div><div class="st-msticker"></div>
-              <div class="st-safe" style="top:14%"></div><div class="st-safe" style="top:80%"></div>
-              <div class="st-scrim-t" hidden></div><div class="st-scrim-b" hidden></div>
+                            <div class="st-scrim-t" hidden></div><div class="st-scrim-b" hidden></div>
               <div class="st-song" hidden></div>
               <div class="st-capv" hidden></div>
               <div class="st-tools" role="toolbar" aria-label="Story tools"></div>
@@ -86,11 +85,11 @@
             </div></div>
           </div>
           <div class="st-bb"><button class="st-btn" type="button" data-k="publish"><i class="fas fa-paper-plane"></i> Share to your story</button><div class="st-bar" hidden><i></i></div></div>
-          <div class="st-sheet" hidden role="dialog" aria-label="Story options"><div class="st-sh-h"><b></b><button class="st-btn sm" type="button" data-k="done">Done</button></div><div class="st-sh-b"></div></div>
+          <div class="st-sheet" hidden role="dialog" aria-label="Story options"><div class="st-sh-h"><b></b><button class="st-btn ghost sm st-col" type="button" data-k="collapse" aria-label="Collapse panel" aria-expanded="true"><i class="fas fa-chevron-down"></i></button><button class="st-btn sm" type="button" data-k="done">Done</button></div><div class="st-sh-b"></div></div>
           <input type="file" hidden>`;
         document.body.appendChild(root);
         q = { head: $('.st-ch'), stage: $('.st-cstage'), mw: $('.st-media-wrap'), bg: $('.st-bgblur'), tx: $('.st-texts'), tools: $('.st-tools'), sheet: $('.st-sheet'),
-              sht: $('.st-sh-h b'), shb: $('.st-sh-b'), file: $('input[type=file]'), bar: $('.st-bar'), barI: $('.st-bar i'), pub: $('[data-k=publish]'),
+              sht: $('.st-sh-h b'), col: $('[data-k=collapse]'), shb: $('.st-sh-b'), file: $('input[type=file]'), bar: $('.st-bar'), barI: $('.st-bar i'), pub: $('[data-k=publish]'),
               pv: $('.st-pv'), msk: $('.st-msticker'), song: $('.st-song'), capv: $('.st-capv'), sT: $('.st-scrim-t'), sB: $('.st-scrim-b'), prevB: $('[data-k=preview]') };
         S.observeStage(q.stage);
         if ('ResizeObserver' in window) new ResizeObserver(measure).observe(q.sheet);
@@ -142,7 +141,7 @@
             sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
             texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar',
             mpos: { x: 0.5, y: 0.54, scale: 1, rot: 0 },
-            mt: { scale: 1, x: 0, y: 0 }, pan: null,
+            mt: { scale: 1, x: 0, y: 0 }, pan: null, shCollapsed: false,
             mSel: false, dragS: null,
             query: '', spq: '', changing: false,
             hist: [], preview: false, busy: false, results: [], msg: '', searching: false, playing: '', tl: null
@@ -289,19 +288,20 @@
         if (M.preview) setPreview(false);
         if (M.sheet === 'music' && name !== 'music') stopAudio();
         M.sheet = name;
-        if (name === 'text') { if (!M.texts.length) { addText(); return; } }
+        M.shCollapsed = false;
+        if (name === 'text' && !selT()) { addText(); return; }     // Aa: format the selected text, or start a new one
         renderSheet();
     }
     function closeSheet() {
         if (!M.sheet) return;
         if (document.activeElement && document.activeElement.isContentEditable) document.activeElement.blur();
         if (M.sheet === 'music') { stopAudio(); M.changing = false; }
-        if (M.sheet === 'text') { M.sel = null; renderTexts(); }
-        M.sheet = null; renderSheet();
+        M.sheet = null; renderSheet();      // the text stays selected so it can be pinched / moved at full size
     }
     function measure() {
         if (!root) return;
-        root.style.setProperty('--sh', (M.sheet ? q.sheet.offsetHeight : 0) + 'px');
+        const bb = root.querySelector('.st-bb');
+        root.style.setProperty('--sh', (M.sheet ? Math.max(0, q.sheet.offsetHeight - (bb ? bb.offsetHeight : 0)) : 0) + 'px');
         root.style.setProperty('--hh', q.head.offsetHeight + 'px');
     }
     function renderAll() { renderStage(); renderSheet(); }
@@ -313,6 +313,9 @@
         q.pub.disabled = M.busy || !hasMedia();
         renderTools();
         if (!open) { root.style.setProperty('--sh', '0px'); return; }
+        q.sheet.classList.toggle('collapsed', !!M.shCollapsed);
+        q.col.innerHTML = '<i class="fas fa-chevron-' + (M.shCollapsed ? 'up' : 'down') + '"></i>';
+        q.col.setAttribute('aria-expanded', String(!M.shCollapsed)); q.col.setAttribute('aria-label', M.shCollapsed ? 'Expand panel' : 'Collapse panel');
         q.sht.textContent = M.sheet === 'layout' ? (M.items.length >= 2 ? 'Layout' : 'Framing') : SHEET_TITLES[M.sheet];
         q.shb.innerHTML = M.sheet === 'text' ? textSheet() : M.sheet === 'music' ? musicSheet() : M.sheet === 'layout' ? layoutSheet() : M.sheet === 'time' ? timeSheet() : captionSheet();
         requestAnimationFrame(measure);
@@ -437,7 +440,7 @@
     function dup() {
         const t = selT(); if (!t) return;
         if (M.texts.length >= MAX_TEXTS) return C.toast('Text limit reached.', 'warn');
-        const n = Object.assign({}, t, { id: rid(), x: S.clamp(t.x + 0.05, S.SAFE.xMin, S.SAFE.xMax), y: S.clamp(t.y + 0.06, S.SAFE.yMin, S.SAFE.yMax) });
+        const n = Object.assign({}, t, { id: rid(), x: S.clamp(t.x + 0.05, 0, 1), y: S.clamp(t.y + 0.06, 0, 1) });
         M.texts.push(n); M.sel = n.id; renderTexts(); renderSheet(); pushHist();
     }
     function del() {
@@ -448,8 +451,7 @@
         if (M.sel === id) return;
         M.sel = id;
         q.tx.querySelectorAll('.st-t').forEach(el => el.classList.toggle('sel', el.dataset.id === id));
-        if (id && M.sheet !== 'text') { if (M.sheet === 'music') stopAudio(); M.sheet = 'text'; }
-        renderSheet();
+        if (M.sheet === 'text') renderSheet();      // keep an open panel in step with the selection; never open one
     }
     function edit(id, selectAll) {
         const el = q.tx.querySelector(`[data-id="${id}"]`); if (!el) return;
@@ -491,8 +493,8 @@
             const nowT = Date.now();
             if (M.lastTap && M.lastTap.id === t.id && nowT - M.lastTap.t < 320) { M.lastTap = null; edit(t.id); return; }
             M.lastTap = { id: t.id, t: nowT };
-            const r = st.getBoundingClientRect();
-            M.drag = { id: t.id, sx: e.clientX, sy: e.clientY, ox: t.x, oy: t.y, w: r.width, h: r.height, moved: false };
+            const r = st.getBoundingClientRect(), er = el.getBoundingClientRect();
+            M.drag = { id: t.id, sx: e.clientX, sy: e.clientY, ox: t.x, oy: t.y, w: r.width, h: r.height, hw: Math.min(0.5, er.width / 2 / r.width), hh: Math.min(0.5, er.height / 2 / r.height), moved: false };
             try { el.setPointerCapture(e.pointerId); } catch (err) {}
             e.preventDefault();
         });
@@ -502,8 +504,8 @@
             if (!d.moved && Math.hypot(dx, dy) < 4) return;
             d.moved = true; st.classList.add('drag');
             const t = find(d.id); if (!t) return;
-            t.x = S.clamp(d.ox + dx / d.w, S.SAFE.xMin, S.SAFE.xMax);
-            t.y = S.clamp(d.oy + dy / d.h, S.SAFE.yMin, S.SAFE.yMax);
+            t.x = S.clamp(d.ox + dx / d.w, d.hw, 1 - d.hw);
+            t.y = S.clamp(d.oy + dy / d.h, d.hh, 1 - d.hh);
             refreshEl(t);
         });
         const end = () => { const d = M.drag; M.drag = null; st.classList.remove('drag'); if (d && d.moved) pushHist(); };
@@ -552,8 +554,8 @@
                 if (!moved) { e.preventDefault(); e.stopPropagation(); return; }
                 const dx = dxPx / sr.width;
                 const dy = dyPx / sr.height;
-                M.mpos.x = clampStickerX(s.ox + dx);
-                M.mpos.y = clampStickerY(s.oy + dy);
+                M.mpos.x = S.clamp(s.ox + dx, s.hw || 0, 1 - (s.hw || 0));
+                M.mpos.y = S.clamp(s.oy + dy, s.hh || 0, 1 - (s.hh || 0));
                 renderSticker();
             } else if (s.mode === 'rot') {
                 const ang = Math.atan2(e.clientY - s.cy, e.clientX - s.cx);
@@ -615,6 +617,7 @@
                     kind: 'move',
                     sx: e.clientX, sy: e.clientY,
                     ox: M.mpos.x, oy: M.mpos.y,
+                    hw: Math.min(0.5, rect.width / 2 / stageRect.width), hh: Math.min(0.5, rect.height / 2 / stageRect.height),
                     stageRect, pointerId: e.pointerId
                 };
             }
@@ -655,8 +658,9 @@
             const [a, b] = pts();
             let tg = [a.tgt, b.tgt].find(x => x.k !== 'bg') || (canMT() ? { k: 'media' } : null);
             if (!tg) return false;
-            M.drag = null; q.stage.classList.remove('drag'); M.pan = null;
+            M.drag = null; M.pan = null;
             if (M.stickerCancel) M.stickerCancel();
+            q.stage.classList.add('drag');
             const t = tg.k === 'text' ? find(tg.id) : null;
             if (tg.k === 'text' && !t) return false;
             P = { tg, d0: dist(a, b) || 1, a0: ang(a, b), size0: t ? t.size : 0, rot0: t ? t.rot : 0, sc0: tg.k === 'sticker' ? M.mpos.scale : M.mt.scale, sr0: M.mpos.rot };
@@ -702,7 +706,7 @@
             if (!ptrs.has(e.pointerId)) return;
             ptrs.delete(e.pointerId);
             if (M.pan && M.pan.id === e.pointerId) { M.pan = null; st.classList.remove('drag'); }
-            if (P && ptrs.size < 2) { const was = P; P = null; pushHist(); if (was.tg.k !== 'media') renderSheet(); else if (M.sheet === 'layout') renderSheet(); }
+            if (P && ptrs.size < 2) { const was = P; P = null; st.classList.remove('drag'); pushHist(); if (was.tg.k !== 'media') renderSheet(); else if (M.sheet === 'layout') renderSheet(); }
         };
         st.addEventListener('pointerup', up, true);
         st.addEventListener('pointercancel', up, true);
@@ -765,6 +769,7 @@
         switch (k) {
             case 'close': tryClose(); break;
             case 'done': closeSheet(); break;
+            case 'collapse': M.shCollapsed = !M.shCollapsed; renderSheet(); break;
             case 'tool': M.sheet === v ? closeSheet() : openSheet(v); break;
             case 'preview': setPreview(!M.preview); break;
             case 'layout': M.layout = v; renderStage(); renderSheet(); break;

@@ -32,7 +32,7 @@
     const CFG = Object.assign({
         IMAGE_MS: 6000,
         MAX_REPLY: 300,
-        composerSrc: 'stories-composer.js?v=1.10.0',
+        composerSrc: 'stories-composer.js?v=1.11.0',
         spotifySearchUrl: '',
         allowStoryDelete: true,        // pages can override via window.STORIES_CONFIG
         allowStoryViews: true          // pages can override via window.STORIES_CONFIG
@@ -327,14 +327,14 @@
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             down = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), held: false, drag: false, dy: 0 };
             try { fr.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-            down.timer = setTimeout(() => { if (down && !down.drag) { down.held = true; pause('hold'); } }, 260);
+            down.timer = setTimeout(() => { if (down && !down.drag) { down.held = true; holdStart(); } }, 260);
         });
         fr.addEventListener('pointermove', e => {
             if (!down || e.pointerId !== down.id) return;
             const dx = e.clientX - down.x, dy = e.clientY - down.y;
             if (!down.drag && dy > 12 && dy > Math.abs(dx) * 1.2) {
                 down.drag = true; clearTimeout(down.timer);
-                if (down.held) { down.held = false; resume('hold'); }
+                if (down.held) { down.held = false; endHold(); }
                 pause('drag');
             }
             if (down.drag) { down.dy = Math.max(0, dy); dragFrame(down.dy); }
@@ -345,20 +345,23 @@
             try { fr.releasePointerCapture(d.id); } catch (err) { /* ignore */ }
             const dx = e.clientX - d.x, dy = e.clientY - d.y;
             if (d.drag) { const v = d.dy / Math.max(1, performance.now() - d.t); (d.dy > 110 || v > 0.6) ? close(false, true) : springBack(); return; }
-            if (d.held) { resume('hold'); return; }
+            if (d.held) { endHold(); return; }
             if (Math.abs(dx) < 14 && Math.abs(dy) < 14) {
                 const r = fr.getBoundingClientRect();
                 (e.clientX - r.left < r.width * 0.3) ? prev() : next();
             }
         });
+        fr.addEventListener('contextmenu', e => e.preventDefault());      // no image menu on long-press
         fr.addEventListener('pointercancel', () => {
             if (!down) return;
             const d = down; down = null; clearTimeout(d.timer);
-            if (d.drag) springBack(); else if (d.held) resume('hold');
+            if (d.drag) springBack(); else if (d.held) endHold();
         });
 
+        el.addEventListener('wheel', e => { if (!e.target.closest('.st-vlist,.st-caption')) e.preventDefault(); }, { passive: false });
         document.addEventListener('keydown', e => {
             if (!V.open) return;
+            if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.key) && e.target !== V.q.input && !e.target.closest('.st-vlist')) e.preventDefault();
             if (e.key === 'Escape') { e.preventDefault(); if (!V.q.vsheet.hidden) toggleViewers(false); else close(); return; }
             if (e.target === V.q.input) return;
             if (e.key === 'ArrowRight') next();
@@ -381,14 +384,13 @@
         return null;
     }
     function frameState(o) {
-        const fr = V.q.frame, w = fr.offsetWidth, h = fr.offsetHeight, rad = innerWidth <= 640 ? 0 : 18;
-        const full = { transform: 'translate(0px,0px) scale(1)', clipPath: `inset(0px 0px 0px 0px round ${rad}px)`, opacity: 1 };
+        const fr = V.q.frame, w = fr.offsetWidth;
+        const full = { transform: 'translate3d(0px,0px,0) scale(1)', opacity: 1 };
         let small;
         if (o && o.width > 8) {
-            const s = o.width / w, vi = Math.max(0, (h - w) / 2);
-            small = { transform: `translate(${o.left + o.width / 2 - innerWidth / 2}px,${o.top + o.height / 2 - innerHeight / 2}px) scale(${s})`,
-                      clipPath: `inset(${vi}px 0px ${vi}px 0px round ${w / 2}px)`, opacity: 1 };
-        } else small = { transform: 'translate(0px,26px) scale(.94)', clipPath: full.clipPath, opacity: 0 };
+            const s = o.width / w;
+            small = { transform: `translate3d(${(o.left + o.width / 2 - innerWidth / 2).toFixed(1)}px,${(o.top + o.height / 2 - innerHeight / 2).toFixed(1)}px,0) scale(${s.toFixed(4)})`, opacity: .2 };
+        } else small = { transform: 'translate3d(0px,24px,0) scale(.94)', opacity: 0 };
         return { full, small };
     }
     function stopAnims() {
@@ -399,16 +401,19 @@
         const fr = V.q.frame;
         stopAnims();
         if (reduceMotion() || !fr.animate) { done && done(); return; }
-        const ease = 'cubic-bezier(.22,.9,.28,1)';
-        const a = fr.animate([from, to], { duration: ms, easing: ease, fill: 'both' });
-        const b = V.q.bd.animate([{ opacity: bdFrom }, { opacity: bdTo }], { duration: ms, easing: 'ease-out', fill: 'both' });
+        V.el.classList.add('anim');                       // CSS drops the small backdrop blurs while moving
+        const a = fr.animate([from, to], { duration: ms, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both' });
+        const b = V.q.bd.animate([{ opacity: bdFrom }, { opacity: bdTo }], { duration: ms, easing: 'linear', fill: 'both' });
         V.anim = a; V.bdAnim = b;
         a.onfinish = () => {
             if (V.anim !== a) return;
+            V.el.classList.remove('anim');
             if (!keep) stopAnims();
             done && done();
         };
     }
+    function holdStart() { pause('hold'); V.el.classList.add('clean'); }
+    function endHold() { V.el.classList.remove('clean'); resume('hold'); }
     function dragFrame(dy) {
         const k = Math.min(dy / Math.max(300, innerHeight * 0.8), 1);
         V.q.frame.style.transform = `translateY(${dy}px) scale(${(1 - k * 0.16).toFixed(3)})`;
@@ -440,14 +445,19 @@
         const o = originEl && originEl.getBoundingClientRect ? originEl.getBoundingClientRect() : findOrigin(uid);
         V.returnFocus = document.activeElement;
         V.el.hidden = false; V.open = true;
-        document.documentElement.classList.add('st-lock');
         try { history.pushState({ stv: 1 }, ''); V.pushed = true; } catch (e) { /* ignore */ }
-        renderSlide();
-        pause('anim');                                   // story clock starts when the grow animation ends
         const { full, small } = frameState(o);
-        runAnim(small, full, 340, 0, 1, () => resume('anim'));
-        if (!V.anim) resume('anim');
+        V.animating = true; V.q.frame.classList.add('blank');
+        runAnim(small, full, 300, 0, 1, () => { V.animating = false; resume('anim'); });
+        if (!V.anim) V.animating = false;
         V.el.querySelector('[data-a=close]').focus({ preventScroll: true });
+        // heavy work (DOM, image decode, listeners) starts AFTER the first animation frame so it can't stall it
+        requestAnimationFrame(() => {
+            V.q.frame.classList.remove('blank');
+            if (!V.open) return;
+            renderSlide();
+            if (V.animating) pause('anim');
+        });
     }
     function openById(id) {
         const s = st.stories.find(x => x.id === id);
@@ -458,21 +468,20 @@
         if (!V.open) return;
         const uid = V.order[V.gi];
         teardownSlide();                                  // stops timer, video and music immediately
-        V.open = false; V.closing = true;
+        V.open = false; V.closing = true; V.animating = false;
         const fr = V.q.frame;
         const finish = () => {
             V.closing = false; V.el.hidden = true; stopAnims();
             fr.style.transform = ''; V.q.bd.style.opacity = '';
-            document.documentElement.classList.remove('st-lock');
             if (V.pushed && !fromPop) { V.pushed = false; try { history.back(); } catch (e) { /* ignore */ } }
             if (V.returnFocus && V.returnFocus.focus) { try { V.returnFocus.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
-            rebuild(rawCache);
+            setTimeout(() => rebuild(rawCache), 80);      // row refresh after the shrink, not during it
         };
         const { full, small } = frameState(findOrigin(uid));
-        const cur = fromDrag ? { transform: fr.style.transform || full.transform, clipPath: full.clipPath, opacity: 1 } : full;
+        const cur = fromDrag ? { transform: fr.style.transform || full.transform, opacity: 1 } : full;
         const bdo = fromDrag ? parseFloat(V.q.bd.style.opacity || '1') : 1;
         fr.style.transform = ''; V.q.bd.style.opacity = '';
-        runAnim(cur, small, 280, bdo, 0, finish, true);
+        runAnim(cur, small, 220, bdo, 0, finish, true);
         if (!V.anim) finish();
     }
     function curGroup() { return st.byOwner.get(V.order[V.gi]); }
@@ -499,6 +508,7 @@
     }
 
     function teardownSlide() {
+        if (V.el) V.el.classList.remove('clean');
         cancelAnimationFrame(V.raf); V.raf = 0;
         if (V.unsubR) { V.unsubR(); V.unsubR = null; }
         if (V.unsubV) { V.unsubV(); V.unsubV = null; }
@@ -568,7 +578,7 @@
                 const im = new Image(); im.alt = s.caption || 'Story';
                 im.onload = () => onReady(null); im.onerror = onError;
                 im.src = s.mediaUrl; q.mw.appendChild(im);
-                const b = new Image(); b.src = s.mediaUrl; b.alt = ''; q.bg.appendChild(b);       // soft backdrop shows when the photo is shrunk / moved
+                const b = new Image(); b.src = S.cloudResize(s.mediaUrl, 64); b.alt = ''; q.bg.appendChild(b);       // soft backdrop shows when the photo is shrunk / moved
             }
         }
         setupMusic(s);
@@ -982,5 +992,5 @@
     function boot() { auth.onAuthStateChanged(onUser); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
-    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.10.0' };
+    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.11.0' };
 })();
