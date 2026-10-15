@@ -700,8 +700,8 @@ html[data-tw-lite] .sr-c{opacity:.6}
    ================================================================ */
 [data-timawa-theme="aurora"] .theme-bg-base{background:linear-gradient(180deg,#d4f3ea,#a9dccd 55%,#86c5b6)}
 [data-timawa-theme="aurora"][data-timawa-mode="dark"] .theme-bg-base{background:linear-gradient(180deg,#02100f,#05181a 55%,#0a2630)}
-[data-timawa-theme="aurora"] .theme-bg-shapes{--q1:#9a6a43;--q2:#5a3d2a;--q3:#6b4630;--q4:#7fb8ae;--q5:#2f6b5c;--q6:#ffffff;--q7:#ffcf70;--q8:#fff;--q9:#ff8a2a;--q10:#ffd45c;--ag:24%;--cw:clamp(110px,12vw,190px);--ra:#10b981;--rb:#6ee7b7;--rc:#8b5cf6;--ss:0;--rib:.5;--lk1:rgba(200,238,228,.95);--lk2:rgba(150,210,196,.95);--sh:#bfe0da;--tw6-c:rgba(255,255,255,.85)}
-[data-timawa-theme="aurora"][data-timawa-mode="dark"] .theme-bg-shapes{--q1:#4a3020;--q2:#1c110a;--q3:#2c1c12;--q4:#0f2f34;--q5:#04120f;--q6:#2d4f58;--q7:#ffc866;--q8:rgba(225,250,245,.85);--q9:#ff7a1f;--q10:#ffd45c;--ag:24%;--cw:clamp(110px,12vw,190px);--ra:#34d399;--rb:#2dd4bf;--rc:#a78bfa;--ss:1;--rib:.95;--lk1:#0f3036;--lk2:#081a1e;--sh:#16363f;--tw6-c:rgba(220,245,255,.7)}
+[data-timawa-theme="aurora"] .theme-bg-shapes{--q1:#9a6a43;--q2:#5a3d2a;--q3:#6b4630;--q4:#5f9d93;--q5:#a7d3cb;--q6:#2f6b5c;--q7:#ffffff;--q8:#ffcf70;--q9:#ffffff;--q10:#ff8a2a;--ag:24%;--cw:clamp(110px,12vw,190px);--ra:#10b981;--rb:#6ee7b7;--rc:#8b5cf6;--ss:0;--rib:.5;--lk1:rgba(200,238,228,.95);--lk2:rgba(150,210,196,.95);--sh:#bfe0da;--tw6-c:rgba(255,255,255,.85);--q11:#ffd45c}
+[data-timawa-theme="aurora"][data-timawa-mode="dark"] .theme-bg-shapes{--q1:#4a3020;--q2:#1c110a;--q3:#2c1c12;--q4:#0b2a2e;--q5:#12383d;--q6:#04120f;--q7:#2d4f58;--q8:#ffc866;--q9:rgba(225,250,245,.85);--q10:#ff7a1f;--ag:24%;--cw:clamp(110px,12vw,190px);--ra:#34d399;--rb:#2dd4bf;--rc:#a78bfa;--ss:1;--rib:.95;--lk1:#0f3036;--lk2:#081a1e;--sh:#16363f;--tw6-c:rgba(220,245,255,.7);--q11:#ffd45c}
 .ar-stars{left:0;right:0;top:0;height:65%;background-image:var(--tw6-s);background-size:50% 50%;opacity:calc(var(--ss)*.8)}
 .ar-stars.t{background-size:37% 37%;background-position:20% 30%;animation:twOp 4s ease-in-out infinite alternate}
 .ar-rib{left:-12%;width:124%;opacity:var(--rib)}

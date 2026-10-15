@@ -15,7 +15,7 @@
 
     <!-- ★ Shared theme system (must load before page render to avoid theme flash) -->
     <link rel="stylesheet" href="theme.css" />
-    <link rel="stylesheet" href="stories.css?v=1.3.0" />
+    <link rel="stylesheet" href="stories.css?v=1.2.0" />
     <script src="theme.js"></script>
 
     <!-- JSZip for ZIP downloads -->
@@ -2870,11 +2870,12 @@
                 <div style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;text-align:right;">
                     <span id="titaNoteCount">0</span>/60
                 </div>
+                <div id="titaNoteMusicRow"></div>
                 <div id="titaNoteStatus" style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;display:none;">
                     <i class="fas fa-clock"></i> <span></span>
                 </div>
                 <div style="font-size:10px;color:#dc2626;margin-top:6px;">
-                    <i class="fas fa-exclamation-triangle"></i> Changing the note text will delete all existing replies.
+                    <i class="fas fa-exclamation-triangle"></i> Changing the note text or song will delete all existing replies.
                 </div>
             </div>
 
@@ -3036,10 +3037,12 @@
         let activeCommentsUnsubscribe = null;
         let activeCommentsNoteUid = null;
         let currentReplyTo = null;
+        let noteCommentsById = {};
 
         let activeHighlightCommentsUnsubscribe = null;
         let activeHighlightCommentsId = null;
         let currentHighlightReplyTo = null;
+        let highlightCommentsById = {};
 
         let pendingMentions = new Map();
         let mentionDropdownIndex = -1;
@@ -3201,6 +3204,25 @@
         // ================================================================
         // ===== ★ HIGHLIGHT REACTIONS SYSTEM =====
         // ================================================================
+        function getMyUid() {
+            try { const u = firebase.auth().currentUser; if (u) return u.uid; } catch (e) { /* ignore */ }
+            if (typeof currentUser !== 'undefined' && currentUser) return currentUser.uid;
+            if (typeof titaCurrentUser !== 'undefined' && titaCurrentUser) return titaCurrentUser.uid;
+            return null;
+        }
+        // "my reaction" is always derived from WHO reacted (byUid) + who is signed in NOW, never frozen at snapshot time
+        function resolveMine(cache) {
+            const u = getMyUid();
+            if (u && cache.byUid) return Object.prototype.hasOwnProperty.call(cache.byUid, u) ? cache.byUid[u] : null;
+            return cache.mine || null;
+        }
+        function setMine(cache, type) {
+            cache.mine = type || null;
+            const u = getMyUid();
+            if (u) { if (!cache.byUid) cache.byUid = {}; if (type) cache.byUid[u] = type; else delete cache.byUid[u]; }
+        }
+        try { firebase.auth().onAuthStateChanged(function () { Object.keys(highlightReactionsCache).forEach(function (id) { try { rerenderHighlightReactionSurfaces(id); } catch (e) { /* ignore */ } }); }); } catch (e) { /* ignore */ }
+
         function ensureHighlightReactionCache(highlightId) {
             if (!highlightReactionsCache[highlightId]) {
                 highlightReactionsCache[highlightId] = {
@@ -3226,8 +3248,7 @@
                     const cache = ensureHighlightReactionCache(highlightId);
                     const counts = {};
                     const byType = {};
-                    let mine = null;
-                    const myUid = titaCurrentUser ? titaCurrentUser.uid : null;
+                    const byUid = {};
 
                     snap.forEach(doc => {
                         const data = doc.data();
@@ -3238,12 +3259,13 @@
                         if (!byType[type]) byType[type] = [];
                         byType[type].push(doc.id);
 
-                        if (myUid && doc.id === myUid) mine = type;
+                        byUid[doc.id] = type;
                     });
 
                     cache.counts = counts;
                     cache.byType = byType;
-                    cache.mine = mine;
+                    cache.byUid = byUid;
+                    cache.mine = byUid[getMyUid()] || null;
 
                     rerenderHighlightReactionSurfaces(highlightId);
                 }, (err) => {
@@ -3311,7 +3333,7 @@
         function renderHighlightReactionBar(highlightId) {
             const cache = highlightReactionsCache[highlightId] || { counts: {}, mine: null };
             const summaryHtml = getReactionSummaryHtml(highlightId, 'small');
-            const mine = cache.mine;
+            const mine = resolveMine(cache);
             const mineEmoji = mine ? HIGHLIGHT_REACTION_EMOJI[mine] : '';
 
             let pickerHtml = '';
@@ -3357,7 +3379,7 @@
         function renderHighlightDetailReactionBar(highlightId) {
             const cache = highlightReactionsCache[highlightId] || { counts: {}, mine: null };
             const summaryHtml = getReactionSummaryHtml(highlightId, 'large');
-            const mine = cache.mine;
+            const mine = resolveMine(cache);
             const mineEmoji = mine ? HIGHLIGHT_REACTION_EMOJI[mine] : '';
 
             let pickerHtml = '';
@@ -3406,7 +3428,7 @@
             if (existing) existing.remove();
 
             const cache = highlightReactionsCache[highlightId] || { counts: {}, mine: null };
-            const mine = cache.mine;
+            const mine = resolveMine(cache);
 
             let optionsHtml = '';
             HIGHLIGHT_REACTION_TYPES.forEach(type => {
@@ -3626,7 +3648,7 @@
 
             const uid = titaCurrentUser.uid;
             const cache = ensureHighlightReactionCache(highlightId);
-            const previousMine = cache.mine;
+            const previousMine = resolveMine(cache);
 
             document.querySelectorAll('.hl-reaction-picker.show').forEach(p => p.classList.remove('show'));
 
@@ -3635,7 +3657,7 @@
                 if (cache.counts[previousMine] === 0) delete cache.counts[previousMine];
             }
             cache.counts[reactionType] = (cache.counts[reactionType] || 0) + 1;
-            cache.mine = reactionType;
+            setMine(cache, reactionType);
 
             rerenderHighlightReactionSurfaces(highlightId);
 
@@ -3647,14 +3669,14 @@
                     await reactionRef.delete();
                     cache.counts[reactionType] = Math.max(0, cache.counts[reactionType] - 1);
                     if (cache.counts[reactionType] === 0) delete cache.counts[reactionType];
-                    cache.mine = null;
+                    setMine(cache, null);
                 } else {
                     await reactionRef.set({
                         type: reactionType,
                         uid,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    cache.mine = reactionType;
+                    setMine(cache, reactionType);
                 }
 
                 rerenderHighlightReactionSurfaces(highlightId);
@@ -3679,8 +3701,7 @@
                 const cache = ensureHighlightReactionCache(highlightId);
                 const counts = {};
                 const byType = {};
-                let mine = null;
-                const myUid = titaCurrentUser ? titaCurrentUser.uid : null;
+                const byUid = {};
                 snap.forEach(doc => {
                     const data = doc.data();
                     const type = data.type;
@@ -3688,11 +3709,12 @@
                     counts[type] = (counts[type] || 0) + 1;
                     if (!byType[type]) byType[type] = [];
                     byType[type].push(doc.id);
-                    if (myUid && doc.id === myUid) mine = type;
+                    byUid[doc.id] = type;
                 });
                 cache.counts = counts;
                 cache.byType = byType;
-                cache.mine = mine;
+                cache.byUid = byUid;
+                    cache.mine = byUid[getMyUid()] || null;
                 rerenderHighlightReactionSurfaces(highlightId);
             } catch (e) {
                 console.warn('refreshHighlightReactionCacheFromServer error:', e);
@@ -4010,6 +4032,7 @@
             }
 
             document.getElementById('noteModalText').textContent = note.text || '';
+            NoteMusic.mountModal(note);
 
             const expiryEl = document.getElementById('noteModalExpiry');
             const expirySpan = expiryEl.querySelector('span');
@@ -4034,6 +4057,7 @@
         }
 
         function closeNoteModal() {
+            NoteMusic.stop();
             if (activeCommentsUnsubscribe) {
                 activeCommentsUnsubscribe();
                 activeCommentsUnsubscribe = null;
@@ -4477,28 +4501,8 @@
                 return;
             }
 
-            const topLevel = comments.filter(c => !c.replyToId);
-            const repliesByParent = {};
-            comments.filter(c => c.replyToId).forEach(c => {
-                if (!repliesByParent[c.replyToId]) repliesByParent[c.replyToId] = [];
-                repliesByParent[c.replyToId].push(c);
-            });
-
-            let html = '';
-            topLevel.forEach(c => {
-                html += renderCommentItem(c, false);
-                const replies = repliesByParent[c.id] || [];
-                replies.forEach(r => {
-                    html += renderCommentItem(r, true);
-                });
-            });
-
-            const orphanReplies = comments.filter(c => c.replyToId && !topLevel.find(t => t.id === c.replyToId));
-            orphanReplies.forEach(r => {
-                html += renderCommentItem(r, false);
-            });
-
-            list.innerHTML = html;
+            noteCommentsById = Threads.index(comments);
+            list.innerHTML = Threads.renderList(comments, renderCommentItem);
         }
 
         function renderTextWithMentions(text, mentionUids) {
@@ -4568,9 +4572,7 @@
                 ? `<button class="delete-btn" onclick="deleteNoteComment('${safeCommentId}')"><i class="fas fa-trash"></i> Delete</button>`
                 : '';
 
-            const replyBtn = !isReply
-                ? `<button onclick="startReplyTo('${safeCommentId}', '${safeAuthorName}')"><i class="fas fa-reply"></i> Reply</button>`
-                : '';
+            const replyBtn = `<button onclick="startReplyTo('${safeCommentId}', '${safeAuthorName}')"><i class="fas fa-reply"></i> Reply</button>`;
 
             const textHtml = renderTextWithMentions(comment.text || '', comment.mentions);
 
@@ -4582,6 +4584,7 @@
                             <span class="comment-author ${isMe ? 'is-me' : ''}">${escapeHtml(authorName)}</span>
                             <span class="comment-time">${formatRelativeTime(createdDate)}</span>
                         </div>
+                        ${Threads.refHtml(comment, noteCommentsById)}
                         <div class="comment-text">${textHtml}</div>
                         <div class="comment-actions">
                             ${replyBtn}
@@ -4592,17 +4595,17 @@
             `;
         }
 
-        function startReplyTo(commentId, authorName) {
-            currentReplyTo = { id: commentId, authorName };
+function startReplyTo(commentId, authorName) {
+            currentReplyTo = Threads.target(commentId, noteCommentsById, authorName);
             const banner = document.getElementById('replyingToBanner');
             const nameEl = document.getElementById('replyingToName');
             if (banner && nameEl) {
-                nameEl.textContent = authorName;
+                nameEl.textContent = currentReplyTo.authorName;
                 banner.classList.add('show');
             }
             const input = document.getElementById('noteCommentInput');
             if (input) {
-                input.placeholder = `Reply to ${authorName}... (type @ to mention)`;
+                input.placeholder = `Reply to ${currentReplyTo.authorName}... (type @ to mention)`;
                 input.focus();
             }
         }
@@ -4779,7 +4782,7 @@
                     if (noteExp < expireAt) expireAt = noteExp;
                 }
 
-                let parentCommentAuthorUid = null;
+                let parentCommentAuthorUid = (currentReplyTo && currentReplyTo.targetUid) || null;
                 let parentCommentAuthorName = null;
                 let parentCommentId = null;
 
@@ -4789,7 +4792,7 @@
                         const parentDoc = await db.collection('noteComments').doc(parentCommentId).get();
                         if (parentDoc.exists) {
                             const p = parentDoc.data();
-                            parentCommentAuthorUid = p.authorUid || null;
+                            if (!parentCommentAuthorUid) parentCommentAuthorUid = p.authorUid || null;
                             parentCommentAuthorName = p.authorName || null;
                         }
                     } catch (e) { /* ignore */ }
@@ -4804,6 +4807,7 @@
                     authorName,
                     authorPhoto,
                     replyToId: currentReplyTo ? currentReplyTo.id : null,
+                    ...Threads.refFields(currentReplyTo),
                     mentions: mentionedUids,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     expireAt: firebase.firestore.Timestamp.fromDate(expireAt)
@@ -4818,7 +4822,7 @@
                     noteUid: currentNoteUid,
                     noteOwnerUid,
                     noteOwnerName,
-                    noteText: note?.text || '',
+                    noteText: NoteMusic.bubbleText(note),
                     parentCommentId,
                     parentCommentAuthorUid,
                     parentCommentAuthorName,
@@ -4849,7 +4853,7 @@
 
             showConfirm({
                 title: 'Delete reply?',
-                message: 'This reply and any nested replies will be permanently removed.',
+                message: Threads.isRoot(commentId, noteCommentsById) ? 'This comment and all replies to it will be permanently removed.' : 'This reply will be removed. Replies that mention it will show it was deleted.',
                 confirmLabel: 'Delete',
                 type: 'danger',
                 onConfirm: async () => {
@@ -5203,24 +5207,8 @@
                 return;
             }
 
-            const topLevel = comments.filter(c => !c.replyToId);
-            const repliesByParent = {};
-            comments.filter(c => c.replyToId).forEach(c => {
-                if (!repliesByParent[c.replyToId]) repliesByParent[c.replyToId] = [];
-                repliesByParent[c.replyToId].push(c);
-            });
-
-            let html = '';
-            topLevel.forEach(c => {
-                html += renderHighlightCommentItem(c, false);
-                const replies = repliesByParent[c.id] || [];
-                replies.forEach(r => { html += renderHighlightCommentItem(r, true); });
-            });
-
-            const orphanReplies = comments.filter(c => c.replyToId && !topLevel.find(t => t.id === c.replyToId));
-            orphanReplies.forEach(r => { html += renderHighlightCommentItem(r, false); });
-
-            list.innerHTML = html;
+            highlightCommentsById = Threads.index(comments);
+            list.innerHTML = Threads.renderList(comments, renderHighlightCommentItem);
         }
 
         function renderHighlightCommentItem(comment, isReply) {
@@ -5244,9 +5232,7 @@
                 ? `<button class="delete-btn" onclick="deleteHighlightComment('${safeCommentId}')"><i class="fas fa-trash"></i> Delete</button>`
                 : '';
 
-            const replyBtn = !isReply
-                ? `<button onclick="startHighlightReply('${safeCommentId}', '${safeAuthorName}')"><i class="fas fa-reply"></i> Reply</button>`
-                : '';
+            const replyBtn = `<button onclick="startHighlightReply('${safeCommentId}', '${safeAuthorName}')"><i class="fas fa-reply"></i> Reply</button>`;
 
             const textHtml = renderTextWithMentions(comment.text || '', comment.mentions);
 
@@ -5258,6 +5244,7 @@
                             <span class="comment-author ${isMe ? 'is-me' : ''}">${escapeHtml(authorName)}</span>
                             <span class="comment-time">${formatRelativeTime(createdDate)}</span>
                         </div>
+                        ${Threads.refHtml(comment, highlightCommentsById)}
                         <div class="comment-text">${textHtml}</div>
                         <div class="comment-actions">
                             ${replyBtn}
@@ -5268,17 +5255,17 @@
             `;
         }
 
-        function startHighlightReply(commentId, authorName) {
-            currentHighlightReplyTo = { id: commentId, authorName };
+function startHighlightReply(commentId, authorName) {
+            currentHighlightReplyTo = Threads.target(commentId, highlightCommentsById, authorName);
             const banner = document.getElementById('highlightReplyingToBanner');
             const nameEl = document.getElementById('highlightReplyingToName');
             if (banner && nameEl) {
-                nameEl.textContent = authorName;
+                nameEl.textContent = currentHighlightReplyTo.authorName;
                 banner.classList.add('show');
             }
             const input = document.getElementById('highlightCommentInput');
             if (input) {
-                input.placeholder = `Reply to ${authorName}... (type @ to mention)`;
+                input.placeholder = `Reply to ${currentHighlightReplyTo.authorName}... (type @ to mention)`;
                 input.focus();
             }
         }
@@ -5323,7 +5310,7 @@
                     if (hlExp > new Date()) expireAt = hlExp;
                 }
 
-                let parentCommentAuthorUid = null;
+                let parentCommentAuthorUid = (currentHighlightReplyTo && currentHighlightReplyTo.targetUid) || null;
                 let parentCommentAuthorName = null;
                 let parentCommentId = null;
 
@@ -5333,7 +5320,7 @@
                         const parentDoc = await db.collection('highlightComments').doc(parentCommentId).get();
                         if (parentDoc.exists) {
                             const p = parentDoc.data();
-                            parentCommentAuthorUid = p.authorUid || null;
+                            if (!parentCommentAuthorUid) parentCommentAuthorUid = p.authorUid || null;
                             parentCommentAuthorName = p.authorName || null;
                         }
                     } catch (e) { /* ignore */ }
@@ -5348,6 +5335,7 @@
                     authorName,
                     authorPhoto,
                     replyToId: currentHighlightReplyTo ? currentHighlightReplyTo.id : null,
+                    ...Threads.refFields(currentHighlightReplyTo),
                     mentions: mentionedUids,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     expireAt: firebase.firestore.Timestamp.fromDate(expireAt)
@@ -5394,7 +5382,7 @@
 
             showConfirm({
                 title: 'Delete comment?',
-                message: 'This comment and any replies will be permanently removed.',
+                message: Threads.isRoot(commentId, highlightCommentsById) ? 'This comment and all replies to it will be permanently removed.' : 'This reply will be removed. Replies that mention it will show it was deleted.',
                 confirmLabel: 'Delete',
                 type: 'danger',
                 onConfirm: async () => {
@@ -7295,7 +7283,7 @@
 
                 const note = notesCache[member.id];
                 let noteBubbleHtml = '';
-                if (note && note.text) {
+                if (note && NoteMusic.hasContent(note)) {
                     const expireAt = note.expireAt
                         ? (note.expireAt.seconds ? new Date(note.expireAt.seconds * 1000) : new Date(note.expireAt))
                         : null;
@@ -7304,8 +7292,8 @@
 
                     noteBubbleHtml = `
                         <div class="member-note-bubble" data-note-uid="${escapeAttr(member.id)}" onclick="event.stopPropagation(); openNoteModal('${escapeAttr(member.id)}')" title="Tap to read full note${isUserLoggedIn && commentCount > 0 ? ' and replies' : ''}">
-                            <i class="fas fa-comment-dots"></i>
-                            <span class="note-text-preview">${escapeHtml(note.text)}</span>
+                            <i class=\"fas ${note.music ? 'fa-music' : 'fa-comment-dots'}\"></i>
+                            <span class="note-text-preview">${escapeHtml(NoteMusic.bubbleText(note))}</span>
                             ${isExpiringSoon ? '<i class="fas fa-hourglass-half" style="color:#ef4444;font-size:11px;"></i>' : ''}
                             ${isUserLoggedIn && commentCount > 0 ? `<span class="note-comment-count"><i class="fas fa-comment"></i> ${commentCount}</span>` : ''}
                         </div>
@@ -7818,9 +7806,10 @@
             const noteCount = document.getElementById('titaNoteCount');
             const noteStatus = document.getElementById('titaNoteStatus');
 
-            if (note && note.text) {
-                noteInput.value = note.text;
-                noteCount.textContent = note.text.length;
+            NoteMusic.setDraft(note ? note.music : null);
+            if (note && NoteMusic.hasContent(note)) {
+                noteInput.value = note.text || '';
+                noteCount.textContent = (note.text || '').length;
 
                 const expireAt = note.expireAt
                     ? (note.expireAt.seconds ? new Date(note.expireAt.seconds * 1000) : new Date(note.expireAt))
@@ -7921,9 +7910,10 @@
                 const noteRef = db.collection('notes').doc(titaCurrentUser.uid);
                 const existingNote = notesCache[titaCurrentUser.uid];
                 const oldText = existingNote?.text || '';
-                const textChanged = noteText !== oldText;
-                const hadNote = !!oldText;
-                const willHaveNote = !!noteText;
+                const noteMusic = NoteMusic.getDraftForSave();
+                const textChanged = noteText !== oldText || (noteMusic ? noteMusic.trackId : '') !== NoteMusic.idOf(existingNote);
+                const hadNote = NoteMusic.hasContent(existingNote);
+                const willHaveNote = !!noteText || !!noteMusic;
 
                 if (textChanged) {
                     if (hadNote) {
@@ -7938,6 +7928,7 @@
                             displayName: displayName,
                             photoURL: titaUserData.photoURL || '',
                             text: noteText,
+                            music: noteMusic || null,
                             createdAt: (existingNote && existingNote.createdAt)
                                 ? existingNote.createdAt
                                 : firebase.firestore.FieldValue.serverTimestamp(),
@@ -8129,7 +8120,7 @@
 
             if (titaPanel && titaPanel.classList.contains('open') &&
                 !titaPanel.contains(event.target) &&
-                !event.target.closest('#titaLauncher')) {
+                !event.target.closest('#titaLauncher, .nm-ov')) {
                 closeTitaPanel();
             }
 
@@ -8287,16 +8278,9 @@
         }
     </script>
 
-<script>
-    // Public homepage: no delete / remove button on stories.
-    // Dashboard and admin pages keep the default (allowStoryDelete: true).
-    window.STORIES_CONFIG = Object.assign({}, window.STORIES_CONFIG || {}, {
-        allowStoryDelete: false
-    });
-</script>
-
-    <script src="stories-shared.js?v=1.11.0"></script>
-    <script src="stories.js?v=1.11.0"></script>
+    <script src="stories-shared.js?v=1.2.0"></script>
+    <script src="notes-music.js?v=1.0.0"></script>
+    <script src="stories.js?v=1.2.0"></script>
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
 </body>

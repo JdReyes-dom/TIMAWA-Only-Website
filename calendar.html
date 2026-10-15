@@ -2341,11 +2341,12 @@
                 <div style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;text-align:right;">
                     <span id="titaNoteCount">0</span>/60
                 </div>
+                <div id="titaNoteMusicRow"></div>
                 <div id="titaNoteStatus" style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;display:none;">
                     <i class="fas fa-clock"></i> <span></span>
                 </div>
                 <div style="font-size:10px;color:#dc2626;margin-top:6px;">
-                    <i class="fas fa-exclamation-triangle"></i> Changing the note text will delete all existing replies.
+                    <i class="fas fa-exclamation-triangle"></i> Changing the note text or song will delete all existing replies.
                 </div>
             </div>
 
@@ -2776,9 +2777,10 @@
                         const noteCount = document.getElementById('titaNoteCount');
                         const noteStatus = document.getElementById('titaNoteStatus');
                         if (noteInput) {
-                            if (note && note.text) {
-                                noteInput.value = note.text;
-                                noteCount.textContent = note.text.length;
+                            NoteMusic.syncDraft(note ? note.music : null);
+                            if (note && NoteMusic.hasContent(note)) {
+                                noteInput.value = note.text || '';
+                                noteCount.textContent = (note.text || '').length;
                                 const expireAt = note.expireAt
                                     ? (note.expireAt.seconds ? new Date(note.expireAt.seconds * 1000) : new Date(note.expireAt))
                                     : null;
@@ -4174,7 +4176,7 @@
 
             if (titaPanel && titaPanel.classList.contains('open') &&
                 !titaPanel.contains(event.target) &&
-                !event.target.closest('#titaLauncher')) {
+                !event.target.closest('#titaLauncher, .nm-ov')) {
                 closeTitaPanel();
             }
 
@@ -4310,9 +4312,10 @@
             const noteCount = document.getElementById('titaNoteCount');
             const noteStatus = document.getElementById('titaNoteStatus');
 
-            if (note && note.text) {
-                noteInput.value = note.text;
-                noteCount.textContent = note.text.length;
+            NoteMusic.setDraft(note ? note.music : null);
+            if (note && NoteMusic.hasContent(note)) {
+                noteInput.value = note.text || '';
+                noteCount.textContent = (note.text || '').length;
                 const expireAt = note.expireAt
                     ? (note.expireAt.seconds ? new Date(note.expireAt.seconds * 1000) : new Date(note.expireAt))
                     : null;
@@ -4404,15 +4407,16 @@
                 await db.collection('users').doc(titaCurrentUser.uid).set(updateData, { merge: true });
 
                 // ============================================================
-                // ★ NOTE HANDLING — only touch the note doc if the TEXT changed
+                // ★ NOTE HANDLING — only touch the note doc if the TEXT or SONG changed
                 // ============================================================
                 const noteText = document.getElementById('titaNote').value.trim().slice(0, 60);
                 const noteRef = db.collection('notes').doc(titaCurrentUser.uid);
                 const existingNote = notesCache[titaCurrentUser.uid];
                 const oldText = existingNote?.text || '';
-                const textChanged = noteText !== oldText;
-                const hadNote = !!oldText;
-                const willHaveNote = !!noteText;
+                const noteMusic = NoteMusic.getDraftForSave();
+                const textChanged = noteText !== oldText || (noteMusic ? noteMusic.trackId : '') !== NoteMusic.idOf(existingNote);
+                const hadNote = NoteMusic.hasContent(existingNote);
+                const willHaveNote = !!noteText || !!noteMusic;
 
                 if (textChanged) {
                     // Only purge comments when the note TEXT actually changed.
@@ -4443,6 +4447,7 @@
                             displayName: displayName,
                             photoURL: titaUserData.photoURL || '',
                             text: noteText,
+                            music: noteMusic || null,
                             createdAt: (existingNote && existingNote.createdAt)
                                 ? existingNote.createdAt
                                 : firebase.firestore.FieldValue.serverTimestamp(),
@@ -4506,6 +4511,8 @@
         });
     </script>
 
+    <script src="stories-shared.js?v=1.11.0"></script>
+    <script src="notes-music.js?v=1.0.0"></script>
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
 </body>
