@@ -2870,6 +2870,7 @@
                 <div style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;text-align:right;">
                     <span id="titaNoteCount">0</span>/60
                 </div>
+                <div id="titaNoteReplaceRow"></div>
                 <div id="titaNoteMusicRow"></div>
                 <div id="titaNoteStatus" style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;display:none;">
                     <i class="fas fa-clock"></i> <span></span>
@@ -7807,6 +7808,7 @@ function startHighlightReply(commentId, authorName) {
             const noteStatus = document.getElementById('titaNoteStatus');
 
             NoteMusic.setDraft(note ? note.music : null);
+            NoteMusic.setReplaceNote(note);
             if (note && NoteMusic.hasContent(note)) {
                 noteInput.value = note.text || '';
                 noteCount.textContent = (note.text || '').length;
@@ -7911,7 +7913,8 @@ function startHighlightReply(commentId, authorName) {
                 const existingNote = notesCache[titaCurrentUser.uid];
                 const oldText = existingNote?.text || '';
                 const noteMusic = NoteMusic.getDraftForSave();
-                const textChanged = noteText !== oldText || (noteMusic ? noteMusic.trackId : '') !== NoteMusic.idOf(existingNote);
+                const replacing = NoteMusic.isReplacing();
+                const textChanged = replacing || noteText !== oldText || (noteMusic ? noteMusic.trackId : '') !== NoteMusic.idOf(existingNote);
                 const hadNote = NoteMusic.hasContent(existingNote);
                 const willHaveNote = !!noteText || !!noteMusic;
 
@@ -7921,7 +7924,9 @@ function startHighlightReply(commentId, authorName) {
                     }
 
                     if (willHaveNote) {
-                        const expireAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+                        // Replace (or no live note) = brand-new note with a full 24h; a plain edit keeps the current expiry
+                        const freshNote = replacing || !NoteMusic.isActive(existingNote);
+                        const expireTs = freshNote ? firebase.firestore.Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)) : existingNote.expireAt;
 
                         await noteRef.set({
                             uid: titaCurrentUser.uid,
@@ -7929,14 +7934,16 @@ function startHighlightReply(commentId, authorName) {
                             photoURL: titaUserData.photoURL || '',
                             text: noteText,
                             music: noteMusic || null,
-                            createdAt: (existingNote && existingNote.createdAt)
+                            createdAt: (!freshNote && existingNote && existingNote.createdAt)
                                 ? existingNote.createdAt
                                 : firebase.firestore.FieldValue.serverTimestamp(),
-                            expireAt: firebase.firestore.Timestamp.fromDate(expireAt),
+                            expireAt: expireTs,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
+                        NoteMusic.setReplaceNote({ text: noteText, music: noteMusic, expireAt: expireTs });     // ends Replace, shows the button for the new note
                     } else {
                         try { await noteRef.delete(); } catch (e) { /* ignore */ }
+                        NoteMusic.setReplaceNote(null);
                     }
                 }
 
@@ -8120,7 +8127,7 @@ function startHighlightReply(commentId, authorName) {
 
             if (titaPanel && titaPanel.classList.contains('open') &&
                 !titaPanel.contains(event.target) &&
-                !event.target.closest('#titaLauncher, .nm-ov')) {
+                !event.target.closest('#titaLauncher, .nm-ov, .st-dlg')) {
                 closeTitaPanel();
             }
 
@@ -8278,7 +8285,7 @@ function startHighlightReply(commentId, authorName) {
         }
     </script>
 
-    <script src="stories-shared.js?v=1.2.0"></script>
+    <script src="stories-shared.js?v=1.11.1"></script>
     <script src="notes-music.js?v=1.0.0"></script>
     <script src="stories.js?v=1.2.0"></script>
     <script src="idle-logout.js"></script>

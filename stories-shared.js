@@ -300,6 +300,7 @@
                   <button type="button" class="st-dlg-ok ${type === 'danger' ? 'danger' : ''}"><i class="fas ${okIcon}"></i> ${esc(opts.confirmLabel || 'Confirm')}</button>
                 </div></div>`;
             document.body.appendChild(el);
+            el.addEventListener('click', e => e.stopPropagation());      // pages treat outside clicks as "close" (e.g. Tita Tima): never let dialog clicks reach them
             const no = el.querySelector('.st-dlg-no'), ok = el.querySelector('.st-dlg-ok');
             requestAnimationFrame(() => el.classList.add('in'));
             const finish = v => {

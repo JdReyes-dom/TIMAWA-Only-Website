@@ -47,6 +47,15 @@
         .nm-ib{width:32px;height:32px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;font-size:13px;flex:0 0 auto;background:var(--theme-primary-soft,#e0f2fe);color:var(--theme-primary,#1089d3)}
         .nm-ib.danger{background:#fee2e2;color:#dc2626}
         .nm-ib:focus-visible,.nm-add:focus-visible,.nm-btn:focus-visible{outline:2px solid var(--theme-primary,#1089d3);outline-offset:2px}
+        .nm-replace{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;margin:10px 0 0;padding:9px 12px;border-radius:12px;border:1.5px solid var(--theme-border-input,#cbd5e1);background:var(--theme-bg-soft,transparent);color:var(--theme-text,#1a1a2e);cursor:pointer;font-family:inherit;text-align:left}
+        .nm-replace:hover{border-color:var(--theme-primary,#1089d3);background:var(--theme-primary-soft,#e0f2fe)}
+        .nm-replace .ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;background:var(--theme-primary-soft,#e0f2fe);color:var(--theme-primary,#1089d3);font-size:12px}
+        .nm-replace b{display:block;font-size:13px}.nm-replace small{display:block;font-size:11.5px;color:var(--theme-text-muted,#666);margin-top:1px}
+        .nm-replacing{display:flex;align-items:center;gap:10px;margin:10px 0 0;padding:10px 12px;border-radius:12px;border:1.5px solid #f59e0b;background:color-mix(in srgb,#f59e0b 12%,var(--theme-card,#fff));color:var(--theme-text,#1a1a2e)}
+        .nm-replacing .ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;background:#fde68a;color:#b45309;font-size:12px}
+        .nm-replacing .tx{flex:1;min-width:0;line-height:1.35}.nm-replacing b{display:block;font-size:13px}.nm-replacing small{display:block;font-size:11.5px;color:var(--theme-text-muted,#666)}
+        .nm-replacing button{border:0;border-radius:10px;padding:7px 12px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;background:var(--theme-bg-soft,#f3f4f6);color:var(--theme-text,#1a1a2e);flex:0 0 auto}
+        .nm-replace:focus-visible,.nm-replacing button:focus-visible{outline:2px solid var(--theme-primary,#1089d3);outline-offset:2px}
         /* picker panel */
         .nm-ov{position:fixed;inset:0;z-index:10120;display:flex;align-items:center;justify-content:center;padding:16px;font-family:inherit}
         .nm-bd{position:absolute;inset:0;background:rgba(8,8,14,.55);opacity:0;transition:opacity .18s}
@@ -168,6 +177,45 @@
         host.innerHTML = m ? cardHtml(m) : '';
     }
 
+    // ------------------------------------------------------------ Replace (start a fresh note, new 24 h timer)
+    // Replace only CLEARS the editor. The live note and its replies are untouched until the user taps Save;
+    // saving then writes a brand-new note (fresh 24 hours, replies cleared). Cancel / closing Tita keeps the old note.
+    let replacing = false, replaceSnap = null, liveNote = null;
+    const expMs = n => { const e = n && n.expireAt; if (!e) return 0; if (e.toMillis) return e.toMillis(); if (e.seconds) return e.seconds * 1000; const t = new Date(e).getTime(); return isNaN(t) ? 0 : t; };
+    const isActive = n => hasContent(n) && expMs(n) > Date.now();
+    const isReplacing = () => replacing;
+    function renderReplace() {
+        const host = document.getElementById('titaNoteReplaceRow'); if (!host) return;
+        injectStyles();
+        if (replacing) {
+            host.innerHTML = '<div class="nm-replacing" role="status"><span class="ic"><i class="fas fa-rotate"></i></span><div class="tx"><b>Replacing your note</b><small>Your current note stays live until you tap Save. Saving restarts the 24-hour timer and clears its replies.</small></div><button type="button" data-nm="replace-cancel">Cancel</button></div>';
+        } else if (isActive(liveNote)) {
+            host.innerHTML = '<button type="button" class="nm-replace" data-nm="replace"><span class="ic"><i class="fas fa-rotate"></i></span><span><b>Replace note</b><small>Start fresh · timer restarts at 24h when saved</small></span></button>';
+        } else host.innerHTML = '';
+    }
+    // keepMode: live snapshots refresh the button without cancelling a Replace in progress
+    function setReplaceNote(note, keepMode) {
+        liveNote = note || null;
+        if (!keepMode) { replacing = false; replaceSnap = null; }
+        renderReplace();
+    }
+    async function startReplace() {
+        if (replacing) return;
+        const ok = await S().confirm({ title: 'Replace your note?', message: 'Your current note and song stay live until you tap Save. Saving gives the new note a fresh 24 hours and clears the replies on the old one.', confirmLabel: 'Start fresh', cancelLabel: 'Keep note', type: 'warn', confirmIcon: 'fa-rotate' });
+        if (!ok) return;
+        const inp = document.getElementById('titaNote'), cnt = document.getElementById('titaNoteCount');
+        replaceSnap = { text: inp ? inp.value : '', music: draft };
+        if (inp) { inp.value = ''; }
+        if (cnt) cnt.textContent = '0';
+        draft = null; replacing = true; renderRow(); renderReplace();
+        if (inp) inp.focus({ preventScroll: true });
+    }
+    function cancelReplace() {
+        const inp = document.getElementById('titaNote'), cnt = document.getElementById('titaNoteCount');
+        if (replaceSnap) { if (inp) inp.value = replaceSnap.text; if (cnt) cnt.textContent = String((replaceSnap.text || '').length); draft = replaceSnap.music; }
+        replacing = false; replaceSnap = null; renderRow(); renderReplace();
+    }
+
     // ------------------------------------------------------------ draft (the song being attached in Tita Tima)
     let draft = null;
     const setDraft = m => { draft = clean(m); renderRow(); };
@@ -246,9 +294,12 @@
         const t = e.target.closest('[data-nm]');
         if (t) {
             const a = t.dataset.nm;
+            e.stopPropagation();      // these buttons re-render themselves; pages would then see a detached target as "outside" and close Tita Tima
             if (a === 'open') openPicker();
             else if (a === 'cancel') cancelPanel();
             else if (a === 'done') donePanel();
+            else if (a === 'replace') startReplace();
+            else if (a === 'replace-cancel') cancelReplace();
             else if (a === 'go') search();
             else if (a === 'remove') { draft = null; stop(); renderRow(); paint(); }
             else if (a === 'prev') {
@@ -281,7 +332,8 @@
         el.classList.remove('nm-flash'); void el.offsetWidth; el.classList.add('nm-flash');
         setTimeout(() => el.classList.remove('nm-flash'), 1400);
     }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderRow); else renderRow();
+    function initRows() { renderRow(); renderReplace(); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRows); else initRows();
 
     // ------------------------------------------------------------ comment threads
     const Threads = {
@@ -319,6 +371,6 @@
         }
     };
 
-    window.NoteMusic = { hasContent, bubbleText, idOf, clean, cardHtml, injectStyles, setDraft, syncDraft, getDraft, getDraftForSave, mountModal, mountDetail, stop, openPicker };
+    window.NoteMusic = { hasContent, bubbleText, idOf, clean, cardHtml, injectStyles, setDraft, syncDraft, isReplacing, isActive, setReplaceNote, getDraft, getDraftForSave, mountModal, mountDetail, stop, openPicker };
     window.Threads = Threads;
 })();
