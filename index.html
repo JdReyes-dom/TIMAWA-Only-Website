@@ -2870,8 +2870,8 @@
                 <div style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;text-align:right;">
                     <span id="titaNoteCount">0</span>/60
                 </div>
-                <div id="titaNoteReplaceRow"></div>
                 <div id="titaNoteMusicRow"></div>
+                <div id="titaNoteReplaceRow"></div>
                 <div id="titaNoteStatus" style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;display:none;">
                     <i class="fas fa-clock"></i> <span></span>
                 </div>
@@ -7292,9 +7292,8 @@ function startHighlightReply(commentId, authorName) {
                     const commentCount = noteCommentCounts[member.id] || 0;
 
                     noteBubbleHtml = `
-                        <div class="member-note-bubble" data-note-uid="${escapeAttr(member.id)}" onclick="event.stopPropagation(); openNoteModal('${escapeAttr(member.id)}')" title="Tap to read full note${isUserLoggedIn && commentCount > 0 ? ' and replies' : ''}">
-                            <i class=\"fas ${note.music ? 'fa-music' : 'fa-comment-dots'}\"></i>
-                            <span class="note-text-preview">${escapeHtml(NoteMusic.bubbleText(note))}</span>
+                        <div class="member-note-bubble${NoteMusic.clean(note.music) ? ' has-music' : ''}" data-note-uid="${escapeAttr(member.id)}" onclick="event.stopPropagation(); openNoteModal('${escapeAttr(member.id)}')" title="Tap to read full note${isUserLoggedIn && commentCount > 0 ? ' and replies' : ''}">
+                            ${NoteMusic.bubbleInner(note, '<i class="fas fa-comment-dots"></i><span class="note-text-preview">' + escapeHtml(note.text || '') + '</span>')}
                             ${isExpiringSoon ? '<i class="fas fa-hourglass-half" style="color:#ef4444;font-size:11px;"></i>' : ''}
                             ${isUserLoggedIn && commentCount > 0 ? `<span class="note-comment-count"><i class="fas fa-comment"></i> ${commentCount}</span>` : ''}
                         </div>
@@ -8286,7 +8285,7 @@ function startHighlightReply(commentId, authorName) {
     </script>
 
     <script src="stories-shared.js?v=1.11.1"></script>
-    <script src="notes-music.js?v=1.0.0"></script>
+    <script src="notes-music.js?v=1.1.0"></script>
     <script src="stories.js?v=1.2.0"></script>
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
