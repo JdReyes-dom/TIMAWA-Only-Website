@@ -3005,11 +3005,16 @@
             });
         });
 
-        window.addEventListener('scroll', function() {
-            const navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) navbar.style.boxShadow = '0 4px 20px rgba(0,0,0,0.05)';
-            else navbar.style.boxShadow = 'none';
-        });
+        // v9: passive listener + only touch the style when the state actually changes (smoother scrolling on phones)
+        (function () {
+            let navShadowOn = false;
+            window.addEventListener('scroll', function() {
+                const on = window.scrollY > 50;
+                if (on === navShadowOn) return;
+                navShadowOn = on;
+                document.getElementById('navbar').style.boxShadow = on ? '0 4px 20px rgba(0,0,0,0.05)' : 'none';
+            }, { passive: true });
+        })();
 
         async function logout() {
             showConfirm({

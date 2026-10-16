@@ -13,10 +13,6 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- ★ Shared theme system (must load before page render to avoid theme flash) -->
-    <link rel="stylesheet" href="theme.css" />
-    <script src="theme.js"></script>
-
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -44,12 +40,354 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             min-height: 100vh;
-            background: var(--theme-bg, var(--admin-bg));
-            color: var(--theme-text, var(--admin-text));
+            background: var(--admin-bg);
+            color: var(--admin-text);
             line-height: 1.6;
             transition: background 0.4s ease, color 0.4s ease;
             position: relative;
             overflow-x: hidden;
+        }
+
+        /* Background layers */
+        .admin-theme-bg {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -3;
+            background: var(--admin-bg);
+            transition: background 0.6s ease;
+            pointer-events: none;
+        }
+
+        .admin-theme-shapes {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* ================================================================
+           ===== ADMIN THEME SHAPES (lightweight, transform/opacity only) =====
+           ================================================================ */
+
+        .admin-shape { position: absolute; pointer-events: none; will-change: transform, opacity; }
+
+        /* --- ADMIN DEFAULT: orbs + rings + diamonds --- */
+        .admin-orb {
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--admin-primary), transparent);
+            filter: blur(60px);
+            opacity: 0.12;
+            animation: adminOrbFloat 20s ease-in-out infinite;
+        }
+        .admin-orb.o1 { width: 400px; height: 400px; top: -10%; right: -5%; }
+        .admin-orb.o2 { width: 300px; height: 300px; bottom: -5%; left: -5%; animation-delay: 5s; }
+        .admin-orb.o3 { width: 250px; height: 250px; top: 40%; left: 40%; animation-delay: 10s; }
+
+        .admin-ring {
+            border-radius: 50%;
+            border: 3px solid var(--admin-primary);
+            opacity: 0.08;
+            animation: adminRingPulse 15s ease-in-out infinite;
+        }
+        .admin-ring.r1 { width: 200px; height: 200px; top: 15%; left: 10%; }
+        .admin-ring.r2 { width: 150px; height: 150px; bottom: 20%; right: 15%; animation-delay: 4s; }
+        .admin-ring.r3 { width: 100px; height: 100px; top: 60%; left: 70%; animation-delay: 8s; }
+
+        .admin-diamond {
+            width: 40px; height: 40px;
+            background: var(--admin-accent);
+            transform: rotate(45deg);
+            opacity: 0.06;
+            animation: adminDiamondSpin 25s linear infinite;
+        }
+        .admin-diamond.d1 { top: 20%; right: 20%; }
+        .admin-diamond.d2 { bottom: 30%; left: 15%; animation-delay: 6s; width: 30px; height: 30px; }
+        .admin-diamond.d3 { top: 70%; left: 50%; animation-delay: 12s; width: 50px; height: 50px; }
+
+        @keyframes adminOrbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.08; }
+            50% { transform: translate(20px, -20px) scale(1.1); opacity: 0.18; }
+        }
+        @keyframes adminRingPulse {
+            0%, 100% { transform: scale(1); opacity: 0.04; }
+            50% { transform: scale(1.15); opacity: 0.12; }
+        }
+        @keyframes adminDiamondSpin {
+            0% { transform: rotate(45deg) scale(1); opacity: 0.04; }
+            50% { transform: rotate(225deg) scale(1.2); opacity: 0.10; }
+            100% { transform: rotate(405deg) scale(1); opacity: 0.04; }
+        }
+
+        /* --- ADMIN CRIMSON: streaks + diamonds + orbs --- */
+        .admin-crimson-orb {
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--admin-primary), transparent);
+            filter: blur(40px);
+            opacity: 0.15;
+            animation: adminCrimsonOrb 16s ease-in-out infinite;
+        }
+        .admin-crimson-orb.co1 { width: 300px; height: 300px; top: 5%; right: 10%; }
+        .admin-crimson-orb.co2 { width: 220px; height: 220px; bottom: 10%; left: 5%; animation-delay: 5s; }
+        .admin-crimson-orb.co3 { width: 350px; height: 350px; top: 45%; left: 45%; animation-delay: 10s; }
+
+        .admin-crimson-streak {
+            width: 3px; height: 140px;
+            background: linear-gradient(to bottom, var(--admin-primary), transparent);
+            border-radius: 3px;
+            opacity: 0.15;
+            transform: rotate(35deg);
+            animation: adminCrimsonStreak 8s ease-in-out infinite;
+        }
+        .admin-crimson-streak.cs1 { top: 10%; left: 25%; }
+        .admin-crimson-streak.cs2 { top: 40%; left: 70%; animation-delay: 3s; height: 180px; }
+        .admin-crimson-streak.cs3 { top: 70%; left: 45%; animation-delay: 6s; height: 110px; }
+
+        .admin-crimson-diamond {
+            width: 45px; height: 45px;
+            background: var(--admin-accent);
+            transform: rotate(45deg);
+            filter: blur(2px);
+            opacity: 0.12;
+            animation: adminCrimsonDiamond 20s ease-in-out infinite;
+        }
+        .admin-crimson-diamond.cd1 { top: 20%; left: 60%; }
+        .admin-crimson-diamond.cd2 { top: 75%; left: 15%; animation-delay: 8s; width: 30px; height: 30px; }
+        .admin-crimson-diamond.cd3 { top: 55%; right: 10%; animation-delay: 14s; width: 55px; height: 55px; }
+
+        @keyframes adminCrimsonOrb {
+            0%, 100% { transform: scale(1); opacity: 0.12; }
+            50% { transform: scale(1.2); opacity: 0.24; }
+        }
+        @keyframes adminCrimsonStreak {
+            0%, 100% { transform: rotate(35deg) scaleY(1); opacity: 0.08; }
+            50% { transform: rotate(35deg) scaleY(1.3); opacity: 0.22; }
+        }
+        @keyframes adminCrimsonDiamond {
+            0%, 100% { transform: rotate(45deg) scale(1); opacity: 0.08; }
+            50% { transform: rotate(405deg) scale(1.2); opacity: 0.18; }
+        }
+
+        /* --- ADMIN OCEAN: waves + bubbles + fish --- */
+        .admin-ocean-wave {
+            width: 200%; height: 180px;
+            left: -50%; bottom: -30px;
+            border-radius: 45%;
+            background: var(--admin-primary);
+            opacity: 0.10;
+            animation: adminOceanWave 18s ease-in-out infinite;
+        }
+        .admin-ocean-wave.ow2 {
+            bottom: -60px; height: 220px;
+            opacity: 0.07;
+            background: var(--admin-accent);
+            animation-duration: 24s;
+            animation-direction: reverse;
+        }
+        .admin-ocean-bubble {
+            border-radius: 50%;
+            border: 2px solid var(--admin-primary);
+            background: transparent;
+            opacity: 0.15;
+            animation: adminOceanBubble 22s linear infinite;
+        }
+        .admin-ocean-bubble.ob1 { width: 60px; height: 60px; left: 10%; bottom: -80px; }
+        .admin-ocean-bubble.ob2 { width: 40px; height: 40px; left: 30%; bottom: -60px; animation-delay: 5s; }
+        .admin-ocean-bubble.ob3 { width: 80px; height: 80px; left: 70%; bottom: -100px; animation-delay: 10s; }
+        .admin-ocean-bubble.ob4 { width: 30px; height: 30px; left: 85%; bottom: -40px; animation-delay: 15s; }
+        .admin-ocean-fish {
+            width: 50px; height: 25px;
+            background: var(--admin-primary);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            opacity: 0.10;
+            animation: adminOceanFish 35s linear infinite;
+        }
+        .admin-ocean-fish::before {
+            content: '';
+            position: absolute;
+            right: -12px; top: 50%;
+            transform: translateY(-50%);
+            width: 0; height: 0;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 15px solid var(--admin-primary);
+        }
+        .admin-ocean-fish.of1 { top: 20%; left: -80px; }
+        .admin-ocean-fish.of2 { top: 65%; left: -100px; animation-duration: 45s; animation-delay: 8s; }
+
+        @keyframes adminOceanWave {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-4%) rotate(2deg); }
+            75% { transform: translateX(4%) rotate(-2deg); }
+        }
+        @keyframes adminOceanBubble {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            10% { opacity: 0.6; }
+            100% { transform: translateY(-110vh) scale(1.3); opacity: 0; }
+        }
+        @keyframes adminOceanFish {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(100vw + 200px)); }
+        }
+
+        /* --- ADMIN MIDNIGHT: stars + moons + nebula --- */
+        .admin-midnight-starfield {
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.85;
+            background-image:
+                radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+                radial-gradient(1px 1px at 25% 45%, #fff, transparent),
+                radial-gradient(1.5px 1.5px at 40% 10%, #fff, transparent),
+                radial-gradient(1px 1px at 55% 70%, #fff, transparent),
+                radial-gradient(1.2px 1.2px at 70% 30%, #fff, transparent),
+                radial-gradient(1px 1px at 85% 55%, #fff, transparent),
+                radial-gradient(1.8px 1.8px at 15% 80%, #fff, transparent),
+                radial-gradient(1px 1px at 60% 90%, #fff, transparent),
+                radial-gradient(1.3px 1.3px at 90% 10%, #fff, transparent),
+                radial-gradient(1px 1px at 5% 50%, #fff, transparent),
+                radial-gradient(1.5px 1.5px at 48% 35%, #fff, transparent),
+                radial-gradient(1px 1px at 78% 85%, #fff, transparent),
+                radial-gradient(1px 1px at 33% 60%, #fff, transparent),
+                radial-gradient(1.2px 1.2px at 92% 75%, #fff, transparent),
+                radial-gradient(1px 1px at 8% 95%, #fff, transparent),
+                radial-gradient(1.6px 1.6px at 68% 50%, #fff, transparent),
+                radial-gradient(1px 1px at 50% 15%, #fff, transparent),
+                radial-gradient(1.1px 1.1px at 22% 5%, #fff, transparent),
+                radial-gradient(1px 1px at 75% 5%, #fff, transparent),
+                radial-gradient(1.4px 1.4px at 42% 82%, #fff, transparent);
+            background-size: 200px 200px;
+            background-repeat: repeat;
+        }
+        .admin-midnight-starfield.ms2 {
+            background-size: 340px 340px;
+            background-position: 50px 80px;
+            opacity: 0.55;
+        }
+        .admin-midnight-shooting {
+            width: 3px; height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 6px 1px rgba(255,255,255,0.6);
+            opacity: 0;
+            animation: adminMidnightShoot 14s ease-in infinite;
+            will-change: transform, opacity;
+        }
+        .admin-midnight-shooting::after {
+            content: '';
+            position: absolute;
+            top: 50%; right: 100%;
+            width: 60px; height: 1px;
+            background: linear-gradient(to left, rgba(255,255,255,0.7), transparent);
+            transform: translateY(-50%);
+        }
+        .admin-midnight-shooting.msh1 { top: 14%; left: 80%; animation-delay: 2s; }
+        .admin-midnight-shooting.msh2 { top: 48%; left: 85%; animation-delay: 9s; animation-duration: 16s; }
+
+        .admin-midnight-nebula {
+            border-radius: 50%;
+            opacity: 0.30;
+            animation: adminMidnightNebula 20s ease-in-out infinite;
+            will-change: opacity;
+        }
+        .admin-midnight-nebula.mn1 {
+            width: 520px; height: 520px; top: -12%; right: -18%;
+            background: radial-gradient(circle,
+                rgba(109, 40, 217, 0.55) 0%,
+                rgba(109, 40, 217, 0.25) 30%,
+                rgba(109, 40, 217, 0.08) 55%,
+                transparent 75%);
+        }
+        .admin-midnight-nebula.mn2 {
+            width: 440px; height: 440px; bottom: -12%; left: -12%;
+            background: radial-gradient(circle,
+                rgba(196, 181, 253, 0.45) 0%,
+                rgba(196, 181, 253, 0.20) 30%,
+                rgba(196, 181, 253, 0.06) 55%,
+                transparent 75%);
+            animation-delay: 7s;
+        }
+        .admin-midnight-moon {
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fff, #c4b5fd);
+            box-shadow: 0 0 40px rgba(196, 181, 253, 0.4);
+            opacity: 0.55;
+            animation: adminMidnightMoon 30s ease-in-out infinite;
+        }
+        .admin-midnight-moon.mm1 { width: 70px; height: 70px; top: 8%; right: 12%; }
+        .admin-midnight-moon.mm2 { width: 45px; height: 45px; bottom: 15%; left: 8%; animation-delay: 10s; }
+
+        @keyframes adminMidnightShoot {
+            0%   { transform: translate(0, 0) rotate(-35deg); opacity: 0; }
+            4%   { opacity: 1; }
+            16%  { transform: translate(-260px, 170px) rotate(-35deg); opacity: 0; }
+            100% { transform: translate(-260px, 170px) rotate(-35deg); opacity: 0; }
+        }
+        @keyframes adminMidnightNebula {
+            0%, 100% { opacity: 0.22; }
+            50%      { opacity: 0.38; }
+        }
+        @keyframes adminMidnightMoon {
+            0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.45; }
+            50%      { transform: scale(1.1) translate(-10px, -15px); opacity: 0.65; }
+        }
+
+        /* --- ADMIN EMBER: embers + sparks + flames --- */
+        .admin-ember-orb {
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--admin-primary), transparent);
+            filter: blur(35px);
+            opacity: 0.18;
+            animation: adminEmberOrb 14s ease-in-out infinite;
+        }
+        .admin-ember-orb.eo1 { width: 320px; height: 320px; top: 8%; left: 8%; }
+        .admin-ember-orb.eo2 { width: 240px; height: 240px; bottom: 12%; right: 6%; animation-delay: 4s; }
+        .admin-ember-orb.eo3 { width: 280px; height: 280px; top: 55%; left: 55%; animation-delay: 8s; }
+
+        .admin-ember-spark {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--admin-primary);
+            box-shadow: 0 0 12px 3px var(--admin-accent);
+            opacity: 0.7;
+            animation: adminEmberSpark 10s ease-in-out infinite;
+        }
+        .admin-ember-spark.es1 { top: 20%; left: 25%; }
+        .admin-ember-spark.es2 { top: 65%; left: 70%; animation-delay: 2s; width: 4px; height: 4px; }
+        .admin-ember-spark.es3 { top: 40%; left: 50%; animation-delay: 4s; width: 8px; height: 8px; }
+        .admin-ember-spark.es4 { top: 80%; left: 20%; animation-delay: 6s; width: 5px; height: 5px; }
+        .admin-ember-spark.es5 { top: 15%; left: 80%; animation-delay: 8s; width: 3px; height: 3px; }
+
+        .admin-ember-flame {
+            width: 0; height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-bottom: 40px solid var(--admin-primary);
+            filter: blur(3px);
+            opacity: 0.12;
+            animation: adminEmberFlame 12s ease-in-out infinite;
+        }
+        .admin-ember-flame.ef1 { top: 30%; left: 15%; transform: rotate(15deg); }
+        .admin-ember-flame.ef2 { top: 60%; left: 80%; animation-delay: 4s; transform: rotate(-20deg); border-left-width: 12px; border-right-width: 12px; border-bottom-width: 28px; }
+        .admin-ember-flame.ef3 { top: 50%; left: 45%; animation-delay: 8s; transform: rotate(45deg); border-left-width: 22px; border-right-width: 22px; border-bottom-width: 48px; }
+
+        @keyframes adminEmberOrb {
+            0%, 100% { transform: scale(1); opacity: 0.14; }
+            50% { transform: scale(1.18); opacity: 0.28; }
+        }
+        @keyframes adminEmberSpark {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; }
+            50% { transform: translateY(-30px) scale(1.4); opacity: 1; }
+        }
+        @keyframes adminEmberFlame {
+            0%, 100% { transform: rotate(0deg) scale(1); opacity: 0.06; }
+            50% { transform: rotate(20deg) scale(1.15); opacity: 0.20; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .admin-shape, .admin-shape * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
 
         /* ========== NAVBAR ========== */
@@ -58,21 +396,25 @@
             z-index: 1000;
             padding: 14px 40px;
             display: flex; justify-content: space-between; align-items: center;
-            background: var(--theme-nav-bg, rgba(255,255,255,0.98));
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--theme-border, rgba(139,92,246,0.15));
+            border-bottom: 1px solid rgba(139, 92, 246, 0.15);
             transition: all 0.3s ease;
             box-shadow: 0 2px 20px rgba(0,0,0,0.04);
             flex-wrap: wrap;
         }
+        [data-admin-theme] .navbar {
+            background: color-mix(in srgb, var(--admin-card) 98%, transparent);
+            border-bottom: 1px solid color-mix(in srgb, var(--admin-primary) 15%, transparent);
+        }
 
         .navbar .logo {
             font-size: 26px; font-weight: 900;
-            color: var(--theme-primary, var(--admin-primary));
+            color: var(--admin-primary);
             letter-spacing: 2px; text-decoration: none; flex-shrink: 0;
         }
         .navbar .logo span {
-            background: var(--theme-gradient, var(--admin-gradient));
+            background: var(--admin-gradient);
             padding: 2px 10px; border-radius: 8px;
             font-size: 10px; color: white; margin-left: 8px;
         }
@@ -82,39 +424,39 @@
         }
         .navbar .nav-links a {
             text-decoration: none;
-            color: var(--theme-text-muted, var(--admin-text-muted));
+            color: var(--admin-text-muted);
             font-weight: 500; font-size: 13px;
             transition: all 0.3s ease; padding: 6px 12px;
             border-radius: 8px; white-space: nowrap;
         }
         .navbar .nav-links a:hover {
-            color: var(--theme-primary, var(--admin-primary));
-            background: color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 8%, transparent);
+            color: var(--admin-primary);
+            background: color-mix(in srgb, var(--admin-primary) 8%, transparent);
         }
         .navbar .nav-links a.active {
-            color: var(--theme-primary, var(--admin-primary));
-            background: color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 12%, transparent);
+            color: var(--admin-primary);
+            background: color-mix(in srgb, var(--admin-primary) 12%, transparent);
         }
-        .navbar .nav-links .admin-link { color: var(--theme-primary, var(--admin-primary)); font-weight: 600; }
+        .navbar .nav-links .admin-link { color: var(--admin-primary); font-weight: 600; }
         .navbar .logout-btn {
-            background: var(--theme-card, var(--admin-card));
-            border: 2px solid var(--theme-danger-soft, var(--admin-danger-soft));
-            color: var(--theme-danger, var(--admin-danger));
+            background: var(--admin-card);
+            border: 2px solid var(--admin-danger-soft);
+            color: var(--admin-danger);
             padding: 6px 14px; border-radius: 50px;
             cursor: pointer; transition: all 0.3s ease;
             font-size: 12px; font-weight: 600;
-            box-shadow: var(--theme-border-input, var(--admin-border-input)) 0px 4px 8px -4px;
+            box-shadow: var(--admin-border-input) 0px 4px 8px -4px;
             font-family: inherit;
         }
         .navbar .logout-btn:hover {
-            background: var(--theme-danger-soft, var(--admin-danger-soft));
+            background: var(--admin-danger-soft);
             transform: scale(1.03);
         }
         .navbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         .navbar-mobile-bell { display: none; position: relative; }
         .navbar-mobile-bell .announcement-bell { width: 42px; height: 42px; font-size: 17px; }
         .navbar .mobile-toggle {
-            display: none; font-size: 24px; color: var(--theme-primary, var(--admin-primary));
+            display: none; font-size: 24px; color: var(--admin-primary);
             cursor: pointer; background: none; border: none; padding: 4px 8px;
         }
 
@@ -123,16 +465,15 @@
         .announcement-bell {
             position: relative; width: 40px; height: 40px;
             border-radius: 50%; border: none;
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-bg-soft); color: var(--admin-primary);
             font-size: 16px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             transition: all 0.25s ease; font-family: inherit; flex-shrink: 0;
         }
-        .announcement-bell:hover { background: var(--theme-primary-soft, var(--admin-border-input)); transform: scale(1.05); }
+        .announcement-bell:hover { background: var(--admin-border-input); transform: scale(1.05); }
         .announcement-bell.active {
-            background: var(--theme-gradient, var(--admin-gradient)); color: white;
-            box-shadow: 0 4px 15px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 30%, transparent);
+            background: var(--admin-gradient); color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
         .announcement-bell.has-new { animation: bellPulse 2s ease-in-out infinite; }
         @keyframes bellPulse {
@@ -145,7 +486,7 @@
             border-radius: 50px; background: linear-gradient(45deg, #ef4444, #dc2626);
             color: white; font-size: 10px; font-weight: 800;
             display: none; align-items: center; justify-content: center;
-            border: 2px solid var(--theme-card, var(--admin-card));
+            border: 2px solid var(--admin-card);
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
         }
         .announcement-badge.show { display: flex; }
@@ -154,61 +495,58 @@
         .announcement-popup {
             position: fixed; width: 380px;
             max-width: calc(100vw - 40px);
-            background: var(--theme-card, var(--admin-card)); border-radius: 20px;
-            box-shadow: 0 20px 60px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 22%, transparent), 0 0 0 1px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 6%, transparent);
+            background: var(--admin-card); border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(139, 92, 246, 0.22), 0 0 0 1px rgba(139, 92, 246, 0.06);
             overflow: hidden; z-index: 2000; opacity: 0;
             transform: translateY(-8px) scale(0.97);
             pointer-events: none;
             transition: all 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            transform-origin: top right;
-            color: var(--theme-text, var(--admin-text));
+            transform-origin: top right; color: var(--admin-text);
         }
         .announcement-popup.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
         .announcement-popup::before {
             content: ''; position: absolute;
             top: -6px; right: 22px; width: 12px; height: 12px;
-            background: var(--theme-card, var(--admin-card)); transform: rotate(45deg);
-            box-shadow: -1px -1px 2px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 6%, transparent);
+            background: var(--admin-card); transform: rotate(45deg);
+            box-shadow: -1px -1px 2px rgba(139, 92, 246, 0.06);
         }
         .announcement-popup-header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 16px 18px;
-            background: linear-gradient(135deg,
-                color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 8%, var(--theme-card, var(--admin-card))) 0%,
-                color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 14%, var(--theme-card, var(--admin-card))) 100%);
-            border-bottom: 1px solid var(--theme-border, var(--admin-border));
+            background: linear-gradient(135deg, var(--admin-bg-soft) 0%, var(--admin-border-input) 100%);
+            border-bottom: 1px solid var(--admin-border);
         }
         .announcement-popup-header h4 {
             font-size: 15px; font-weight: 800;
-            color: var(--theme-text, var(--admin-text));
+            color: var(--admin-text);
             display: flex; align-items: center; gap: 8px; margin: 0;
         }
-        .announcement-popup-header h4 i { color: var(--theme-primary, var(--admin-primary)); }
+        .announcement-popup-header h4 i { color: var(--admin-primary); }
         .announcement-mark-all {
-            background: none; border: none; color: var(--theme-primary, var(--admin-primary));
+            background: none; border: none; color: var(--admin-primary);
             font-size: 12px; font-weight: 600; cursor: pointer;
             padding: 4px 10px; border-radius: 50px;
             transition: all 0.2s ease; font-family: inherit;
         }
-        .announcement-mark-all:hover { background: color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 12%, transparent); }
+        .announcement-mark-all:hover { background: rgba(139, 92, 246, 0.1); }
         .announcement-list { max-height: 420px; overflow-y: auto; padding: 6px; }
         .announcement-item {
-            display: flex; gap: 12px; padding: 12px 14px;
-            border-radius: 14px; cursor: pointer;
-            transition: all 0.2s ease; position: relative;
-            margin-bottom: 4px; background: var(--theme-card, var(--admin-card));
+            display: flex; gap: 12px;
+            padding: 12px 14px; border-radius: 14px;
+            cursor: pointer; transition: all 0.2s ease;
+            position: relative; margin-bottom: 4px;
+            background: var(--admin-card);
         }
         .announcement-item:hover {
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft)); transform: translateX(2px);
+            background: var(--admin-bg-soft); transform: translateX(2px);
         }
-        .announcement-item.unread { background: var(--theme-primary-soft-2, var(--admin-bg-soft)); }
-        .announcement-item.unread:hover { background: var(--theme-primary-soft, var(--admin-border-input)); }
+        .announcement-item.unread { background: var(--admin-bg-soft); }
+        .announcement-item.unread:hover { background: var(--admin-border-input); }
         .announcement-item.unread .announcement-title { font-weight: 700; }
         .announcement-icon {
             width: 42px; height: 42px; border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px; flex-shrink: 0;
-            background: var(--theme-primary-soft, var(--admin-border-input));
+            font-size: 20px; flex-shrink: 0; background: var(--admin-border-input);
         }
         .announcement-icon.type-admin { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); }
         .announcement-icon.type-birthday { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); }
@@ -224,7 +562,7 @@
         .announcement-body { flex: 1; min-width: 0; }
         .announcement-title {
             font-size: 13px; font-weight: 600;
-            color: var(--theme-text, var(--admin-text)); line-height: 1.35;
+            color: var(--admin-text); line-height: 1.35;
             margin-bottom: 2px; display: flex;
             align-items: center; gap: 6px; flex-wrap: wrap;
         }
@@ -235,30 +573,30 @@
         .announcement-priority-badge.urgent { background: #fee2e2; color: #dc2626; }
         .announcement-priority-badge.info { background: #dbeafe; color: #2563eb; }
         .announcement-message {
-            font-size: 12px; color: var(--theme-text-muted, var(--admin-text-muted));
+            font-size: 12px; color: var(--admin-text-muted);
             line-height: 1.45; display: -webkit-box;
             -webkit-line-clamp: 2; -webkit-box-orient: vertical;
             overflow: hidden; overflow-wrap: anywhere;
         }
-        .announcement-time { font-size: 11px; color: var(--theme-text-faint, var(--admin-text-dim)); margin-top: 3px; }
+        .announcement-time { font-size: 11px; color: var(--admin-text-dim); margin-top: 3px; }
         .announcement-unread-dot {
             position: absolute; top: 14px; right: 14px;
             width: 8px; height: 8px; border-radius: 50%;
-            background: var(--theme-primary, var(--admin-primary));
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 15%, transparent);
+            background: var(--admin-primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
         }
         .announcement-popup-footer {
-            padding: 10px 18px; background: var(--theme-bg, var(--admin-bg));
-            border-top: 1px solid var(--theme-border, var(--admin-border));
+            padding: 10px 18px; background: var(--admin-bg);
+            border-top: 1px solid var(--admin-border);
             text-align: center; font-size: 11px;
-            color: var(--theme-text-dim, var(--admin-text-dim)); font-weight: 600;
+            color: var(--admin-text-dim); font-weight: 600;
         }
         .announcement-empty {
             text-align: center; padding: 40px 20px;
-            color: var(--theme-text-dim, var(--admin-text-dim));
+            color: var(--admin-text-dim);
         }
         .announcement-empty i {
-            font-size: 36px; color: var(--theme-primary-soft, var(--admin-border-input));
+            font-size: 36px; color: var(--admin-border-input);
             display: block; margin-bottom: 10px;
         }
         .announcement-empty p { font-size: 13px; }
@@ -272,12 +610,11 @@
         }
         .announcement-view-modal.active { display: flex; }
         .announcement-view-modal .modal-content {
-            background: var(--theme-card, var(--admin-card)); border-radius: 24px; padding: 0;
+            background: var(--admin-card); border-radius: 24px; padding: 0;
             max-width: 540px; width: 100%; max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 70px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 35%, transparent);
+            overflow-y: auto; box-shadow: 0 25px 70px rgba(139, 92, 246, 0.35);
             animation: annModalPop 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            color: var(--theme-text, var(--admin-text));
+            color: var(--admin-text);
         }
         @keyframes annModalPop {
             from { transform: scale(0.9) translateY(20px); opacity: 0; }
@@ -285,7 +622,7 @@
         }
         .announcement-view-header {
             position: relative; padding: 30px 30px 22px;
-            background: var(--theme-gradient, var(--admin-gradient));
+            background: var(--admin-gradient);
             border-radius: 24px 24px 0 0;
             text-align: center; overflow: hidden;
         }
@@ -310,7 +647,7 @@
         .announcement-view-close:hover { background: rgba(255,255,255,0.4); transform: rotate(90deg); }
         .announcement-view-icon {
             width: 80px; height: 80px; border-radius: 22px;
-            background: var(--theme-card, var(--admin-card));
+            background: var(--admin-card);
             display: flex; align-items: center; justify-content: center;
             font-size: 38px; margin: 0 auto 14px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
@@ -333,24 +670,24 @@
         .announcement-view-priority.urgent { background: #fee2e2; color: #dc2626; }
         .announcement-view-priority.info { background: #dbeafe; color: #2563eb; }
         .announcement-view-title {
-            font-size: 22px; font-weight: 800; color: var(--theme-text, var(--admin-text));
+            font-size: 22px; font-weight: 800; color: var(--admin-text);
             line-height: 1.3; margin-bottom: 14px; overflow-wrap: anywhere;
         }
         .announcement-view-message {
-            font-size: 15px; color: var(--theme-text-muted, var(--admin-text-muted));
+            font-size: 15px; color: var(--admin-text-muted);
             line-height: 1.7; padding: 18px 20px;
-            background: var(--theme-bg, var(--admin-bg)); border-radius: 16px;
-            border-left: 4px solid var(--theme-primary, var(--admin-primary));
+            background: var(--admin-bg); border-radius: 16px;
+            border-left: 4px solid var(--admin-primary);
             margin-bottom: 18px; white-space: pre-wrap; word-break: break-word;
         }
         .announcement-view-meta {
             display: flex; flex-wrap: wrap; gap: 14px;
-            font-size: 12px; color: var(--theme-text-dim, var(--admin-text-dim));
-            padding-top: 16px; border-top: 1px solid var(--theme-border, var(--admin-border));
+            font-size: 12px; color: var(--admin-text-dim);
+            padding-top: 16px; border-top: 1px solid var(--admin-border);
             margin-bottom: 20px;
         }
         .announcement-view-meta span { display: inline-flex; align-items: center; gap: 6px; }
-        .announcement-view-meta i { color: var(--theme-primary, var(--admin-primary)); font-size: 11px; }
+        .announcement-view-meta i { color: var(--admin-primary); font-size: 11px; }
         .announcement-view-actions { display: flex; gap: 10px; flex-wrap: wrap; }
         .announcement-view-actions button,
         .announcement-view-actions a {
@@ -362,16 +699,16 @@
             gap: 8px; font-family: inherit; text-decoration: none;
         }
         .announcement-view-actions .ann-view-primary {
-            background: var(--theme-gradient, var(--admin-gradient)); color: white;
-            box-shadow: 0 4px 15px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 30%, transparent);
+            background: var(--admin-gradient); color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
         }
         .announcement-view-actions .ann-view-primary:hover {
-            transform: scale(1.02); box-shadow: 0 6px 25px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 45%, transparent);
+            transform: scale(1.02); box-shadow: 0 6px 25px rgba(139, 92, 246, 0.45);
         }
         .announcement-view-actions .ann-view-secondary {
-            background: var(--theme-bg, var(--admin-bg)); color: var(--theme-text-muted, var(--admin-text-muted));
+            background: var(--admin-bg); color: var(--admin-text-muted);
         }
-        .announcement-view-actions .ann-view-secondary:hover { background: var(--theme-primary-soft, var(--admin-border-input)); }
+        .announcement-view-actions .ann-view-secondary:hover { background: var(--admin-border-input); }
 
         .main-container {
             max-width: 1400px;
@@ -382,57 +719,55 @@
         }
 
         .hero-banner {
-            background: linear-gradient(135deg,
-                color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 8%, var(--theme-card, var(--admin-card))) 0%,
-                color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 14%, var(--theme-card, var(--admin-card))) 100%);
+            background: linear-gradient(135deg, var(--admin-bg-soft) 0%, var(--admin-border-input) 100%);
             border-radius: 24px;
             padding: 40px 50px;
             margin-bottom: 30px;
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 20px;
-            box-shadow: 0 4px 30px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 10%, transparent);
-            border: 1px solid var(--theme-border, var(--admin-border));
+            box-shadow: 0 4px 30px rgba(139, 92, 246, 0.1);
+            border: 1px solid var(--admin-border);
         }
         .hero-banner .content h1 {
-            font-size: 28px; font-weight: 800; color: var(--theme-text, var(--admin-text));
+            font-size: 28px; font-weight: 800; color: var(--admin-text);
         }
         .hero-banner .content h1 .highlight {
-            background: var(--theme-gradient, var(--admin-gradient));
+            background: var(--admin-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .hero-banner .content p { color: var(--theme-text-muted, var(--admin-text-muted)); font-size: 15px; }
+        .hero-banner .content p { color: var(--admin-text-muted); font-size: 15px; }
         .hero-banner .actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
         .btn-primary {
             display: inline-flex; align-items: center; gap: 8px;
-            background: var(--theme-gradient, var(--admin-gradient)); color: white;
+            background: var(--admin-gradient); color: white;
             padding: 12px 24px; border-radius: 50px; border: none;
             font-size: 14px; font-weight: 600; cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
             font-family: inherit;
         }
-        .btn-primary:hover { transform: scale(1.03); box-shadow: 0 6px 25px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 35%, transparent); }
+        .btn-primary:hover { transform: scale(1.03); box-shadow: 0 6px 25px rgba(139, 92, 246, 0.35); }
         .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
         .btn-secondary {
             display: inline-flex; align-items: center; gap: 8px;
-            background: var(--theme-card, var(--admin-card)); color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-card); color: var(--admin-primary);
             padding: 12px 24px; border-radius: 50px;
-            border: 2px solid var(--theme-border-input, var(--admin-border-input));
+            border: 2px solid var(--admin-border-input);
             font-size: 14px; font-weight: 600; cursor: pointer;
             transition: all 0.3s ease; font-family: inherit;
         }
         .btn-secondary:hover {
-            border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-bg, var(--admin-bg)); transform: scale(1.03);
+            border-color: var(--admin-primary);
+            background: var(--admin-bg); transform: scale(1.03);
         }
 
         .btn-danger {
             display: inline-flex; align-items: center; gap: 8px;
-            background: var(--theme-danger-soft, var(--admin-danger-soft)); color: var(--theme-danger, var(--admin-danger));
+            background: var(--admin-danger-soft); color: var(--admin-danger);
             padding: 6px 14px; border-radius: 50px; border: none;
             font-size: 12px; font-weight: 600; cursor: pointer;
             transition: all 0.3s ease; font-family: inherit;
@@ -450,7 +785,7 @@
 
         .btn-success {
             display: inline-flex; align-items: center; gap: 8px;
-            background: var(--theme-success-soft, var(--admin-success-soft)); color: var(--theme-success, var(--admin-success));
+            background: var(--admin-success-soft); color: var(--admin-success);
             padding: 6px 14px; border-radius: 50px; border: none;
             font-size: 12px; font-weight: 600; cursor: pointer;
             transition: all 0.3s ease; font-family: inherit;
@@ -460,30 +795,30 @@
         .admin-tabs {
             display: flex; gap: 10px; flex-wrap: wrap;
             margin-bottom: 25px;
-            background: var(--theme-card, var(--admin-card));
+            background: var(--admin-card);
             padding: 15px 20px; border-radius: 20px;
-            border: 1px solid var(--theme-border, var(--admin-border));
+            border: 1px solid var(--admin-border);
             box-shadow: 0 2px 10px rgba(0,0,0,0.04);
         }
         .admin-tab {
             padding: 10px 20px; border-radius: 12px;
             border: 2px solid transparent;
-            background: var(--theme-bg, var(--admin-bg)); color: var(--theme-text-muted, var(--admin-text-muted));
+            background: var(--admin-bg); color: var(--admin-text-muted);
             font-weight: 600; cursor: pointer;
             transition: all 0.3s ease; font-size: 14px;
             font-family: inherit;
         }
-        .admin-tab:hover { background: var(--theme-primary-soft-2, var(--admin-bg-soft)); color: var(--theme-primary, var(--admin-primary)); }
+        .admin-tab:hover { background: var(--admin-bg-soft); color: var(--admin-primary); }
         .admin-tab.active {
-            background: var(--theme-gradient, var(--admin-gradient));
-            color: white; border-color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-gradient);
+            color: white; border-color: var(--admin-primary);
         }
         .admin-tab i { margin-right: 8px; }
         .admin-tab .tab-badge {
             display: inline-flex; align-items: center; justify-content: center;
             min-width: 20px; height: 20px; padding: 0 6px;
-            border-radius: 50px; background: var(--theme-border-input, var(--admin-border-input));
-            color: var(--theme-primary, var(--admin-primary)); font-size: 10px;
+            border-radius: 50px; background: var(--admin-border-input);
+            color: var(--admin-primary); font-size: 10px;
             font-weight: 800; margin-left: 6px;
         }
         .admin-tab.active .tab-badge {
@@ -498,10 +833,10 @@
         }
 
         .admin-card {
-            background: var(--theme-card, var(--admin-card));
+            background: var(--admin-card);
             border-radius: 20px;
             padding: 25px 30px;
-            border: 1px solid var(--theme-border, var(--admin-border));
+            border: 1px solid var(--admin-border);
             box-shadow: 0 2px 10px rgba(0,0,0,0.04);
             margin-bottom: 20px;
         }
@@ -512,10 +847,9 @@
         .admin-card .card-header h3 {
             font-size: 18px; font-weight: 700;
             display: flex; align-items: center; gap: 10px;
-            color: var(--theme-text, var(--admin-text));
         }
         .admin-card .card-header .count {
-            font-size: 13px; color: var(--theme-text-dim, var(--admin-text-dim)); font-weight: 400;
+            font-size: 13px; color: var(--admin-text-dim); font-weight: 400;
         }
         .admin-card .card-header .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -526,22 +860,22 @@
         }
 
         .item-card {
-            background: var(--theme-bg, var(--admin-bg));
+            background: var(--admin-bg);
             border-radius: 16px;
             padding: 18px 20px;
-            border: 1px solid var(--theme-border, var(--admin-border));
+            border: 1px solid var(--admin-border);
             transition: all 0.3s ease;
             position: relative; min-width: 0;
         }
         .item-card:hover {
-            border-color: var(--theme-primary, var(--admin-primary));
+            border-color: var(--admin-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .item-card.selected {
-            border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            border-color: var(--admin-primary);
+            background: var(--admin-bg-soft);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
         }
         .item-card .item-actions {
             position: absolute; top: 12px; right: 12px;
@@ -554,45 +888,45 @@
         }
         .item-card .item-title {
             font-weight: 600; font-size: 16px;
-            color: var(--theme-text, var(--admin-text)); margin-bottom: 4px;
+            color: var(--admin-text); margin-bottom: 4px;
             padding-right: 70px; overflow-wrap: anywhere;
         }
         .item-card .item-subtitle {
-            font-size: 13px; color: var(--theme-text-dim, var(--admin-text-dim));
+            font-size: 13px; color: var(--admin-text-dim);
             margin-bottom: 4px; overflow-wrap: anywhere;
         }
         .item-card .item-description {
-            font-size: 13px; color: var(--theme-text-muted, var(--admin-text-muted));
+            font-size: 13px; color: var(--admin-text-muted);
             margin-top: 4px; overflow-wrap: anywhere;
         }
         .item-card .item-tags {
             display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px;
         }
         .item-card .item-tag {
-            background: var(--theme-border-input, var(--admin-border-input));
-            color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-border-input);
+            color: var(--admin-primary);
             padding: 2px 10px; border-radius: 50px;
             font-size: 11px; font-weight: 600;
         }
 
         .announcement-card {
-            background: var(--theme-bg, var(--admin-bg));
+            background: var(--admin-bg);
             border-radius: 16px;
             padding: 18px 20px;
-            border: 1px solid var(--theme-border, var(--admin-border));
+            border: 1px solid var(--admin-border);
             transition: all 0.3s ease;
             position: relative; display: flex;
             gap: 14px; align-items: flex-start; min-width: 0;
         }
         .announcement-card:hover {
-            border-color: var(--theme-primary, var(--admin-primary));
+            border-color: var(--admin-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .announcement-card.selected {
-            border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            border-color: var(--admin-primary);
+            background: var(--admin-bg-soft);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
         }
         .announcement-card.expired {
             opacity: 0.65; border-color: #fecaca; background: #fef2f2;
@@ -601,13 +935,13 @@
         .announcement-card .announcement-card-icon {
             width: 50px; height: 50px; border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 22px; flex-shrink: 0; background: var(--theme-border-input, var(--admin-border-input));
+            font-size: 22px; flex-shrink: 0; background: var(--admin-border-input);
         }
-        .announcement-card.expired .announcement-card-icon { background: var(--theme-danger-soft, var(--admin-danger-soft)); }
+        .announcement-card.expired .announcement-card-icon { background: var(--admin-danger-soft); }
         .announcement-card .announcement-card-body { flex: 1; min-width: 0; }
         .announcement-card .announcement-card-title {
             font-weight: 700; font-size: 15px;
-            color: var(--theme-text, var(--admin-text)); margin-bottom: 4px;
+            color: var(--admin-text); margin-bottom: 4px;
             display: flex; align-items: center; gap: 8px;
             flex-wrap: wrap; overflow-wrap: anywhere;
         }
@@ -625,21 +959,21 @@
             letter-spacing: 0.4px; text-transform: uppercase;
         }
         .announcement-card .announcement-card-message {
-            font-size: 13px; color: var(--theme-text-muted, var(--admin-text-muted));
+            font-size: 13px; color: var(--admin-text-muted);
             line-height: 1.5; margin-bottom: 8px;
             display: -webkit-box; -webkit-line-clamp: 3;
             -webkit-box-orient: vertical; overflow: hidden;
             overflow-wrap: anywhere;
         }
         .announcement-card .announcement-card-meta {
-            font-size: 11px; color: var(--theme-text-dim, var(--admin-text-dim));
+            font-size: 11px; color: var(--admin-text-dim);
             display: flex; flex-wrap: wrap; gap: 10px;
         }
         .announcement-card .announcement-card-meta span {
             display: inline-flex; align-items: center; gap: 4px;
         }
         .announcement-card .announcement-card-meta i {
-            color: var(--theme-primary, var(--admin-primary)); font-size: 10px;
+            color: var(--admin-primary); font-size: 10px;
         }
         .announcement-card .announcement-card-actions {
             position: absolute; top: 12px; right: 12px;
@@ -660,50 +994,50 @@
         .announcement-card .announcement-card-actions .btn-danger:hover { background: #fecaca; transform: scale(1.05); }
 
         .user-card {
-            background: var(--theme-bg, var(--admin-bg));
+            background: var(--admin-bg);
             border-radius: 16px;
             padding: 18px 20px;
-            border: 1px solid var(--theme-border, var(--admin-border));
+            border: 1px solid var(--admin-border);
             transition: all 0.3s ease;
             position: relative; display: flex;
             gap: 14px; align-items: flex-start; min-width: 0;
         }
         .user-card:hover {
-            border-color: var(--theme-primary, var(--admin-primary));
+            border-color: var(--admin-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .user-card.selected {
-            border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            border-color: var(--admin-primary);
+            background: var(--admin-bg-soft);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
         }
         .user-card .user-avatar-circle {
             width: 56px; height: 56px; border-radius: 50%;
-            background: var(--theme-gradient, var(--admin-gradient));
+            background: var(--admin-gradient);
             display: flex; align-items: center; justify-content: center;
             color: white; font-weight: 700; font-size: 20px;
             flex-shrink: 0; overflow: hidden;
-            border: 3px solid var(--theme-card, var(--admin-card));
-            box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 15%, transparent);
+            border: 3px solid var(--admin-card);
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
         }
         .user-card .user-avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
         .user-card .user-card-body { flex: 1; min-width: 0; }
         .user-card .user-card-name {
             font-weight: 700; font-size: 15px;
-            color: var(--theme-text, var(--admin-text));
+            color: var(--admin-text);
             display: flex; align-items: center; gap: 8px;
             margin-bottom: 2px; flex-wrap: wrap;
             overflow-wrap: anywhere;
         }
         .user-card .user-card-name .admin-mini-badge {
-            background: var(--theme-gradient, var(--admin-gradient)); color: white;
+            background: var(--admin-gradient); color: white;
             font-size: 9px; padding: 1px 8px;
             border-radius: 50px; font-weight: 700;
             letter-spacing: 0.5px;
         }
         .user-card .user-card-meta {
-            font-size: 12px; color: var(--theme-text-dim, var(--admin-text-dim));
+            font-size: 12px; color: var(--admin-text-dim);
             display: flex; flex-wrap: wrap;
             gap: 10px; margin-bottom: 6px;
         }
@@ -711,9 +1045,9 @@
             display: inline-flex; align-items: center;
             gap: 4px; overflow-wrap: anywhere;
         }
-        .user-card .user-card-meta i { color: var(--theme-primary, var(--admin-primary)); font-size: 11px; }
+        .user-card .user-card-meta i { color: var(--admin-primary); font-size: 11px; }
         .user-card .user-card-bio {
-            font-size: 13px; color: var(--theme-text-muted, var(--admin-text-muted));
+            font-size: 13px; color: var(--admin-text-muted);
             line-height: 1.5; margin-bottom: 6px;
             display: -webkit-box; -webkit-line-clamp: 2;
             -webkit-box-orient: vertical; overflow: hidden;
@@ -721,8 +1055,7 @@
         }
         .user-card .user-card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
         .user-card .user-card-tags .item-tag {
-            background: var(--theme-border-input, var(--admin-border-input));
-            color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-border-input); color: var(--admin-primary);
             padding: 2px 10px; border-radius: 50px;
             font-size: 10px; font-weight: 600;
         }
@@ -754,80 +1087,78 @@
 
         /* Chat cards */
         .chat-card {
-            background: var(--theme-bg, var(--admin-bg));
+            background: var(--admin-bg);
             border-radius: 16px;
             padding: 18px 20px;
-            border: 1px solid var(--theme-border, var(--admin-border));
+            border: 1px solid var(--admin-border);
             transition: all 0.3s ease;
             position: relative; display: flex;
             gap: 14px; align-items: flex-start; min-width: 0;
             grid-column: 1 / -1;
         }
         .chat-card:hover {
-            border-color: var(--theme-primary, var(--admin-primary));
+            border-color: var(--admin-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .chat-card.selected {
-            border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            border-color: var(--admin-primary);
+            background: var(--admin-bg-soft);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
         }
         .chat-card.group-chat {
-            background: linear-gradient(135deg,
-                color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 4%, var(--theme-card, var(--admin-card))) 0%,
-                color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 8%, var(--theme-card, var(--admin-card))) 100%);
-            border-color: color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 18%, transparent);
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%);
+            border-color: rgba(124, 58, 237, 0.18);
         }
-        .chat-card.group-chat:hover { border-color: var(--theme-primary, var(--admin-primary)); }
+        .chat-card.group-chat:hover { border-color: var(--admin-primary); }
         .chat-card .chat-card-avatar {
             width: 46px; height: 46px; border-radius: 50%;
-            background: var(--theme-gradient, var(--admin-gradient));
+            background: var(--admin-gradient);
             display: flex; align-items: center; justify-content: center;
             color: white; font-weight: 700; font-size: 16px;
             flex-shrink: 0; overflow: hidden;
-            border: 3px solid var(--theme-card, var(--admin-card));
-            box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 15%, transparent);
+            border: 3px solid var(--admin-card);
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
         }
         .chat-card .chat-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .chat-card .chat-card-body { flex: 1; min-width: 0; }
         .chat-card .chat-card-author {
             font-weight: 700; font-size: 14px;
-            color: var(--theme-text, var(--admin-text)); margin-bottom: 4px;
+            color: var(--admin-text); margin-bottom: 4px;
             display: flex; align-items: center; gap: 8px;
             flex-wrap: wrap; overflow-wrap: anywhere;
         }
         .chat-card .chat-card-recipient {
             display: inline-flex; align-items: center; gap: 4px;
-            background: var(--theme-border-input, var(--admin-border-input)); color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-border-input); color: var(--admin-primary);
             font-size: 10px; font-weight: 700;
             padding: 2px 8px; border-radius: 50px;
             text-transform: uppercase; letter-spacing: 0.4px;
         }
         .chat-card .chat-card-recipient.group-recipient {
-            background: var(--theme-gradient, var(--admin-gradient)); color: white;
-            box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            background: var(--admin-gradient); color: white;
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
         }
         .chat-card .chat-card-text {
-            font-size: 14px; color: var(--theme-text, var(--admin-text)); font-weight: 500;
+            font-size: 14px; color: #333; font-weight: 500;
             line-height: 1.5; padding: 10px 14px;
-            background: var(--theme-card, var(--admin-card)); border-radius: 12px;
-            border: 1.5px solid var(--theme-border, var(--admin-border));
+            background: var(--admin-card); border-radius: 12px;
+            border: 1.5px solid var(--admin-border);
             margin-bottom: 8px; word-break: break-word;
             overflow-wrap: anywhere; white-space: pre-wrap;
         }
         .chat-card.group-chat .chat-card-text {
-            background: color-mix(in srgb, var(--theme-card, var(--admin-card)) 90%, transparent);
-            border-color: color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 15%, transparent);
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(124, 58, 237, 0.15);
         }
         .chat-card .chat-card-meta {
-            font-size: 11px; color: var(--theme-text-dim, var(--admin-text-dim));
+            font-size: 11px; color: var(--admin-text-dim);
             display: flex; flex-wrap: wrap; gap: 10px;
         }
         .chat-card .chat-card-meta span {
             display: inline-flex; align-items: center; gap: 4px;
         }
-        .chat-card .chat-card-meta i { color: var(--theme-primary, var(--admin-primary)); font-size: 10px; }
+        .chat-card .chat-card-meta i { color: var(--admin-primary); font-size: 10px; }
         .chat-card .chat-card-meta .mention-badge { color: #d97706; font-weight: 700; }
         .chat-card .chat-card-meta .mention-badge i { color: #d97706; }
         .chat-card .chat-card-actions {
@@ -849,8 +1180,8 @@
         /* Feature toggle banner */
         .feature-toggle-banner {
             display: flex; align-items: center; gap: 16px;
-            padding: 20px 24px; background: var(--theme-card, var(--admin-card));
-            border-radius: 16px; border: 1px solid var(--theme-border, var(--admin-border));
+            padding: 20px 24px; background: var(--admin-card);
+            border-radius: 16px; border: 1px solid var(--admin-border);
             margin-bottom: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.04);
             flex-wrap: wrap;
@@ -867,7 +1198,7 @@
             width: 52px; height: 52px; border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
             font-size: 24px; flex-shrink: 0;
-            background: var(--theme-card, var(--admin-card));
+            background: var(--admin-card);
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         .feature-toggle-banner.off .icon-wrap { color: #d97706; }
@@ -905,26 +1236,26 @@
         /* Filter bar */
         .comments-filter-bar {
             display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-            padding: 12px 16px; background: var(--theme-bg, var(--admin-bg));
-            border-radius: 14px; border: 1px solid var(--theme-border, var(--admin-border));
+            padding: 12px 16px; background: var(--admin-bg);
+            border-radius: 14px; border: 1px solid var(--admin-border);
             margin-bottom: 15px;
         }
         .comments-filter-bar label {
             font-size: 12px; font-weight: 700;
-            color: var(--theme-text-muted, var(--admin-text-muted));
+            color: var(--admin-text-muted);
             text-transform: uppercase; letter-spacing: 0.4px;
         }
         .comments-filter-bar select {
             padding: 8px 14px; border-radius: 50px;
-            border: 2px solid var(--theme-border-input, var(--admin-border-input));
-            background: var(--theme-card, var(--admin-card)); font-size: 13px;
-            font-family: inherit; color: var(--theme-text, var(--admin-text));
+            border: 2px solid var(--admin-border-input);
+            background: var(--admin-card); font-size: 13px;
+            font-family: inherit; color: var(--admin-text);
             cursor: pointer; transition: all 0.25s ease;
             max-width: 260px;
         }
         .comments-filter-bar select:focus {
-            outline: none; border-color: var(--theme-primary, var(--admin-primary));
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 10%, transparent);
+            outline: none; border-color: var(--admin-primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
 
         .user-search-wrap {
@@ -935,39 +1266,39 @@
         .user-search-wrap input {
             width: 100%; padding: 10px 16px 10px 40px;
             border-radius: 50px;
-            border: 2px solid var(--theme-border-input, var(--admin-border-input));
-            background: var(--theme-bg, var(--admin-bg)); font-size: 13px;
+            border: 2px solid var(--admin-border-input);
+            background: var(--admin-bg); font-size: 13px;
             font-family: inherit; transition: all 0.3s ease;
-            color: var(--theme-text, var(--admin-text));
+            color: var(--admin-text);
         }
         .user-search-wrap input:focus {
-            outline: none; border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-card, var(--admin-card));
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 10%, transparent);
+            outline: none; border-color: var(--admin-primary);
+            background: var(--admin-card);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
         .user-search-wrap .search-icon {
             position: absolute; left: 14px;
-            color: var(--theme-text-dim, var(--admin-text-dim)); font-size: 13px;
+            color: var(--admin-text-dim); font-size: 13px;
             pointer-events: none;
         }
 
         .select-checkbox {
             position: absolute; top: 12px; left: 12px;
             z-index: 5; width: 24px; height: 24px;
-            cursor: pointer; accent-color: var(--theme-primary, var(--admin-primary));
+            cursor: pointer; accent-color: var(--admin-primary);
             display: none;
         }
         .batch-mode .select-checkbox { display: block; }
 
         .batch-toolbar {
             display: none; align-items: center; gap: 12px;
-            padding: 12px 18px; background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            border-radius: 14px; border: 1px solid var(--theme-border-input, var(--admin-border-input));
+            padding: 12px 18px; background: var(--admin-bg-soft);
+            border-radius: 14px; border: 1px solid var(--admin-border-input);
             margin-bottom: 15px; flex-wrap: wrap;
         }
         .batch-toolbar.active { display: flex; }
         .batch-toolbar .batch-count {
-            font-weight: 700; font-size: 13px; color: var(--theme-primary, var(--admin-primary));
+            font-weight: 700; font-size: 13px; color: var(--admin-primary);
         }
         .batch-toolbar .batch-actions {
             display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto;
@@ -986,30 +1317,30 @@
             background: #fecaca; transform: scale(1.03);
         }
         .batch-toolbar .batch-actions .btn-batch-cancel {
-            background: var(--theme-card, var(--admin-card)); color: var(--theme-text-muted, var(--admin-text-muted));
-            border: 1px solid var(--theme-border-input, var(--admin-border-input));
+            background: var(--admin-card); color: var(--admin-text-muted);
+            border: 1px solid var(--admin-border-input);
         }
-        .batch-toolbar .batch-actions .btn-batch-cancel:hover { background: var(--theme-bg, var(--admin-bg)); }
+        .batch-toolbar .batch-actions .btn-batch-cancel:hover { background: var(--admin-bg); }
         .batch-toolbar .batch-actions .btn-batch-select-all {
-            background: var(--theme-border-input, var(--admin-border-input)); color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-border-input); color: var(--admin-primary);
         }
         .batch-toolbar .batch-actions .btn-batch-select-all:hover { background: #ddd6fe; }
 
         .batch-toggle-btn {
             display: inline-flex; align-items: center; gap: 6px;
-            background: var(--theme-bg, var(--admin-bg)); color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-bg); color: var(--admin-primary);
             padding: 8px 16px; border-radius: 50px;
-            border: 2px solid var(--theme-border-input, var(--admin-border-input));
+            border: 2px solid var(--admin-border-input);
             font-size: 12px; font-weight: 700;
             cursor: pointer; transition: all 0.25s ease;
             font-family: inherit;
         }
         .batch-toggle-btn:hover {
-            border-color: var(--theme-primary, var(--admin-primary)); background: var(--theme-primary-soft-2, var(--admin-bg-soft));
+            border-color: var(--admin-primary); background: var(--admin-bg-soft);
         }
         .batch-toggle-btn.active {
-            background: var(--theme-primary, var(--admin-primary)); color: white;
-            border-color: var(--theme-primary, var(--admin-primary));
+            background: var(--admin-primary); color: white;
+            border-color: var(--admin-primary);
         }
 
         .modal {
@@ -1020,39 +1351,39 @@
         }
         .modal.active { display: flex; }
         .modal-content {
-            background: var(--theme-card, var(--admin-card));
+            background: var(--admin-card);
             border-radius: 24px; padding: 35px;
             max-width: 520px; width: 100%;
             max-height: 90vh; overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            color: var(--theme-text, var(--admin-text));
+            color: var(--admin-text);
         }
         .modal-content h2 {
-            color: var(--theme-primary, var(--admin-primary)); font-size: 24px;
+            color: var(--admin-primary); font-size: 24px;
             margin-bottom: 20px;
             display: flex; align-items: center; gap: 12px;
         }
         .modal-content .input-group { margin-bottom: 14px; }
         .modal-content .input-group label {
-            color: var(--theme-text-muted, var(--admin-text-muted)); font-size: 13px;
+            color: var(--admin-text-muted); font-size: 13px;
             font-weight: 600; display: block; margin-bottom: 5px;
         }
-        .modal-content .input-group label .required-star { color: var(--theme-danger, var(--admin-danger)); }
+        .modal-content .input-group label .required-star { color: var(--admin-danger); }
         .modal-content .input-group input,
         .modal-content .input-group textarea,
         .modal-content .input-group select {
             width: 100%; padding: 12px 16px;
             border-radius: 12px;
-            border: 2px solid var(--theme-border-input, var(--admin-border-input));
-            background: var(--theme-bg, var(--admin-bg));
-            color: var(--theme-text, var(--admin-text)); font-size: 14px;
+            border: 2px solid var(--admin-border-input);
+            background: var(--admin-bg);
+            color: var(--admin-text); font-size: 14px;
             transition: all 0.3s ease; font-family: inherit;
         }
         .modal-content .input-group input:focus,
         .modal-content .input-group textarea:focus,
         .modal-content .input-group select:focus {
-            outline: none; border-color: var(--theme-primary, var(--admin-primary));
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 10%, transparent);
+            outline: none; border-color: var(--admin-primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
         .modal-content .input-group textarea { min-height: 80px; resize: vertical; }
         .modal-content .input-row {
@@ -1060,26 +1391,26 @@
         }
 
         .image-upload-area {
-            border: 2px dashed var(--theme-border-input, var(--admin-border-input));
+            border: 2px dashed var(--admin-border-input);
             border-radius: 12px; padding: 20px;
             text-align: center; cursor: pointer;
-            transition: all 0.3s ease; background: var(--theme-bg, var(--admin-bg));
+            transition: all 0.3s ease; background: var(--admin-bg);
             position: relative; min-height: 120px;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
         }
         .image-upload-area:hover {
-            border-color: var(--theme-primary, var(--admin-primary)); background: var(--theme-primary-soft-2, var(--admin-bg-soft));
+            border-color: var(--admin-primary); background: var(--admin-bg-soft);
         }
         .image-upload-area img {
             max-width: 100%; max-height: 150px;
             border-radius: 8px; margin-bottom: 8px;
         }
         .image-upload-area .upload-placeholder {
-            color: var(--theme-text-dim, var(--admin-text-dim)); font-size: 13px;
+            color: var(--admin-text-dim); font-size: 13px;
         }
         .image-upload-area .upload-placeholder i {
-            font-size: 32px; color: var(--theme-primary, var(--admin-primary));
+            font-size: 32px; color: var(--admin-primary);
             display: block; margin-bottom: 8px;
         }
         .image-upload-area .remove-image {
@@ -1105,25 +1436,25 @@
             font-family: inherit;
         }
         .modal-actions .btn-primary {
-            background: var(--theme-gradient, var(--admin-gradient)); color: white;
-            box-shadow: 0 4px 15px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            background: var(--admin-gradient); color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
         }
         .modal-actions .btn-primary:hover { transform: scale(1.02); }
         .modal-actions .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
-        .modal-actions .btn-secondary { background: var(--theme-bg, var(--admin-bg)); color: var(--theme-text-muted, var(--admin-text-muted)); }
-        .modal-actions .btn-secondary:hover { background: var(--theme-border-input, var(--admin-border-input)); }
-        .modal-actions .btn-danger { background: var(--theme-danger-soft, var(--admin-danger-soft)); color: var(--theme-danger, var(--admin-danger)); }
+        .modal-actions .btn-secondary { background: var(--admin-bg); color: var(--admin-text-muted); }
+        .modal-actions .btn-secondary:hover { background: var(--admin-border-input); }
+        .modal-actions .btn-danger { background: var(--admin-danger-soft); color: var(--admin-danger); }
         .modal-actions .btn-danger:hover { background: #fecaca; }
 
         .empty-state {
             text-align: center; padding: 40px 20px;
-            color: var(--theme-text-dim, var(--admin-text-dim)); grid-column: 1 / -1;
+            color: var(--admin-text-dim); grid-column: 1 / -1;
         }
         .empty-state i {
-            font-size: 40px; color: var(--theme-primary-soft, var(--admin-border-input));
+            font-size: 40px; color: var(--admin-border-input);
             display: block; margin-bottom: 10px;
         }
-        .empty-state h3 { color: var(--theme-text, var(--admin-text)); font-size: 18px; }
+        .empty-state h3 { color: var(--admin-text); font-size: 18px; }
 
         .spinner {
             display: inline-block; width: 16px; height: 16px;
@@ -1134,13 +1465,13 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .preview-container {
-            background: var(--theme-card, var(--admin-card)); border-radius: 20px;
-            border: 1px solid var(--theme-border, var(--admin-border)); overflow: hidden;
+            background: var(--admin-card); border-radius: 20px;
+            border: 1px solid var(--admin-border); overflow: hidden;
             box-shadow: 0 2px 10px rgba(0,0,0,0.04);
         }
         .preview-header {
-            padding: 15px 20px; background: var(--theme-bg, var(--admin-bg));
-            border-bottom: 1px solid var(--theme-border, var(--admin-border));
+            padding: 15px 20px; background: var(--admin-bg);
+            border-bottom: 1px solid var(--admin-border);
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 10px;
         }
@@ -1157,27 +1488,27 @@
         .footer {
             max-width: 1400px; margin: 0 auto;
             padding: 30px 40px; text-align: center;
-            color: var(--theme-text-dim, var(--admin-text-dim)); font-size: 13px;
-            border-top: 1px solid var(--theme-border, var(--admin-border));
+            color: var(--admin-text-dim); font-size: 13px;
+            border-top: 1px solid var(--admin-border);
         }
 
         /* Highlight cards */
         .highlight-card {
-            background: var(--theme-bg, var(--admin-bg)); border-radius: 16px;
-            padding: 0; border: 1px solid var(--theme-border, var(--admin-border));
+            background: var(--admin-bg); border-radius: 16px;
+            padding: 0; border: 1px solid var(--admin-border);
             transition: all 0.3s ease; position: relative;
             overflow: hidden; min-width: 0;
             display: flex; flex-direction: column;
         }
         .highlight-card:hover {
-            border-color: var(--theme-primary, var(--admin-primary));
+            border-color: var(--admin-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .highlight-card.selected {
-            border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            border-color: var(--admin-primary);
+            background: var(--admin-bg-soft);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
         }
         .highlight-card.expired {
             opacity: 0.65; border-color: #fecaca; background: #fef2f2;
@@ -1191,7 +1522,7 @@
             width: 100%; height: 160px;
             background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
             display: flex; align-items: center; justify-content: center;
-            color: var(--theme-primary, var(--admin-primary)); font-size: 36px; flex-shrink: 0;
+            color: var(--admin-primary); font-size: 36px; flex-shrink: 0;
         }
         .highlight-card .highlight-card-body {
             padding: 14px 16px 16px; flex: 1;
@@ -1200,12 +1531,12 @@
         .highlight-card .highlight-card-author {
             display: flex; align-items: center; gap: 8px;
             margin-bottom: 8px; font-size: 13px;
-            font-weight: 700; color: var(--theme-text, var(--admin-text));
+            font-weight: 700; color: var(--admin-text);
             overflow-wrap: anywhere;
         }
         .highlight-card .highlight-card-author-avatar {
             width: 26px; height: 26px; border-radius: 50%;
-            background: var(--theme-gradient, var(--admin-gradient));
+            background: var(--admin-gradient);
             display: flex; align-items: center; justify-content: center;
             color: white; font-size: 10px; font-weight: 700;
             overflow: hidden; flex-shrink: 0;
@@ -1214,22 +1545,22 @@
             width: 100%; height: 100%; object-fit: cover;
         }
         .highlight-card .highlight-card-caption {
-            font-size: 13px; color: var(--theme-text-muted, var(--admin-text-muted));
+            font-size: 13px; color: var(--admin-text-muted);
             line-height: 1.45; margin-bottom: 10px;
             display: -webkit-box; -webkit-line-clamp: 2;
             -webkit-box-orient: vertical; overflow: hidden;
             overflow-wrap: anywhere;
         }
         .highlight-card .highlight-card-meta {
-            font-size: 11px; color: var(--theme-text-dim, var(--admin-text-dim));
+            font-size: 11px; color: var(--admin-text-dim);
             display: flex; flex-wrap: wrap; gap: 8px;
             margin-top: auto; padding-top: 8px;
-            border-top: 1px solid var(--theme-border, var(--admin-border));
+            border-top: 1px solid var(--admin-border);
         }
         .highlight-card .highlight-card-meta span {
             display: inline-flex; align-items: center; gap: 4px;
         }
-        .highlight-card .highlight-card-meta i { color: var(--theme-primary, var(--admin-primary)); font-size: 10px; }
+        .highlight-card .highlight-card-meta i { color: var(--admin-primary); font-size: 10px; }
         .highlight-card .highlight-card-expired-badge {
             background: #fee2e2; color: #dc2626;
             font-size: 9px; font-weight: 800;
@@ -1257,21 +1588,36 @@
         .highlight-card .highlight-card-actions .btn-success:hover { background: #bbf7d0; transform: scale(1.05); }
 
         /* Note cards */
+
+        /* ===== Notes with songs (admin) ===== */
+        #tab-notes, #tab-comments, #noteEditModal {
+            --theme-primary: var(--admin-primary); --theme-primary-soft: var(--admin-bg-soft); --theme-gradient: var(--admin-gradient);
+            --theme-card: var(--admin-card); --theme-text: var(--admin-text); --theme-text-muted: var(--admin-text-muted); --theme-text-dim: var(--admin-text-dim);
+            --theme-border: var(--admin-border); --theme-border-input: var(--admin-border-input); --theme-bg-soft: var(--admin-bg-soft);
+        }
+        .note-card .nm-card { margin-top: 8px; max-width: 440px; padding: 8px 10px; }
+        .note-card .nm-card .nm-art, .note-card .nm-card .nm-ph { width: 42px; height: 42px; }
+        .song-badge { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; color: var(--admin-primary); background: var(--admin-bg-soft); padding: 2px 9px; border-radius: 999px; }
+        .song-only { font-style: italic; color: var(--admin-text-dim); }
+        .notes-insight { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; margin-top: 4px; font-size: 12.5px; color: var(--admin-text-muted); }
+        .notes-insight .chip { background: var(--admin-bg-soft); color: var(--admin-primary); font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+        .comment-card-ref { font-size: 12px; color: var(--admin-text-muted); border-left: 3px solid var(--admin-primary); padding: 2px 8px; margin: 3px 0 4px; background: var(--admin-bg-soft); border-radius: 3px 8px 8px 3px; }
+        .comment-card-ref b { color: var(--admin-text); }
         .note-card {
-            background: var(--theme-bg, var(--admin-bg)); border-radius: 16px;
-            padding: 18px 20px; border: 1px solid var(--theme-border, var(--admin-border));
+            background: var(--admin-bg); border-radius: 16px;
+            padding: 18px 20px; border: 1px solid var(--admin-border);
             transition: all 0.3s ease; position: relative;
             display: flex; gap: 14px; align-items: flex-start; min-width: 0;
         }
         .note-card:hover {
-            border-color: var(--theme-primary, var(--admin-primary));
+            border-color: var(--admin-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .note-card.selected {
-            border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            border-color: var(--admin-primary);
+            background: var(--admin-bg-soft);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
         }
         .note-card.expired {
             opacity: 0.65; border-color: #fecaca; background: #fef2f2;
@@ -1281,32 +1627,32 @@
             width: 50px; height: 50px; border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
             font-size: 22px; flex-shrink: 0;
-            background: var(--theme-border-input, var(--admin-border-input));
+            background: var(--admin-border-input);
         }
         .note-card .note-card-body { flex: 1; min-width: 0; }
         .note-card .note-card-author {
             font-weight: 700; font-size: 14px;
-            color: var(--theme-text, var(--admin-text)); margin-bottom: 6px;
+            color: var(--admin-text); margin-bottom: 6px;
             display: flex; align-items: center; gap: 8px;
             flex-wrap: wrap; overflow-wrap: anywhere;
         }
         .note-card .note-card-text {
-            font-size: 15px; color: var(--theme-text, var(--admin-text)); font-weight: 600;
+            font-size: 15px; color: #333; font-weight: 600;
             line-height: 1.5; padding: 10px 14px;
-            background: var(--theme-card, var(--admin-card)); border-radius: 12px;
-            border: 1.5px solid var(--theme-border, var(--admin-border));
+            background: var(--admin-card); border-radius: 12px;
+            border: 1.5px solid var(--admin-border);
             margin-bottom: 8px; word-break: break-word;
             overflow-wrap: anywhere;
         }
         .note-card .note-card-meta {
-            font-size: 11px; color: var(--theme-text-dim, var(--admin-text-dim));
+            font-size: 11px; color: var(--admin-text-dim);
             display: flex; flex-wrap: wrap; gap: 10px;
         }
         .note-card .note-card-meta span {
             display: inline-flex; align-items: center; gap: 4px;
         }
-        .note-card .note-card-meta i { color: var(--theme-primary, var(--admin-primary)); font-size: 10px; }
-        .note-card .note-card-meta .expired-label { color: var(--theme-danger, var(--admin-danger)); font-weight: 800; }
+        .note-card .note-card-meta i { color: var(--admin-primary); font-size: 10px; }
+        .note-card .note-card-meta .expired-label { color: var(--admin-danger); font-weight: 800; }
         .note-card .note-card-actions {
             position: absolute; top: 12px; right: 12px;
             display: flex; gap: 6px; opacity: 0;
@@ -1324,25 +1670,25 @@
         .note-card .note-card-actions .btn-edit:hover { background: #bfdbfe; transform: scale(1.05); }
         .note-card .note-card-actions .btn-danger { background: #fee2e2; color: #dc2626; }
         .note-card .note-card-actions .btn-danger:hover { background: #fecaca; transform: scale(1.05); }
-        .note-card .note-card-actions .btn-view-comments { background: var(--theme-border-input, var(--admin-border-input)); color: var(--theme-primary, var(--admin-primary)); }
+        .note-card .note-card-actions .btn-view-comments { background: var(--admin-border-input); color: var(--admin-primary); }
         .note-card .note-card-actions .btn-view-comments:hover { background: #ddd6fe; transform: scale(1.05); }
 
         /* Comment cards */
         .comment-card {
-            background: var(--theme-bg, var(--admin-bg)); border-radius: 16px;
-            padding: 18px 20px; border: 1px solid var(--theme-border, var(--admin-border));
+            background: var(--admin-bg); border-radius: 16px;
+            padding: 18px 20px; border: 1px solid var(--admin-border);
             transition: all 0.3s ease; position: relative;
             display: flex; gap: 14px; align-items: flex-start; min-width: 0;
         }
         .comment-card:hover {
-            border-color: var(--theme-primary, var(--admin-primary));
+            border-color: var(--admin-primary);
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .comment-card.selected {
-            border-color: var(--theme-primary, var(--admin-primary));
-            background: var(--theme-primary-soft-2, var(--admin-bg-soft));
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 25%, transparent);
+            border-color: var(--admin-primary);
+            background: var(--admin-bg-soft);
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
         }
         .comment-card.expired {
             opacity: 0.65; border-color: #fecaca; background: #fef2f2;
@@ -1350,18 +1696,18 @@
         .comment-card.expired:hover { opacity: 1; }
         .comment-card .comment-card-avatar {
             width: 44px; height: 44px; border-radius: 50%;
-            background: var(--theme-gradient, var(--admin-gradient));
+            background: var(--admin-gradient);
             display: flex; align-items: center; justify-content: center;
             color: white; font-weight: 700; font-size: 15px;
             flex-shrink: 0; overflow: hidden;
-            border: 3px solid var(--theme-card, var(--admin-card));
-            box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 15%, transparent);
+            border: 3px solid var(--admin-card);
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
         }
         .comment-card .comment-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .comment-card .comment-card-body { flex: 1; min-width: 0; }
         .comment-card .comment-card-author {
             font-weight: 700; font-size: 14px;
-            color: var(--theme-text, var(--admin-text)); margin-bottom: 6px;
+            color: var(--admin-text); margin-bottom: 6px;
             display: flex; align-items: center; gap: 8px;
             flex-wrap: wrap; overflow-wrap: anywhere;
         }
@@ -1374,32 +1720,32 @@
         }
         .comment-card .comment-card-reply-indicator i { font-size: 9px; }
         .comment-card .comment-card-context {
-            font-size: 11px; color: var(--theme-text-dim, var(--admin-text-dim));
-            padding: 8px 12px; background: var(--theme-primary-soft-2, #f0f4ff);
-            border-radius: 10px; border-left: 3px solid var(--theme-primary, #c7d2fe);
+            font-size: 11px; color: var(--admin-text-dim);
+            padding: 8px 12px; background: #f0f4ff;
+            border-radius: 10px; border-left: 3px solid #c7d2fe;
             margin-bottom: 8px; line-height: 1.4;
             overflow-wrap: anywhere;
             display: -webkit-box; -webkit-line-clamp: 2;
             -webkit-box-orient: vertical; overflow: hidden;
         }
-        .comment-card .comment-card-context strong { color: var(--theme-primary, var(--admin-primary)); font-weight: 700; }
+        .comment-card .comment-card-context strong { color: var(--admin-primary); font-weight: 700; }
         .comment-card .comment-card-text {
-            font-size: 14px; color: var(--theme-text, var(--admin-text)); font-weight: 500;
+            font-size: 14px; color: #333; font-weight: 500;
             line-height: 1.5; padding: 10px 14px;
-            background: var(--theme-card, var(--admin-card)); border-radius: 12px;
-            border: 1.5px solid var(--theme-border, var(--admin-border));
+            background: var(--admin-card); border-radius: 12px;
+            border: 1.5px solid var(--admin-border);
             margin-bottom: 8px; word-break: break-word;
             overflow-wrap: anywhere; white-space: pre-wrap;
         }
         .comment-card .comment-card-meta {
-            font-size: 11px; color: var(--theme-text-dim, var(--admin-text-dim));
+            font-size: 11px; color: var(--admin-text-dim);
             display: flex; flex-wrap: wrap; gap: 10px;
         }
         .comment-card .comment-card-meta span {
             display: inline-flex; align-items: center; gap: 4px;
         }
-        .comment-card .comment-card-meta i { color: var(--theme-primary, var(--admin-primary)); font-size: 10px; }
-        .comment-card .comment-card-meta .expired-label { color: var(--theme-danger, var(--admin-danger)); font-weight: 800; }
+        .comment-card .comment-card-meta i { color: var(--admin-primary); font-size: 10px; }
+        .comment-card .comment-card-meta .expired-label { color: var(--admin-danger); font-weight: 800; }
         .comment-card .comment-card-actions {
             position: absolute; top: 12px; right: 12px;
             display: flex; gap: 6px; opacity: 0;
@@ -1432,9 +1778,9 @@
         .toast {
             display: flex; align-items: center; gap: 12px;
             padding: 13px 18px; border-radius: 14px;
-            background: var(--theme-card, var(--admin-card)); color: var(--theme-text, var(--admin-text));
+            background: var(--admin-card); color: var(--admin-text);
             box-shadow: 0 14px 40px -10px rgba(0,0,0,0.22),
-                        0 0 0 1px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 8%, transparent);
+                        0 0 0 1px rgba(139, 92, 246, 0.08);
             font-size: 13.5px; font-weight: 600;
             min-width: 260px; max-width: 380px;
             pointer-events: auto;
@@ -1452,7 +1798,7 @@
         }
         .toast.success .toast-icon { background: linear-gradient(135deg, #16a34a, #22c55e); }
         .toast.error .toast-icon { background: linear-gradient(135deg, #dc2626, #ef4444); }
-        .toast.info .toast-icon { background: var(--theme-gradient, var(--admin-gradient)); }
+        .toast.info .toast-icon { background: var(--admin-gradient); }
         .toast.warn .toast-icon { background: linear-gradient(135deg, #d97706, #f59e0b); }
 
         .confirm-dialog {
@@ -1463,12 +1809,12 @@
         }
         .confirm-dialog.active { display: flex; }
         .confirm-content {
-            background: var(--theme-card, var(--admin-card)); border-radius: 24px;
+            background: var(--admin-card); border-radius: 24px;
             padding: 30px 28px 24px; max-width: 400px; width: 100%;
             text-align: center;
-            box-shadow: 0 30px 80px -20px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 40%, transparent);
+            box-shadow: 0 30px 80px -20px rgba(139, 92, 246, 0.4);
             animation: confirmPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            color: var(--theme-text, var(--admin-text)); position: relative;
+            color: var(--admin-text); position: relative;
         }
         @keyframes confirmPop {
             from { transform: scale(0.9) translateY(20px); opacity: 0; }
@@ -1484,10 +1830,10 @@
         .confirm-icon-wrap.warn { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #d97706; }
         .confirm-title {
             font-size: 19px; font-weight: 800;
-            color: var(--theme-text, var(--admin-text)); margin-bottom: 6px; line-height: 1.3;
+            color: var(--admin-text); margin-bottom: 6px; line-height: 1.3;
         }
         .confirm-message {
-            font-size: 13.5px; color: var(--theme-text-muted, var(--admin-text-muted));
+            font-size: 13.5px; color: var(--admin-text-muted);
             line-height: 1.55; margin-bottom: 22px;
         }
         .confirm-actions { display: flex; gap: 10px; }
@@ -1500,12 +1846,12 @@
             gap: 6px;
         }
         .confirm-actions .confirm-cancel {
-            background: var(--theme-bg, var(--admin-bg)); color: var(--theme-text-muted, var(--admin-text-muted));
+            background: var(--admin-bg); color: var(--admin-text-muted);
         }
-        .confirm-actions .confirm-cancel:hover { background: var(--theme-border-input, var(--admin-border-input)); }
+        .confirm-actions .confirm-cancel:hover { background: var(--admin-border-input); }
         .confirm-actions .confirm-ok {
-            background: var(--theme-gradient, var(--admin-gradient)); color: white;
-            box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 55%, transparent);
+            background: var(--admin-gradient); color: white;
+            box-shadow: 0 6px 18px -6px rgba(139, 92, 246, 0.55);
         }
         .confirm-actions .confirm-ok.danger {
             background: linear-gradient(135deg, #dc2626, #ef4444);
@@ -1517,7 +1863,7 @@
             position: fixed; inset: 0; z-index: 5000;
             display: flex; align-items: center; justify-content: center;
             flex-direction: column; gap: 20px;
-            background: color-mix(in srgb, var(--theme-bg, var(--admin-bg)) 88%, transparent);
+            background: rgba(248, 250, 255, 0.88);
             backdrop-filter: blur(10px);
             opacity: 0; pointer-events: none;
             transition: opacity 0.35s ease;
@@ -1525,12 +1871,12 @@
         .loading-overlay.active { opacity: 1; pointer-events: auto; }
         .loading-overlay .pl {
             width: 6em; height: 6em;
-            filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--theme-primary, var(--admin-primary)) 35%, transparent));
+            filter: drop-shadow(0 8px 24px rgba(139, 92, 246, 0.35));
         }
         .loading-overlay .loading-text {
             font-size: 13px; font-weight: 700;
             letter-spacing: 0.5px;
-            color: var(--theme-text-muted, var(--admin-text-muted));
+            color: var(--admin-text-muted);
             text-transform: uppercase;
             animation: loadingTextFade 1.6s ease-in-out infinite;
         }
@@ -1569,8 +1915,8 @@
             .navbar .nav-links {
                 display: none; flex-direction: column;
                 position: absolute; top: 100%; left: 0; right: 0;
-                background: var(--theme-card, var(--admin-card)); padding: 20px;
-                border-bottom: 2px solid var(--theme-border, var(--admin-border));
+                background: var(--admin-card); padding: 20px;
+                border-bottom: 2px solid var(--admin-border);
                 gap: 12px; box-shadow: 0 20px 30px rgba(0,0,0,0.05);
                 width: 100%; max-height: calc(100vh - 60px); overflow-y: auto;
             }
@@ -1639,10 +1985,10 @@
         }
 
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--theme-border, var(--admin-border)); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: var(--theme-gradient, var(--admin-gradient)); border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: var(--admin-border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--admin-gradient); border-radius: 10px; }
     </style>
-    <link rel="stylesheet" href="stories.css?v=1.3.0" />
+    <link rel="stylesheet" href="stories.css?v=1.11.0" />
 </head>
 <body>
     <!-- ===== LOADING OVERLAY ===== -->
@@ -1650,11 +1996,11 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" class="pl" aria-hidden="true">
             <defs>
                 <linearGradient y2="1" x2="0" y1="0" x1="0" id="pl-grad">
-                    <stop class="pl__grad-stop-1" offset="0%"></stop>
-                    <stop class="pl__grad-stop-2" offset="100%"></stop>
+                    <stop class="pl__grad-stop-1" stop-color="#7c3aed" offset="0%"></stop>
+                    <stop class="pl__grad-stop-2" stop-color="#8b5cf6" offset="100%"></stop>
                 </linearGradient>
             </defs>
-            <circle stroke-linecap="round" stroke-width="16" stroke="currentColor" fill="none" cy="64" cx="64" r="56" class="pl__ring" style="color: color-mix(in srgb, var(--theme-primary, #7c3aed) 15%, transparent);"></circle>
+            <circle stroke-linecap="round" stroke-width="16" stroke="currentColor" fill="none" cy="64" cx="64" r="56" class="pl__ring" style="color: rgba(139, 92, 246, 0.15);"></circle>
             <path stroke-dashoffset="10" stroke-dasharray="44 1111" stroke-linejoin="round" stroke-linecap="round" stroke-width="16" stroke="url(#pl-grad)" fill="none" d="M92,15.492S78.194,4.967,66.743,16.887c-17.231,17.938-28.26,96.974-28.26,96.974L119.85,59.892l-99-31.588,57.528,89.832L97.8,19.349,13.636,88.51l89.012,16.015S81.908,38.332,66.1,22.337C50.114,6.156,36,15.492,36,15.492a56,56,0,1,0,56,0Z" class="pl__worm"></path>
         </svg>
         <div class="loading-text" id="loadingText">Loading admin panel…</div>
@@ -1682,10 +2028,9 @@
         </div>
     </div>
 
-    <!-- ===== BACKGROUND LAYERS (shared theme system) ===== -->
-    <div class="theme-bg-base"></div>
-    <div class="theme-bg-shapes" id="themeBgShapes"><!-- Injected by JS --></div>
-    <div class="theme-bg-overlay"></div>
+    <!-- ===== ADMIN THEME BACKGROUND ===== -->
+    <div class="admin-theme-bg"></div>
+    <div class="admin-theme-shapes" id="adminThemeShapes"><!-- Injected by JS --></div>
 
     <nav class="navbar" id="navbar">
         <a href="admin.html" class="logo">TIMAWA <span>ADMIN</span></a>
@@ -1800,7 +2145,7 @@
         <div id="tab-coffee" class="tab-content active">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-coffee" style="color: var(--theme-primary, var(--admin-primary));"></i> Favorite Coffee Shops</h3>
+                    <h3><i class="fas fa-coffee" style="color: var(--admin-primary);"></i> Favorite Coffee Shops</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <span class="count" id="coffeeCount">0 items</span>
                         <button class="batch-toggle-btn" onclick="toggleBatchMode('coffee')"><i class="fas fa-check-square"></i> Select</button>
@@ -1822,7 +2167,7 @@
         <div id="tab-places" class="tab-content">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-map-marked-alt" style="color: var(--theme-primary, var(--admin-primary));"></i> Favorite Places</h3>
+                    <h3><i class="fas fa-map-marked-alt" style="color: var(--admin-primary);"></i> Favorite Places</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <span class="count" id="placesCount">0 items</span>
                         <button class="batch-toggle-btn" onclick="toggleBatchMode('places')"><i class="fas fa-check-square"></i> Select</button>
@@ -1844,7 +2189,7 @@
         <div id="tab-activities" class="tab-content">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-gamepad" style="color: var(--theme-primary, var(--admin-primary));"></i> Favorite Things to Do</h3>
+                    <h3><i class="fas fa-gamepad" style="color: var(--admin-primary);"></i> Favorite Things to Do</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <span class="count" id="activitiesCount">0 items</span>
                         <button class="batch-toggle-btn" onclick="toggleBatchMode('activities')"><i class="fas fa-check-square"></i> Select</button>
@@ -1865,10 +2210,11 @@
 
         <!-- ===== HIGHLIGHTS TAB ===== -->
         <div id="tab-highlights" class="tab-content">
+            <!-- Stories row (same as the homepage): above the highlights management card -->
             <div id="adminStoriesMount" class="st-row-mount st-in-admin" hidden></div>
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-images" style="color: var(--theme-primary, var(--admin-primary));"></i> Highlights Management</h3>
+                    <h3><i class="fas fa-images" style="color: var(--admin-primary);"></i> Highlights Management</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%;margin-top:10px;">
                         <div class="user-search-wrap">
                             <i class="fas fa-search search-icon"></i>
@@ -1912,7 +2258,7 @@
         <div id="tab-announcements" class="tab-content">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-bullhorn" style="color: var(--theme-primary, var(--admin-primary));"></i> Announcements</h3>
+                    <h3><i class="fas fa-bullhorn" style="color: var(--admin-primary);"></i> Announcements</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%;margin-top:10px;">
                         <div class="user-search-wrap">
                             <i class="fas fa-search search-icon"></i>
@@ -1943,7 +2289,7 @@
         <div id="tab-users" class="tab-content">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-user-friends" style="color: var(--theme-primary, var(--admin-primary));"></i> App Users (Real Accounts)</h3>
+                    <h3><i class="fas fa-user-friends" style="color: var(--admin-primary);"></i> App Users (Real Accounts)</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%;margin-top:10px;">
                         <div class="user-search-wrap">
                             <i class="fas fa-search search-icon"></i>
@@ -1970,18 +2316,27 @@
         <div id="tab-notes" class="tab-content">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-sticky-note" style="color: var(--theme-primary, var(--admin-primary));"></i> Quick Notes Management</h3>
+                    <h3><i class="fas fa-sticky-note" style="color: var(--admin-primary);"></i> Quick Notes Management</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%;margin-top:10px;">
                         <div class="user-search-wrap">
                             <i class="fas fa-search search-icon"></i>
-                            <input type="text" id="notesSearchInput" placeholder="Search notes by author or text..." oninput="filterNotes()" />
+                            <input type="text" id="notesSearchInput" placeholder="Search notes by author, text, song or artist..." oninput="filterNotes()" />
                         </div>
+                        <select id="notesTypeFilter" onchange="filterNotes()" title="Filter notes">
+                            <option value="">All notes</option>
+                            <option value="song">🎵 With a song</option>
+                            <option value="songonly">🎵 Song only</option>
+                            <option value="text">📝 Text only</option>
+                            <option value="replies">💬 With replies</option>
+                            <option value="expired">🗑️ Expired</option>
+                        </select>
                         <span class="count" id="notesCount">0 notes</span>
                         <button class="batch-toggle-btn" onclick="toggleBatchMode('notes')"><i class="fas fa-check-square"></i> Select</button>
                         <button class="btn-danger" onclick="deleteAllExpiredNotes()"><i class="fas fa-trash-alt"></i> Delete All Expired</button>
                         <button class="btn-secondary" onclick="loadNotesAdmin(true)"><i class="fas fa-sync"></i> Refresh</button>
                     </div>
                 </div>
+                <div class="notes-insight" id="notesInsight" style="padding:0 20px 8px;"></div>
                 <div class="batch-toolbar" id="batchToolbar-notes">
                     <span class="batch-count" id="batchCount-notes">0 selected</span>
                     <div class="batch-actions">
@@ -1998,7 +2353,7 @@
         <div id="tab-comments" class="tab-content">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-comments" style="color: var(--theme-primary, var(--admin-primary));"></i> Note Replies (Comments)</h3>
+                    <h3><i class="fas fa-comments" style="color: var(--admin-primary);"></i> Note Replies (Comments)</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%;margin-top:10px;">
                         <div class="user-search-wrap">
                             <i class="fas fa-search search-icon"></i>
@@ -2022,6 +2377,8 @@
                         <option value="expired">🗑️ Expired</option>
                         <option value="replies">💬 Replies Only</option>
                         <option value="top">📌 Top-level Only</option>
+                        <option value="nested">↪ Replies to replies</option>
+                        <option value="selfreply">🔁 Self-replies</option>
                     </select>
                 </div>
 
@@ -2041,7 +2398,7 @@
         <div id="tab-chats" class="tab-content">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-comment-dots" style="color: var(--theme-primary, var(--admin-primary));"></i> Squad Chats (Moderation)</h3>
+                    <h3><i class="fas fa-comment-dots" style="color: var(--admin-primary);"></i> Squad Chats (Moderation)</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%;margin-top:10px;">
                         <div class="user-search-wrap">
                             <i class="fas fa-search search-icon"></i>
@@ -2100,27 +2457,22 @@
         <div id="tab-stories" class="tab-content">
             <div class="admin-card">
                 <div class="card-header">
-                    <h3><i class="fas fa-circle-play" style="color: var(--theme-primary, var(--admin-primary));"></i> Stories (Moderation)</h3>
+                    <h3><i class="fas fa-circle-play" style="color: var(--admin-primary);"></i> Stories (Moderation)</h3>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;width:100%;margin-top:10px;">
                         <div class="user-search-wrap">
                             <i class="fas fa-search search-icon"></i>
                             <input type="text" id="storiesSearchInput" placeholder="Search by owner, caption or text..." oninput="renderStoriesAdmin()" />
                         </div>
+                        <select id="storiesStatusFilter" onchange="renderStoriesAdmin()">
+                            <option value="active">🟢 Active (24h)</option>
+                            <option value="removed">🚫 Removed</option>
+                            <option value="expired">⌛ Expired</option>
+                            <option value="all">All</option>
+                        </select>
                         <span class="count" id="storiesCount">0 stories</span>
                     </div>
                 </div>
-
-                <div class="comments-filter-bar">
-                    <label><i class="fas fa-filter"></i> Filter:</label>
-                    <select id="storiesStatusFilter" onchange="renderStoriesAdmin()">
-                        <option value="active">🟢 Active (24h)</option>
-                        <option value="removed">🚫 Removed</option>
-                        <option value="expired">⌛ Expired</option>
-                        <option value="all">📋 All Stories</option>
-                    </select>
-                </div>
-
-                <p style="font-size:12.5px;color:var(--theme-text-dim, var(--admin-text-dim));margin:4px 0 14px;">
+                <p style="font-size:12.5px;color:var(--admin-text-dim);margin:4px 0 14px;">
                     <b>Remove</b> hides a story from every member immediately and keeps the record (reversible).
                     <b>Delete</b> removes the record permanently. Uploaded media stays on Cloudinary until your cleanup job runs.
                 </p>
@@ -2164,13 +2516,13 @@
                         <div class="upload-placeholder" id="imagePlaceholder">
                             <i class="fas fa-image"></i>
                             <span>Click to upload an image</span>
-                            <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;">Recommended: 400x300px</span>
+                            <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;">Recommended: 400x300px</span>
                         </div>
                         <img id="imagePreview" style="display:none;max-width:100%;max-height:150px;border-radius:8px;" />
                         <button type="button" class="remove-image" id="removeImageBtn" style="display:none;" onclick="removeImage(event)"><i class="fas fa-times"></i> Remove</button>
                     </div>
                     <input type="file" id="imageInput" accept="image/*" style="display:none;" onchange="handleImageUpload(event)" />
-                    <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));">Upload a custom image for this item</span>
+                    <span style="font-size:11px;color:var(--admin-text-dim);">Upload a custom image for this item</span>
                 </div>
 
                 <div class="modal-actions">
@@ -2190,16 +2542,16 @@
 
                 <div class="input-group" id="highlightImagePreviewGroup">
                     <label>Current Image</label>
-                    <div style="text-align:center;background:var(--theme-bg, var(--admin-bg));border-radius:12px;padding:12px;border:2px solid var(--theme-border-input, var(--admin-border-input));">
+                    <div style="text-align:center;background:var(--admin-bg);border-radius:12px;padding:12px;border:2px solid var(--admin-border-input);">
                         <img id="editHighlightImage" src="" alt="Highlight preview" style="max-width:100%;max-height:220px;border-radius:8px;display:block;margin:0 auto;" />
-                        <div id="editHighlightMultiCount" style="font-size:11px;color:var(--theme-primary, var(--admin-primary));font-weight:700;margin-top:8px;display:none;"></div>
+                        <div id="editHighlightMultiCount" style="font-size:11px;color:var(--admin-primary);font-weight:700;margin-top:8px;display:none;"></div>
                     </div>
                 </div>
 
                 <div class="input-group">
                     <label>Caption</label>
                     <textarea id="editHighlightCaption" placeholder="What's happening?" maxlength="500" style="min-height:80px;"></textarea>
-                    <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;"><span id="editHighlightCharCount">0</span>/500 characters</span>
+                    <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;"><span id="editHighlightCharCount">0</span>/500 characters</span>
                 </div>
 
                 <div class="input-group">
@@ -2211,7 +2563,7 @@
                     <div class="input-group">
                         <label>Expiry Date</label>
                         <input type="date" id="editHighlightExpiry" />
-                        <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;">Highlights auto-delete after this date</span>
+                        <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;">Highlights auto-delete after this date</span>
                     </div>
                     <div class="input-group">
                         <label>Days Left (computed)</label>
@@ -2221,7 +2573,7 @@
 
                 <div class="input-group">
                     <label>Image URLs (read-only)</label>
-                    <div id="editHighlightUrls" style="font-size:11px;color:var(--theme-text-muted, var(--admin-text-muted));background:var(--theme-bg, var(--admin-bg));padding:10px 12px;border-radius:10px;border:1px solid var(--theme-border, var(--admin-border));max-height:100px;overflow-y:auto;overflow-wrap:anywhere;line-height:1.6;"></div>
+                    <div id="editHighlightUrls" style="font-size:11px;color:var(--admin-text-muted);background:var(--admin-bg);padding:10px 12px;border-radius:10px;border:1px solid var(--admin-border);max-height:100px;overflow-y:auto;overflow-wrap:anywhere;line-height:1.6;"></div>
                 </div>
 
                 <div class="modal-actions">
@@ -2247,7 +2599,7 @@
                 <div class="input-group">
                     <label>Message <span class="required-star">*</span></label>
                     <textarea id="announcementMessageInput" placeholder="Write the announcement message..." required maxlength="500" style="min-height:100px;"></textarea>
-                    <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;">Max 500 characters</span>
+                    <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;">Max 500 characters</span>
                 </div>
 
                 <div class="input-row">
@@ -2279,13 +2631,13 @@
                 <div class="input-group">
                     <label>Custom Icon (optional emoji)</label>
                     <input type="text" id="announcementIconInput" placeholder="Leave blank for auto icon by type" maxlength="4" />
-                    <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;">e.g., 🎉 or 📣</span>
+                    <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;">e.g., 🎉 or 📣</span>
                 </div>
 
                 <div class="input-group">
                     <label>Link (optional)</label>
                     <input type="text" id="announcementLinkInput" placeholder="e.g., calendar.html or index.html#highlights" />
-                    <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;">User will be taken here when they tap the announcement</span>
+                    <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;">User will be taken here when they tap the announcement</span>
                 </div>
 
                 <div class="input-row">
@@ -2294,12 +2646,12 @@
                         <select id="announcementTargetInput">
                             <option value="">🌐 Everyone</option>
                         </select>
-                        <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;">Leave blank for all users</span>
+                        <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;">Leave blank for all users</span>
                     </div>
                     <div class="input-group">
                         <label>Expires In (days)</label>
                         <input type="number" id="announcementExpiryInput" value="7" min="1" max="365" />
-                        <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;">Auto-hide after this many days</span>
+                        <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;">Auto-hide after this many days</span>
                     </div>
                 </div>
 
@@ -2330,7 +2682,7 @@
                         <button type="button" class="remove-image" id="userRemoveImageBtn" style="display:none;" onclick="removeUserImage(event)"><i class="fas fa-times"></i> Remove</button>
                     </div>
                     <input type="file" id="userImageInput" accept="image/*" style="display:none;" onchange="handleUserImageUpload(event)" />
-                    <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));">Leave blank to keep the current photo</span>
+                    <span style="font-size:11px;color:var(--admin-text-dim);">Leave blank to keep the current photo</span>
                 </div>
 
                 <div class="input-group">
@@ -2429,12 +2781,19 @@
                 <input type="hidden" id="editNoteUid" />
 
                 <div class="input-group">
-                    <label>Note Text <span class="required-star">*</span></label>
+                    <label>Note Text <span class="required-star" id="editNoteStar">*</span></label>
                     <textarea id="editNoteText" placeholder="Enter note text..." maxlength="60" style="min-height:80px;"></textarea>
-                    <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;"><span id="editNoteCharCount">0</span>/60 characters</span>
-                    <span style="font-size:11px;color:var(--theme-danger, var(--admin-danger));display:block;margin-top:4px;">
-                        <i class="fas fa-exclamation-triangle"></i> Changing the text will delete all existing replies to this note.
+                    <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;"><span id="editNoteCharCount">0</span>/60 characters</span>
+                    <span style="font-size:11px;color:var(--admin-danger);display:block;margin-top:4px;">
+                        <i class="fas fa-exclamation-triangle"></i> Changing the text or removing the song will delete all existing replies to this note.
                     </span>
+                </div>
+                <div class="input-group" id="editNoteMusicGroup" style="display:none;">
+                    <label><i class="fas fa-music"></i> Song on this note</label>
+                    <div id="editNoteMusicInfo"></div>
+                    <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;cursor:pointer;font-weight:600;">
+                        <input type="checkbox" id="editNoteRemoveMusic" style="width:auto;" /> Remove the song from this note
+                    </label>
                 </div>
 
                 <div class="modal-actions">
@@ -2454,13 +2813,13 @@
 
                 <div class="input-group" id="commentContextGroup">
                     <label>Replying to Note</label>
-                    <div id="editCommentContext" style="font-size:13px;color:var(--theme-text-muted, var(--admin-text-muted));background:var(--theme-primary-soft-2, #f0f4ff);padding:12px 14px;border-radius:12px;border-left:3px solid var(--theme-primary, var(--admin-primary));line-height:1.5;overflow-wrap:anywhere;"></div>
+                    <div id="editCommentContext" style="font-size:13px;color:var(--admin-text-muted);background:#f0f4ff;padding:12px 14px;border-radius:12px;border-left:3px solid var(--admin-primary);line-height:1.5;overflow-wrap:anywhere;"></div>
                 </div>
 
                 <div class="input-group">
                     <label>Reply Text <span class="required-star">*</span></label>
                     <textarea id="editCommentText" placeholder="Enter reply text..." maxlength="150" style="min-height:90px;"></textarea>
-                    <span style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));display:block;margin-top:4px;"><span id="editCommentCharCount">0</span>/150 characters</span>
+                    <span style="font-size:11px;color:var(--admin-text-dim);display:block;margin-top:4px;"><span id="editCommentCharCount">0</span>/150 characters</span>
                 </div>
 
                 <div class="modal-actions">
@@ -2475,10 +2834,10 @@
     <div id="previewModal" class="modal">
         <div class="modal-content" style="max-width: 95%; padding: 20px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                <h2 style="color:var(--theme-primary, var(--admin-primary));font-size:22px;display:flex;align-items:center;gap:12px;margin:0;">
+                <h2 style="color:var(--admin-primary);font-size:22px;display:flex;align-items:center;gap:12px;margin:0;">
                     <i class="fas fa-eye"></i> Live Preview
                 </h2>
-                <button onclick="closePreview()" style="background:none;border:none;font-size:28px;cursor:pointer;color:var(--theme-text-dim, var(--admin-text-dim));">&times;</button>
+                <button onclick="closePreview()" style="background:none;border:none;font-size:28px;cursor:pointer;color:var(--admin-text-dim);">&times;</button>
             </div>
             <div class="preview-container">
                 <div class="preview-header">
@@ -2501,10 +2860,12 @@
 
     <script>
         /* ============================================================
-           ===== ADMIN PANEL VERSION =====
-           - Uses shared theme system (theme.css + theme.js)
-           - Admin-specific palette variables still available for admin UI
+           ===== ADMIN THEME + UI OPTIMIZATION VERSION =====
+           ============================================================
+           - Admin-only theme system (5 presets + light/dark)
+           - Animated background shapes per theme (lightweight)
            - Toast stack + confirm dialog + loading overlay
+           - Replaces alert()/confirm() throughout
            ============================================================ */
 
         const firebaseConfig = {
@@ -2594,11 +2955,17 @@
         let editingHighlightId = null;
         let highlightAuthorCache = {};
 
+        // ★ HIGHLIGHT REACTIONS ADMIN STATE
         let highlightReactionsCache = {};
         let highlightReactionUnsubscribes = {};
         const HIGHLIGHT_REACTION_TYPES = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
         const HIGHLIGHT_REACTION_EMOJI = {
-            like: '👍', love: '❤️', haha: '😂', wow: '😮', sad: '😢', angry: '😡'
+            like: '👍',
+            love: '❤️',
+            haha: '😂',
+            wow: '😮',
+            sad: '😢',
+            angry: '😡'
         };
         const HIGHLIGHT_REACTION_ORDER = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
 
@@ -2772,6 +3139,261 @@
         function hideLoadingOverlayWhenReady() { hideLoadingOverlay(420); }
 
         // ================================================================
+        // ===== ADMIN UNIQUE THEME SYSTEM =====
+        // ================================================================
+        const ADMIN_THEME_STORAGE_KEY = 'timawa_admin_theme';
+
+        const ADMIN_THEME_SHAPES = {
+            admin_default: `
+                <div class="admin-shape admin-orb o1"></div>
+                <div class="admin-shape admin-orb o2"></div>
+                <div class="admin-shape admin-orb o3"></div>
+                <div class="admin-shape admin-ring r1"></div>
+                <div class="admin-shape admin-ring r2"></div>
+                <div class="admin-shape admin-ring r3"></div>
+                <div class="admin-shape admin-diamond d1"></div>
+                <div class="admin-shape admin-diamond d2"></div>
+                <div class="admin-shape admin-diamond d3"></div>
+            `,
+            admin_crimson: `
+                <div class="admin-shape admin-crimson-orb co1"></div>
+                <div class="admin-shape admin-crimson-orb co2"></div>
+                <div class="admin-shape admin-crimson-orb co3"></div>
+                <div class="admin-shape admin-crimson-streak cs1"></div>
+                <div class="admin-shape admin-crimson-streak cs2"></div>
+                <div class="admin-shape admin-crimson-streak cs3"></div>
+                <div class="admin-shape admin-crimson-diamond cd1"></div>
+                <div class="admin-shape admin-crimson-diamond cd2"></div>
+                <div class="admin-shape admin-crimson-diamond cd3"></div>
+            `,
+            admin_ocean: `
+                <div class="admin-shape admin-ocean-wave"></div>
+                <div class="admin-shape admin-ocean-wave ow2"></div>
+                <div class="admin-shape admin-ocean-bubble ob1"></div>
+                <div class="admin-shape admin-ocean-bubble ob2"></div>
+                <div class="admin-shape admin-ocean-bubble ob3"></div>
+                <div class="admin-shape admin-ocean-bubble ob4"></div>
+                <div class="admin-shape admin-ocean-fish of1"></div>
+                <div class="admin-shape admin-ocean-fish of2"></div>
+            `,
+            admin_midnight: `
+                <div class="admin-shape admin-midnight-starfield"></div>
+                <div class="admin-shape admin-midnight-starfield ms2"></div>
+                <div class="admin-shape admin-midnight-shooting msh1"></div>
+                <div class="admin-shape admin-midnight-shooting msh2"></div>
+                <div class="admin-shape admin-midnight-nebula mn1"></div>
+                <div class="admin-shape admin-midnight-nebula mn2"></div>
+                <div class="admin-shape admin-midnight-moon mm1"></div>
+                <div class="admin-shape admin-midnight-moon mm2"></div>
+            `,
+            admin_ember: `
+                <div class="admin-shape admin-ember-orb eo1"></div>
+                <div class="admin-shape admin-ember-orb eo2"></div>
+                <div class="admin-shape admin-ember-orb eo3"></div>
+                <div class="admin-shape admin-ember-spark es1"></div>
+                <div class="admin-shape admin-ember-spark es2"></div>
+                <div class="admin-shape admin-ember-spark es3"></div>
+                <div class="admin-shape admin-ember-spark es4"></div>
+                <div class="admin-shape admin-ember-spark es5"></div>
+                <div class="admin-shape admin-ember-flame ef1"></div>
+                <div class="admin-shape admin-ember-flame ef2"></div>
+                <div class="admin-shape admin-ember-flame ef3"></div>
+            `
+        };
+
+        const ADMIN_THEMES = {
+            admin_default: {
+                name: 'Admin', sub: 'Default', emoji: '🛡️',
+                light: {
+                    '--admin-primary': '#7c3aed', '--admin-accent': '#8b5cf6',
+                    '--admin-gradient': 'linear-gradient(45deg, #7c3aed 0%, #8b5cf6 100%)',
+                    '--admin-bg': '#f8faff', '--admin-bg-soft': '#f5f3ff', '--admin-card': '#ffffff',
+                    '--admin-text': '#1a1a2e', '--admin-text-muted': '#555', '--admin-text-dim': '#888',
+                    '--admin-border': '#eef2f7', '--admin-border-input': '#e0e7ff',
+                    '--admin-shadow': 'rgba(139, 92, 246, 0.15)',
+                    '--admin-danger': '#ef4444', '--admin-danger-soft': '#fee2e2',
+                    '--admin-success': '#16a34a', '--admin-success-soft': '#dcfce7',
+                    '--admin-warn': '#d97706', '--admin-warn-soft': '#fef3c7'
+                },
+                dark: {
+                    '--admin-primary': '#a78bfa', '--admin-accent': '#c4b5fd',
+                    '--admin-gradient': 'linear-gradient(45deg, #a78bfa 0%, #c4b5fd 100%)',
+                    '--admin-bg': '#0f0a1a', '--admin-bg-soft': '#1a1229', '--admin-card': '#1a1229',
+                    '--admin-text': '#e8e0ff', '--admin-text-muted': '#b0a0d0', '--admin-text-dim': '#8878b0',
+                    '--admin-border': '#2a1e3d', '--admin-border-input': '#3d2e5c',
+                    '--admin-shadow': 'rgba(167, 139, 250, 0.25)',
+                    '--admin-danger': '#ef4444', '--admin-danger-soft': '#3d1a1a',
+                    '--admin-success': '#22c55e', '--admin-success-soft': '#0f2e1a',
+                    '--admin-warn': '#f59e0b', '--admin-warn-soft': '#3d3018'
+                }
+            },
+            admin_crimson: {
+                name: 'Crimson', sub: 'Bold Admin', emoji: '🔴',
+                light: {
+                    '--admin-primary': '#dc2626', '--admin-accent': '#f87171',
+                    '--admin-gradient': 'linear-gradient(45deg, #dc2626 0%, #f87171 100%)',
+                    '--admin-bg': '#fff5f5', '--admin-bg-soft': '#fee2e2', '--admin-card': '#ffffff',
+                    '--admin-text': '#2e1a1a', '--admin-text-muted': '#6b4a4a', '--admin-text-dim': '#9c7a7a',
+                    '--admin-border': '#fde8e8', '--admin-border-input': '#fbd5d5',
+                    '--admin-shadow': 'rgba(220, 38, 38, 0.15)',
+                    '--admin-danger': '#dc2626', '--admin-danger-soft': '#fee2e2',
+                    '--admin-success': '#16a34a', '--admin-success-soft': '#dcfce7',
+                    '--admin-warn': '#d97706', '--admin-warn-soft': '#fef3c7'
+                },
+                dark: {
+                    '--admin-primary': '#ef4444', '--admin-accent': '#fca5a5',
+                    '--admin-gradient': 'linear-gradient(45deg, #ef4444 0%, #fca5a5 100%)',
+                    '--admin-bg': '#1a0a0a', '--admin-bg-soft': '#2a1010', '--admin-card': '#1e0e0e',
+                    '--admin-text': '#fbe5e5', '--admin-text-muted': '#c9a0a0', '--admin-text-dim': '#a57a7a',
+                    '--admin-border': '#3a1a1a', '--admin-border-input': '#5c2a2a',
+                    '--admin-shadow': 'rgba(239, 68, 68, 0.25)',
+                    '--admin-danger': '#f87171', '--admin-danger-soft': '#3d1a1a',
+                    '--admin-success': '#22c55e', '--admin-success-soft': '#0f2e1a',
+                    '--admin-warn': '#f59e0b', '--admin-warn-soft': '#3d3018'
+                }
+            },
+            admin_ocean: {
+                name: 'Ocean', sub: 'Deep Admin', emoji: '🌊',
+                light: {
+                    '--admin-primary': '#0891b2', '--admin-accent': '#22d3ee',
+                    '--admin-gradient': 'linear-gradient(45deg, #0891b2 0%, #22d3ee 100%)',
+                    '--admin-bg': '#f0f9ff', '--admin-bg-soft': '#e0f2fe', '--admin-card': '#ffffff',
+                    '--admin-text': '#0c2e3a', '--admin-text-muted': '#3d6b7a', '--admin-text-dim': '#6a9aa8',
+                    '--admin-border': '#d9eff8', '--admin-border-input': '#bce5f5',
+                    '--admin-shadow': 'rgba(8, 145, 178, 0.15)',
+                    '--admin-danger': '#ef4444', '--admin-danger-soft': '#fee2e2',
+                    '--admin-success': '#16a34a', '--admin-success-soft': '#dcfce7',
+                    '--admin-warn': '#d97706', '--admin-warn-soft': '#fef3c7'
+                },
+                dark: {
+                    '--admin-primary': '#22d3ee', '--admin-accent': '#67e8f9',
+                    '--admin-gradient': 'linear-gradient(45deg, #22d3ee 0%, #67e8f9 100%)',
+                    '--admin-bg': '#041a22', '--admin-bg-soft': '#0a2a38', '--admin-card': '#0a2a38',
+                    '--admin-text': '#d9f4fc', '--admin-text-muted': '#8ec4d4', '--admin-text-dim': '#629aac',
+                    '--admin-border': '#134352', '--admin-border-input': '#1e6b82',
+                    '--admin-shadow': 'rgba(34, 211, 238, 0.25)',
+                    '--admin-danger': '#ef4444', '--admin-danger-soft': '#3d1a1a',
+                    '--admin-success': '#22c55e', '--admin-success-soft': '#0f2e1a',
+                    '--admin-warn': '#f59e0b', '--admin-warn-soft': '#3d3018'
+                }
+            },
+            admin_midnight: {
+                name: 'Midnight', sub: 'Dark Admin', emoji: '🌙',
+                light: {
+                    '--admin-primary': '#6d28d9', '--admin-accent': '#8b5cf6',
+                    '--admin-gradient': 'linear-gradient(45deg, #6d28d9 0%, #8b5cf6 100%)',
+                    '--admin-bg': '#f5f3ff', '--admin-bg-soft': '#ede9fe', '--admin-card': '#ffffff',
+                    '--admin-text': '#1e1b4b', '--admin-text-muted': '#4c3d6b', '--admin-text-dim': '#7a6a9a',
+                    '--admin-border': '#e4e0f0', '--admin-border-input': '#d4c9ef',
+                    '--admin-shadow': 'rgba(109, 40, 217, 0.15)',
+                    '--admin-danger': '#ef4444', '--admin-danger-soft': '#fee2e2',
+                    '--admin-success': '#16a34a', '--admin-success-soft': '#dcfce7',
+                    '--admin-warn': '#d97706', '--admin-warn-soft': '#fef3c7'
+                },
+                dark: {
+                    '--admin-primary': '#a78bfa', '--admin-accent': '#c4b5fd',
+                    '--admin-gradient': 'linear-gradient(45deg, #a78bfa 0%, #c4b5fd 100%)',
+                    '--admin-bg': '#0a0714', '--admin-bg-soft': '#150e26', '--admin-card': '#150e26',
+                    '--admin-text': '#e8e0ff', '--admin-text-muted': '#b0a0d0', '--admin-text-dim': '#8878b0',
+                    '--admin-border': '#281e3d', '--admin-border-input': '#3d2e5c',
+                    '--admin-shadow': 'rgba(167, 139, 250, 0.25)',
+                    '--admin-danger': '#ef4444', '--admin-danger-soft': '#3d1a1a',
+                    '--admin-success': '#22c55e', '--admin-success-soft': '#0f2e1a',
+                    '--admin-warn': '#f59e0b', '--admin-warn-soft': '#3d3018'
+                }
+            },
+            admin_ember: {
+                name: 'Ember', sub: 'Warm Admin', emoji: '🔥',
+                light: {
+                    '--admin-primary': '#ea580c', '--admin-accent': '#fb923c',
+                    '--admin-gradient': 'linear-gradient(45deg, #ea580c 0%, #fb923c 100%)',
+                    '--admin-bg': '#fff7f0', '--admin-bg-soft': '#ffedd5', '--admin-card': '#ffffff',
+                    '--admin-text': '#3a1a0c', '--admin-text-muted': '#7a4a2a', '--admin-text-dim': '#a87a5a',
+                    '--admin-border': '#fde4d0', '--admin-border-input': '#fbd5b0',
+                    '--admin-shadow': 'rgba(234, 88, 12, 0.15)',
+                    '--admin-danger': '#ef4444', '--admin-danger-soft': '#fee2e2',
+                    '--admin-success': '#16a34a', '--admin-success-soft': '#dcfce7',
+                    '--admin-warn': '#d97706', '--admin-warn-soft': '#fef3c7'
+                },
+                dark: {
+                    '--admin-primary': '#fb923c', '--admin-accent': '#fdba74',
+                    '--admin-gradient': 'linear-gradient(45deg, #fb923c 0%, #fdba74 100%)',
+                    '--admin-bg': '#1a0e08', '--admin-bg-soft': '#2a1810', '--admin-card': '#2a1810',
+                    '--admin-text': '#fce8d9', '--admin-text-muted': '#d4a88a', '--admin-text-dim': '#a87a5a',
+                    '--admin-border': '#3d2218', '--admin-border-input': '#5c3828',
+                    '--admin-shadow': 'rgba(251, 146, 60, 0.25)',
+                    '--admin-danger': '#ef4444', '--admin-danger-soft': '#3d1a1a',
+                    '--admin-success': '#22c55e', '--admin-success-soft': '#0f2e1a',
+                    '--admin-warn': '#f59e0b', '--admin-warn-soft': '#3d3018'
+                }
+            }
+        };
+
+        const DEFAULT_ADMIN_THEME = { preset: 'admin_default', mode: 'light' };
+        let selectedAdminTheme = { ...DEFAULT_ADMIN_THEME };
+
+        function injectAdminThemeShapes(presetKey) {
+            const container = document.getElementById('adminThemeShapes');
+            if (!container) return;
+            if (container.dataset.activeTheme === presetKey) return;
+            container.innerHTML = ADMIN_THEME_SHAPES[presetKey] || ADMIN_THEME_SHAPES.admin_default;
+            container.dataset.activeTheme = presetKey;
+        }
+
+        function applyAdminTheme(theme) {
+            const preset = ADMIN_THEMES[theme.preset] || ADMIN_THEMES.admin_default;
+            const mode = theme.mode === 'dark' ? 'dark' : 'light';
+            const palette = preset[mode];
+
+            const root = document.documentElement;
+            Object.keys(palette).forEach(key => {
+                root.style.setProperty(key, palette[key]);
+            });
+            root.setAttribute('data-admin-theme', theme.preset);
+            root.setAttribute('data-admin-mode', mode);
+
+            injectAdminThemeShapes(theme.preset);
+
+            const plStops = document.querySelectorAll('#pl-grad stop');
+            if (plStops.length === 2) {
+                plStops[0].setAttribute('stop-color', palette['--admin-primary']);
+                plStops[1].setAttribute('stop-color', palette['--admin-accent']);
+            }
+            const plRing = document.querySelector('.pl__ring');
+            if (plRing) plRing.style.color = palette['--admin-border-input'];
+
+            let meta = document.querySelector('meta[name="theme-color"]');
+            if (!meta) {
+                meta = document.createElement('meta');
+                meta.name = 'theme-color';
+                document.head.appendChild(meta);
+            }
+            meta.content = palette['--admin-bg'];
+        }
+
+        function persistAdminThemeLocally(theme) {
+            try { localStorage.setItem(ADMIN_THEME_STORAGE_KEY, JSON.stringify(theme)); } catch (e) {}
+        }
+        function readAdminThemeFromStorage() {
+            try {
+                const raw = localStorage.getItem(ADMIN_THEME_STORAGE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (parsed && parsed.preset && ADMIN_THEMES[parsed.preset]) {
+                    return { preset: parsed.preset, mode: parsed.mode === 'dark' ? 'dark' : 'light' };
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        // Initial theme apply (before auth resolves)
+        (function initAdminTheme() {
+            const cached = readAdminThemeFromStorage();
+            selectedAdminTheme = cached || { ...DEFAULT_ADMIN_THEME };
+            applyAdminTheme(selectedAdminTheme);
+        })();
+
+        // ================================================================
         // ===== FIREBASE HELPERS =====
         // ================================================================
         async function getCurrentUserProfileCached(user) {
@@ -2846,6 +3468,7 @@
             return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
+        // ===== CHUNKED BATCH DELETE =====
         async function chunkedBatchDelete(refs) {
             let deleted = 0, errors = 0;
             for (let i = 0; i < refs.length; i += BATCH_CHUNK_SIZE) {
@@ -2879,11 +3502,15 @@
         }
 
         // ================================================================
-        // ===== HIGHLIGHT REACTIONS ADMIN =====
+        // ===== ★ HIGHLIGHT REACTIONS ADMIN =====
         // ================================================================
         function ensureHighlightReactionCache(highlightId) {
             if (!highlightReactionsCache[highlightId]) {
-                highlightReactionsCache[highlightId] = { counts: {}, byType: {}, total: 0 };
+                highlightReactionsCache[highlightId] = {
+                    counts: {},
+                    byType: {},
+                    total: 0
+                };
             }
             return highlightReactionsCache[highlightId];
         }
@@ -2913,6 +3540,7 @@
                     cache.byType = byType;
                     cache.total = total;
 
+                    // Re-render only the affected highlight card
                     const card = document.querySelector(`.highlight-card[data-id="${CSS.escape(highlightId)}"]`);
                     if (card) {
                         const reactionRow = card.querySelector('.highlight-reaction-row');
@@ -2945,21 +3573,22 @@
             const total = cache.total || 0;
 
             if (total === 0) {
-                return `<div class="highlight-reaction-row" style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));padding-top:6px;border-top:1px solid var(--theme-border, var(--admin-border));margin-top:6px;"><i class="fas fa-thumbs-up"></i> No reactions yet</div>`;
+                return `<div class="highlight-reaction-row" style="font-size:11px;color:var(--admin-text-dim);padding-top:6px;border-top:1px solid var(--admin-border);margin-top:6px;"><i class="fas fa-thumbs-up"></i> No reactions yet</div>`;
             }
 
+            // Build emoji chips
             let chipsHtml = '';
             HIGHLIGHT_REACTION_ORDER.forEach(type => {
                 const count = cache.counts[type] || 0;
                 if (count === 0) return;
                 const emoji = HIGHLIGHT_REACTION_EMOJI[type];
-                chipsHtml += `<span style="display:inline-flex;align-items:center;gap:2px;background:var(--theme-card, var(--admin-card));border:1px solid var(--theme-border, var(--admin-border));border-radius:50px;padding:1px 8px;font-size:12px;line-height:1;margin-right:4px;">${emoji} <span style="font-size:10px;font-weight:700;color:var(--theme-text-dim, var(--admin-text-dim));">${count}</span></span>`;
+                chipsHtml += `<span style="display:inline-flex;align-items:center;gap:2px;background:var(--admin-card);border:1px solid var(--admin-border);border-radius:50px;padding:1px 8px;font-size:12px;line-height:1;margin-right:4px;">${emoji} <span style="font-size:10px;font-weight:700;color:var(--admin-text-dim);">${count}</span></span>`;
             });
 
-            return `<div class="highlight-reaction-row" style="font-size:11px;color:var(--theme-text-dim, var(--admin-text-dim));padding-top:6px;border-top:1px solid var(--theme-border, var(--admin-border));margin-top:6px;display:flex;flex-wrap:wrap;align-items:center;gap:4px;">
-                <i class="fas fa-thumbs-up" style="color:var(--theme-primary, var(--admin-primary));"></i>
+            return `<div class="highlight-reaction-row" style="font-size:11px;color:var(--admin-text-dim);padding-top:6px;border-top:1px solid var(--admin-border);margin-top:6px;display:flex;flex-wrap:wrap;align-items:center;gap:4px;">
+                <i class="fas fa-thumbs-up" style="color:var(--admin-primary);"></i>
                 ${chipsHtml}
-                <span style="font-weight:700;color:var(--theme-text-muted, var(--admin-text-muted));margin-left:2px;">${total}</span>
+                <span style="font-weight:700;color:var(--admin-text-muted);margin-left:2px;">${total}</span>
             </div>`;
         }
 
@@ -3321,7 +3950,7 @@
         }
 
         // ================================================================
-        // ===== HIGHLIGHTS MANAGEMENT =====
+        // ===== HIGHLIGHTS MANAGEMENT (UPDATED WITH REACTIONS) =====
         // ================================================================
         function loadHighlightsAdmin() {
             const grid = document.getElementById('highlightsGrid');
@@ -3329,6 +3958,7 @@
             if (!grid) return;
             if (unsubscribeAdminHighlights) unsubscribeAdminHighlights();
 
+            // Clean up old reaction listeners
             detachAllHighlightReactionsListeners();
 
             unsubscribeAdminHighlights = db.collection('highlights')
@@ -3343,6 +3973,7 @@
                     populateHighlightsAuthorFilter();
                     filterHighlights();
 
+                    // Attach reaction listeners for each highlight
                     allHighlights.forEach(h => attachHighlightReactionsListener(h.id));
                 }, (error) => {
                     console.error('Error loading highlights:', error);
@@ -3455,6 +4086,7 @@
                 ? `<img src="${thumb}" alt="Highlight" class="highlight-card-image" loading="lazy" />`
                 : `<div class="highlight-card-image-placeholder"><i class="fas fa-image"></i></div>`;
 
+            // ★ Reaction row
             const reactionRowHtml = renderHighlightReactionRow(h.id);
 
             return `
@@ -3587,6 +4219,7 @@
                 type: 'danger',
                 onConfirm: async () => {
                     try {
+                        // Delete comments
                         const commentsSnap = await db.collection('highlightComments').where('highlightId', '==', id).get();
                         if (!commentsSnap.empty) {
                             const commentRefs = [];
@@ -3594,6 +4227,7 @@
                             await chunkedBatchDelete(commentRefs);
                         }
 
+                        // ★ Delete reactions subcollection
                         try {
                             const reactionsSnap = await db.collection('highlights').doc(id)
                                 .collection('reactions').get();
@@ -3606,6 +4240,7 @@
                             console.warn('Could not delete reactions subcollection:', e);
                         }
 
+                        // ★ Delete reaction notifications targeting this highlight
                         try {
                             const notifSnap = await db.collection('announcements')
                                 .where('type', '==', 'reaction')
@@ -3625,9 +4260,11 @@
                             console.warn('Could not delete reaction notifications:', e);
                         }
 
+                        // Detach listener and clean cache
                         detachHighlightReactionsListener(id);
                         delete highlightReactionsCache[id];
 
+                        // Delete the highlight doc
                         await db.collection('highlights').doc(id).delete();
                         showToast('Highlight deleted.', 'success');
                     } catch (err) {
@@ -3697,6 +4334,7 @@
                         }
                     } catch (e) { console.warn('Could not delete comments for highlight', hid, e.message); }
 
+                    // ★ Delete reactions subcollection
                     try {
                         const reactionsSnap = await db.collection('highlights').doc(hid)
                             .collection('reactions').get();
@@ -3707,6 +4345,7 @@
                         }
                     } catch (e) { console.warn('Could not delete reactions for highlight', hid, e.message); }
 
+                    // ★ Delete reaction notifications targeting this highlight
                     try {
                         const notifSnap = await db.collection('announcements')
                             .where('type', '==', 'reaction')
@@ -3781,7 +4420,7 @@
                     filterChats();
                 }, (error) => {
                     console.error('Error loading chats:', error);
-                    if (grid) grid.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Could not load chats</h3><p>${escapeHtml(error.message)}</p><p style="font-size:11px;margin-top:8px;color:var(--theme-text-dim, var(--admin-text-dim));">If you see an "index" error, check the browser console for the create-index link.</p></div>`;
+                    if (grid) grid.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Could not load chats</h3><p>${escapeHtml(error.message)}</p><p style="font-size:11px;margin-top:8px;color:var(--admin-text-dim);">If you see an "index" error, check the browser console for the create-index link.</p></div>`;
                 });
         }
 
@@ -4189,11 +4828,21 @@
             const grid = document.getElementById('notesGrid');
             if (!grid) return;
             const term = (document.getElementById('notesSearchInput')?.value || '').trim().toLowerCase();
+            const typeFilter = document.getElementById('notesTypeFilter')?.value || '';
+            const songOf = n => NoteMusic.clean(n.music);
+            const expiredOf = n => { const e = n.expireAt ? new Date(n.expireAt.seconds ? n.expireAt.seconds * 1000 : n.expireAt) : null; return e ? e < new Date() : false; };
+            renderNotesInsight();
             let filtered = allNotes;
+            if (typeFilter === 'song') filtered = filtered.filter(n => songOf(n));
+            else if (typeFilter === 'songonly') filtered = filtered.filter(n => songOf(n) && !String(n.text || '').trim());
+            else if (typeFilter === 'text') filtered = filtered.filter(n => !songOf(n));
+            else if (typeFilter === 'replies') filtered = filtered.filter(n => getCommentCountForNote(n.uid) > 0);
+            else if (typeFilter === 'expired') filtered = filtered.filter(expiredOf);
             if (term) {
-                filtered = allNotes.filter(n => {
+                filtered = filtered.filter(n => {
                     const user = noteUserCache[n.uid] || {};
-                    return [n.text || '', user.displayName || '', n.uid || ''].join(' ').toLowerCase().includes(term);
+                    const song = songOf(n) || {};
+                    return [n.text || '', song.title || '', song.artist || '', user.displayName || '', n.uid || ''].join(' ').toLowerCase().includes(term);
                 });
             }
             if (filtered.length === 0) {
@@ -4204,6 +4853,20 @@
             filtered.forEach(note => { html += renderNoteCard(note); });
             grid.innerHTML = html;
             grid.classList.toggle('batch-mode', batchState.notes.active);
+        }
+
+        // moderation overview: how many notes carry a song and which songs are most used
+        function renderNotesInsight() {
+            const el = document.getElementById('notesInsight'); if (!el) return;
+            const withSong = allNotes.map(n => ({ n, m: NoteMusic.clean(n.music) })).filter(x => x.m);
+            const songOnly = withSong.filter(x => !String(x.n.text || '').trim()).length;
+            const counts = {};
+            withSong.forEach(x => { const k = x.m.trackId; (counts[k] = counts[k] || { m: x.m, c: 0 }).c++; });
+            const top = Object.values(counts).sort((a, b) => b.c - a.c).slice(0, 4);
+            el.innerHTML = withSong.length
+                ? `<span class="chip"><i class="fas fa-music"></i> ${withSong.length} with a song</span><span>${songOnly} song-only</span>` +
+                  (top.length ? `<span>· Most used: ${top.map(t => `${escapeHtml(t.m.title)} <b>×${t.c}</b>`).join(', ')}</span>` : '')
+                : '<span>No notes have songs yet.</span>';
         }
 
         function getCommentCountForNote(noteUid) {
@@ -4230,6 +4893,7 @@
             else timeLabel = `<span><i class="fas fa-clock"></i> Expiring soon</span>`;
 
             const isSelected = batchState.notes.active && batchState.notes.selected.has(note.id);
+            const songMeta = NoteMusic.clean(note.music);
             const commentCount = getCommentCountForNote(note.uid);
             const commentBtn = commentCount > 0
                 ? `<button class="btn-view-comments" onclick="viewNoteComments('${escapeAttr(note.uid)}')" title="View ${commentCount} repl${commentCount === 1 ? 'y' : 'ies'}"><i class="fas fa-comments"></i> ${commentCount}</button>`
@@ -4238,23 +4902,25 @@
             return `
                 <div class="note-card ${isExpired ? 'expired' : ''} ${isSelected ? 'selected' : ''}" data-id="${escapeAttr(note.id)}">
                     <input type="checkbox" class="select-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleItemSelection('notes', '${escapeAttr(note.id)}', this.checked)" />
-                    <div class="note-card-icon" style="background:${isExpired ? 'var(--theme-danger-soft, var(--admin-danger-soft))' : 'var(--theme-border-input, var(--admin-border-input))'};">
-                        ${isExpired ? '🗑️' : '📝'}
+                    <div class="note-card-icon" style="background:${isExpired ? 'var(--admin-danger-soft)' : 'var(--admin-border-input)'};">
+                        ${isExpired ? '🗑️' : (songMeta ? '🎵' : '📝')}
                     </div>
                     <div class="note-card-body">
                         <div class="note-card-author">
                             <span style="display:inline-flex;align-items:center;gap:8px;min-width:0;">
-                                <span style="width:24px;height:24px;border-radius:50%;overflow:hidden;background:var(--theme-gradient, var(--admin-gradient));display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;flex-shrink:0;">
+                                <span style="width:24px;height:24px;border-radius:50%;overflow:hidden;background:var(--admin-gradient);display:inline-flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;flex-shrink:0;">
                                     ${avatarContent}
                                 </span>
                                 ${escapeHtml(user.displayName)}
                             </span>
                         </div>
-                        <div class="note-card-text">${escapeHtml(note.text || '')}</div>
+                        <div class="note-card-text">${String(note.text || '').trim() ? escapeHtml(note.text) : (songMeta ? '<span class="song-only">(song only)</span>' : '')}</div>
+                        ${songMeta ? NoteMusic.cardHtml(songMeta) : ''}
                         <div class="note-card-meta">
                             ${createdAt ? `<span><i class="fas fa-calendar-plus"></i> Created ${formatRelativeTime(createdAt)}</span>` : ''}
                             ${timeLabel}
-                            ${commentCount > 0 ? `<span style="color:var(--theme-primary, var(--admin-primary));font-weight:700;"><i class="fas fa-comments"></i> ${commentCount} repl${commentCount === 1 ? 'y' : 'ies'}</span>` : ''}
+                            ${songMeta ? '<span class="song-badge"><i class="fas fa-music"></i> Song</span>' : ''}
+                            ${commentCount > 0 ? `<span style="color:var(--admin-primary);font-weight:700;"><i class="fas fa-comments"></i> ${commentCount} repl${commentCount === 1 ? 'y' : 'ies'}</span>` : ''}
                             ${isExpired ? '<span><i class="fas fa-trash-alt"></i> Ready for cleanup</span>' : ''}
                         </div>
                     </div>
@@ -4283,6 +4949,11 @@
             document.getElementById('editNoteUid').value = note.uid;
             document.getElementById('editNoteText').value = note.text || '';
             document.getElementById('editNoteCharCount').textContent = (note.text || '').length;
+            const song = NoteMusic.clean(note.music);
+            document.getElementById('editNoteMusicGroup').style.display = song ? 'block' : 'none';
+            document.getElementById('editNoteMusicInfo').innerHTML = song ? NoteMusic.cardHtml(song) : '';
+            document.getElementById('editNoteRemoveMusic').checked = false;
+            document.getElementById('editNoteStar').style.display = song ? 'none' : '';
             document.getElementById('noteEditModal').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -4291,12 +4962,14 @@
             const uid = document.getElementById('editNoteUid').value;
             const text = document.getElementById('editNoteText').value.trim();
             if (!uid) { showToast('No note selected.', 'warn'); return; }
-            if (!text) { showToast('Note text cannot be empty. Use delete instead.', 'warn'); return; }
+            const existing = allNotes.find(n => n.uid === uid);
+            const hasSong = !!(existing && NoteMusic.clean(existing.music));
+            const removeMusic = hasSong && !!document.getElementById('editNoteRemoveMusic')?.checked;
+            if (!text && !(hasSong && !removeMusic)) { showToast('Note text cannot be empty unless the note keeps its song. Use delete instead.', 'warn'); return; }
             if (text.length > 60) { showToast('Note text must be 60 characters or less.', 'warn'); return; }
 
-            const existing = allNotes.find(n => n.uid === uid);
             const oldText = existing?.text || '';
-            const textChanged = text !== oldText;
+            const textChanged = text !== oldText || removeMusic;
 
             if (textChanged) {
                 const replyCount = getCommentCountForNote(uid);
@@ -4306,25 +4979,24 @@
                         message: `This note has ${replyCount} repl${replyCount === 1 ? 'y' : 'ies'}. Changing the note text will DELETE all existing replies. Continue?`,
                         confirmLabel: 'Continue',
                         type: 'warn',
-                        onConfirm: () => actuallySaveNoteEdit(uid, text, textChanged)
+                        onConfirm: () => actuallySaveNoteEdit(uid, text, textChanged, removeMusic)
                     });
                     return;
                 }
             }
-            actuallySaveNoteEdit(uid, text, textChanged);
+            actuallySaveNoteEdit(uid, text, textChanged, removeMusic);
         }
 
-        async function actuallySaveNoteEdit(uid, text, textChanged) {
+        async function actuallySaveNoteEdit(uid, text, textChanged, removeMusic) {
             const btn = document.getElementById('noteSaveBtn');
             const originalHtml = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Saving...';
             try {
                 if (textChanged) await purgeCommentsForNote(uid);
-                await db.collection('notes').doc(uid).update({
-                    text: text,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                const upd = { text: text, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                if (removeMusic) upd.music = firebase.firestore.FieldValue.delete();     // moderation: take the song off the note
+                await db.collection('notes').doc(uid).update(upd);
                 const replyMsg = textChanged ? ' (old replies removed)' : '';
                 showToast(`Note updated successfully!${replyMsg}`, 'success');
                 closeNoteEditModal();
@@ -4347,7 +5019,8 @@
             const note = allNotes.find(n => n.id === noteId);
             const user = noteUserCache[note?.uid] || {};
             const name = user.displayName || note?.uid || 'this user';
-            const textPreview = note?.text ? `"${note.text.slice(0, 40)}${note.text.length > 40 ? '...' : ''}"` : '';
+            const _nt = NoteMusic.bubbleText(note);
+            const textPreview = _nt ? `"${_nt.slice(0, 40)}${_nt.length > 40 ? '...' : ''}"` : '';
             const replyCount = note?.uid ? getCommentCountForNote(note.uid) : 0;
             const replyMsg = replyCount > 0 ? ` This will also delete ${replyCount} repl${replyCount === 1 ? 'y' : 'ies'} on this note.` : '';
 
@@ -4467,7 +5140,8 @@
             let html = '<option value="">All Notes</option>';
             noteUids.forEach(uid => {
                 const note = allNotes.find(n => n.uid === uid);
-                const noteText = note?.text ? `"${note.text.slice(0, 40)}${note.text.length > 40 ? '...' : ''}"` : `Note ${uid.slice(0, 8)}...`;
+                const _nt2 = NoteMusic.bubbleText(note);
+                const noteText = _nt2 ? `"${_nt2.slice(0, 40)}${_nt2.length > 40 ? '...' : ''}"` : `Note ${uid.slice(0, 8)}...`;
                 const user = noteUserCache[uid];
                 const authorName = user?.displayName || 'Unknown';
                 html += `<option value="${escapeAttr(uid)}">📝 ${escapeHtml(authorName)}: ${escapeHtml(noteText)}</option>`;
@@ -4494,12 +5168,14 @@
             });
             else if (statusFilter === 'replies') filtered = filtered.filter(c => c.replyToId);
             else if (statusFilter === 'top') filtered = filtered.filter(c => !c.replyToId);
+            else if (statusFilter === 'nested') filtered = filtered.filter(c => c.replyToId && c.replyToCommentId && c.replyToCommentId !== c.replyToId);
+            else if (statusFilter === 'selfreply') filtered = filtered.filter(c => c.replyToId && replyTargetUid(c) === c.authorUid);
 
             if (term) {
                 filtered = filtered.filter(c => {
                     const author = commentAuthorCache[c.authorUid] || {};
                     const note = allNotes.find(n => n.uid === c.noteUid);
-                    const haystack = [c.text || '', author.displayName || '', c.authorUid || '', note?.text || '', noteUserCache[c.noteUid]?.displayName || ''].join(' ').toLowerCase();
+                    const haystack = [c.text || '', author.displayName || '', c.authorUid || '', NoteMusic.bubbleText(note), c.replyToName || '', c.replyToText || '', noteUserCache[c.noteUid]?.displayName || ''].join(' ').toLowerCase();
                     return haystack.includes(term);
                 });
             }
@@ -4515,6 +5191,10 @@
             grid.innerHTML = html;
             grid.classList.toggle('batch-mode', batchState.comments.active);
         }
+
+        // who a reply answers: the exact comment it references (falls back to the thread root for older replies)
+        function replyTarget(c) { return c.replyToId ? allComments.find(x => x.id === (c.replyToCommentId || c.replyToId)) : null; }
+        function replyTargetUid(c) { const t = replyTarget(c); return t ? t.authorUid : (c.replyToUid || null); }
 
         function renderCommentCard(comment) {
             const author = commentAuthorCache[comment.authorUid] || { displayName: comment.authorName || 'Anonymous', photoURL: comment.authorPhoto || '' };
@@ -4537,16 +5217,19 @@
 
             const note = allNotes.find(n => n.uid === comment.noteUid);
             const noteAuthor = noteUserCache[comment.noteUid] || { displayName: 'Unknown' };
-            const noteText = note?.text || '(note deleted)';
+            const noteText = NoteMusic.bubbleText(note) || '(note deleted)';
             const notePreview = noteText.length > 80 ? noteText.slice(0, 80) + '...' : noteText;
 
-            let replyContext = '';
+            let replyContext = '', replyRef = '';
             if (comment.replyToId) {
-                const parent = allComments.find(c => c.id === comment.replyToId);
-                if (parent) {
-                    const parentAuthor = commentAuthorCache[parent.authorUid]?.displayName || 'someone';
-                    replyContext = `<span class="comment-card-reply-indicator"><i class="fas fa-reply"></i> reply to ${escapeHtml(parentAuthor)}</span>`;
-                } else replyContext = `<span class="comment-card-reply-indicator"><i class="fas fa-reply"></i> reply</span>`;
+                const target = replyTarget(comment);
+                const tUid = replyTargetUid(comment);
+                const tName = commentAuthorCache[tUid]?.displayName || target?.authorName || comment.replyToName || 'someone';
+                const selfReply = !!tUid && tUid === comment.authorUid;
+                const nested = !!comment.replyToCommentId && comment.replyToCommentId !== comment.replyToId;
+                replyContext = `<span class="comment-card-reply-indicator"><i class="fas fa-reply"></i> ${selfReply ? 'replied to themselves' : 'reply to ' + escapeHtml(tName)}${nested ? ' · reply to a reply' : ''}${target ? '' : ' · target deleted'}</span>`;
+                const snip = String((target && target.text) || comment.replyToText || '').slice(0, 90);
+                if (snip) replyRef = `<div class="comment-card-ref"><i class="fas fa-reply" style="font-size:10px"></i> <b>${escapeHtml(selfReply ? 'themselves' : tName)}</b>: “${escapeHtml(snip)}”${target ? '' : ' <em>(deleted)</em>'}</div>`;
             }
 
             const isSelected = batchState.comments.active && batchState.comments.selected.has(comment.id);
@@ -4564,6 +5247,7 @@
                             <strong><i class="fas fa-quote-left" style="font-size:9px;"></i> ${escapeHtml(noteAuthor.displayName)}'s note:</strong>
                             ${escapeHtml(notePreview)}
                         </div>
+                        ${replyRef}
                         <div class="comment-card-text">${escapeHtml(comment.text || '')}</div>
                         <div class="comment-card-meta">
                             ${createdAt ? `<span><i class="fas fa-calendar-plus"></i> ${formatRelativeTime(createdAt)}</span>` : ''}
@@ -4590,7 +5274,7 @@
             const note = allNotes.find(n => n.uid === comment.noteUid);
             const noteAuthor = noteUserCache[comment.noteUid] || { displayName: 'Unknown' };
             const contextEl = document.getElementById('editCommentContext');
-            if (note) contextEl.innerHTML = `<strong>${escapeHtml(noteAuthor.displayName)}</strong> wrote: "${escapeHtml(note.text || '')}"`;
+            if (note) contextEl.innerHTML = `<strong>${escapeHtml(noteAuthor.displayName)}</strong> wrote: "${escapeHtml(NoteMusic.bubbleText(note))}"${NoteMusic.clean(note.music) ? ' <i class="fas fa-music"></i>' : ''}`;
             else contextEl.innerHTML = `<em>Original note no longer exists (uid: ${escapeHtml(comment.noteUid)})</em>`;
 
             document.getElementById('commentEditModal').classList.add('active');
@@ -4636,7 +5320,8 @@
             const name = author.displayName || comment?.authorName || 'this user';
             const textPreview = comment?.text ? `"${comment.text.slice(0, 50)}${comment.text.length > 50 ? '...' : ''}"` : '';
             const childCount = allComments.filter(c => c.replyToId === commentId).length;
-            const childMsg = childCount > 0 ? ` This will also delete ${childCount} nested repl${childCount === 1 ? 'y' : 'ies'} that replied to it.` : '';
+            const mentionCount = allComments.filter(c => c.replyToCommentId === commentId && c.replyToId !== commentId).length;
+            const childMsg = childCount > 0 ? ` This will also delete ${childCount} repl${childCount === 1 ? 'y' : 'ies'} in its thread.` : (mentionCount > 0 ? ` ${mentionCount} repl${mentionCount === 1 ? 'y' : 'ies'} that mention it will show it as deleted.` : '');
 
             showConfirm({
                 title: 'Delete this reply?',
@@ -4688,6 +5373,10 @@
             try { localStorage.setItem(ANNOUNCEMENT_CACHE_KEY + uid, JSON.stringify({ uid, t: Date.now(), items })); } catch (e) {}
         }
 
+        // ================================================================
+        // ===== LOCAL DATE HELPER (fixes UTC date rollover at 8AM PHT) =====
+        // Returns "YYYY-MM-DD" in the user's local timezone.
+        // ================================================================
         function getLocalDateString(date) {
             const d = date instanceof Date ? date : new Date();
             const yyyy = d.getFullYear();
@@ -4701,14 +5390,14 @@
                 const raw = localStorage.getItem(ANNOUNCEMENT_AUTOGEN_KEY + uid);
                 if (!raw) return false;
                 const parsed = JSON.parse(raw);
-                const today = getLocalDateString();
+                const today = getLocalDateString();  // ✅ LOCAL date (PHT)
                 return parsed && parsed.date === today && parsed.kinds && parsed.kinds[kind] === true;
             } catch (e) { return false; }
         }
 
         function markAutogenRunToday(uid, kind) {
             try {
-                const today = getLocalDateString();
+                const today = getLocalDateString();  // ✅ LOCAL date (PHT)
                 let parsed = { date: today, kinds: {} };
                 const raw = localStorage.getItem(ANNOUNCEMENT_AUTOGEN_KEY + uid);
                 if (raw) {
@@ -4959,6 +5648,8 @@
                 });
                 if (todayBirthdayUsers.length === 0) { markAutogenRunToday(currentUser.uid, 'birthdays_all'); return; }
 
+                // ✅ Use a LOCAL date-stamped referenceId for exact dedup.
+                // No timezone comparison needed — just check if today's ref exists.
                 const localDateStr = getLocalDateString();
 
                 let alreadyAnnouncedUids = new Set();
@@ -4972,6 +5663,7 @@
                     existingSnap.forEach(doc => {
                         const d = doc.data();
                         if (d.referenceId) {
+                            // referenceId format: "2026-09-23_<uid>" → extract uid
                             const parts = d.referenceId.split('_');
                             if (parts.length >= 2) alreadyAnnouncedUids.add(parts[1]);
                         }
@@ -5338,19 +6030,22 @@
             if (!user) { window.location.href = 'index.html'; return; }
             currentUser = user;
 
-            // Apply cached theme first
-            const cachedTheme = readThemeFromStorage();
-            if (cachedTheme) {
-                selectedTheme = cachedTheme;
-                applyTheme(selectedTheme);
-            }
-
             try {
                 const data = await getCurrentUserProfileCached(user);
                 if (data?.isAdmin !== true) {
                     showToast('You need admin privileges to access this page.', 'error');
                     window.location.href = 'dashboard.html';
                     return;
+                }
+
+                // Load admin theme from profile if saved
+                if (data?.adminTheme && ADMIN_THEMES[data.adminTheme.preset]) {
+                    selectedAdminTheme = {
+                        preset: data.adminTheme.preset,
+                        mode: data.adminTheme.mode === 'dark' ? 'dark' : 'light'
+                    };
+                    applyAdminTheme(selectedAdminTheme);
+                    persistAdminThemeLocally(selectedAdminTheme);
                 }
 
                 loadAllData();
@@ -5843,7 +6538,7 @@
         });
 
         // ================================================================
-        // ===== STORIES MODERATION =====
+        // ===== STORIES MODERATION (uses the same isAdmin gate as the page) =====
         // ================================================================
         let unsubscribeAdminStories = null;
         let adminStoriesCache = [];
@@ -5853,7 +6548,7 @@
         function storyEffectiveStatus(s) {
             if (s.status === 'removed') return 'removed';
             const created = storyTsMs(s.createdAt);
-            if (!created) return 'expired';
+            if (!created) return 'expired'; // malformed / no server timestamp -> never treated as live
             const exp = Math.min(storyTsMs(s.expiresAt) || (created + STORY_TTL_MS), created + STORY_TTL_MS);
             return exp > Date.now() ? 'active' : 'expired';
         }
@@ -5861,6 +6556,8 @@
             try { const x = new URL(u); return (x.protocol === 'https:' && x.hostname === 'res.cloudinary.com') ? x.href : ''; } catch (e) { return ''; }
         }
 
+        // Auto-delete: the Firestore TTL policy on stories.expiresAt is the primary cleaner (see STORIES_SETUP.md).
+        // TTL can lag, so whenever an admin has this page open, expired stories (and their reactions) are removed here too.
         const sweepTried = new Set();
         async function sweepExpiredStories() {
             const now = Date.now();
@@ -5875,8 +6572,8 @@
                 sweepTried.add(s.id);
                 try {
                     const ref = db.collection('stories').doc(s.id);
-                    const [rs, vs] = await Promise.all([ref.collection('reactions').get(), ref.collection('views').get()]);
-                    const b = db.batch(); rs.forEach(d => b.delete(d.ref)); vs.forEach(d => b.delete(d.ref)); b.delete(ref);
+                    const rs = await ref.collection('reactions').get();
+                    const b = db.batch(); rs.forEach(d => b.delete(d.ref)); b.delete(ref);
                     await b.commit();
                 } catch (e) { console.warn('Expired story cleanup failed:', s.id, e.code || e.message); }
             }
@@ -5921,29 +6618,29 @@
             }
 
             const fmt = ms => ms ? new Date(ms).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
-            const colors = { active: 'var(--theme-success, #16a34a)', removed: 'var(--theme-danger, #ef4444)', expired: 'var(--theme-text-dim, #888)' };
+            const colors = { active: 'var(--admin-success)', removed: 'var(--admin-danger)', expired: 'var(--admin-text-dim)' };
             grid.innerHTML = list.map(({ s, status }) => {
                 const thumb = storySafeCloudUrl(s.thumbUrl) || (s.mediaType === 'image' ? storySafeCloudUrl(s.mediaUrl) : '');
                 const media = storySafeCloudUrl(s.mediaUrl);
                 const created = storyTsMs(s.createdAt);
                 const texts = Array.isArray(s.textOverlays) ? s.textOverlays.filter(t => t && t.text).map(t => t.text).join(' · ') : '';
                 const removedLine = status === 'removed'
-                    ? `<div style="font-size:12px;color:var(--theme-danger, var(--admin-danger));margin-top:6px;"><i class="fas fa-ban"></i> Removed ${escapeHtml(fmt(storyTsMs(s.removedAt)))}${s.removedBy ? ' by ' + escapeHtml(s.removedBy === (currentUser && currentUser.uid) ? 'you' : s.removedBy.slice(0, 8) + '…') : ''}</div>` : '';
+                    ? `<div style="font-size:12px;color:var(--admin-danger);margin-top:6px;"><i class="fas fa-ban"></i> Removed ${escapeHtml(fmt(storyTsMs(s.removedAt)))}${s.removedBy ? ' by ' + escapeHtml(s.removedBy === (currentUser && currentUser.uid) ? 'you' : s.removedBy.slice(0, 8) + '…') : ''}</div>` : '';
                 const canRestore = status === 'removed' && created && (created + STORY_TTL_MS) > Date.now();
                 return `
                 <div class="item-card" data-story-id="${escapeAttr(s.id)}">
                     <div style="display:flex;gap:12px;align-items:flex-start;">
-                        <div style="flex:0 0 64px;height:96px;border-radius:10px;overflow:hidden;background:var(--theme-primary-soft-2, var(--admin-bg-soft));display:grid;place-items:center;color:var(--theme-text-dim, var(--admin-text-dim));">
+                        <div style="flex:0 0 64px;height:96px;border-radius:10px;overflow:hidden;background:var(--admin-bg-soft);display:grid;place-items:center;color:var(--admin-text-dim);">
                             ${thumb ? `<img src="${escapeAttr(thumb)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.remove()">` : `<i class="fas fa-${s.mediaType === 'video' ? 'video' : 'image'}"></i>`}
                         </div>
                         <div style="min-width:0;flex:1;">
-                            <div style="font-weight:700;color:var(--theme-text, var(--admin-text));overflow-wrap:anywhere;">${escapeHtml(s.ownerName || 'Member')}</div>
-                            <div style="font-size:11.5px;color:var(--theme-text-dim, var(--admin-text-dim));overflow-wrap:anywhere;">${escapeHtml(s.ownerUid || '')}</div>
+                            <div style="font-weight:700;color:var(--admin-text);overflow-wrap:anywhere;">${escapeHtml(s.ownerName || 'Member')}</div>
+                            <div style="font-size:11.5px;color:var(--admin-text-dim);overflow-wrap:anywhere;">${escapeHtml(s.ownerUid || '')}</div>
                             <div style="margin-top:6px;font-size:12px;"><span style="font-weight:700;color:${colors[status]};text-transform:capitalize;">● ${status}</span>
-                                <span style="color:var(--theme-text-dim, var(--admin-text-dim));"> · ${s.mediaType === 'video' ? 'Video' : 'Photo'} · ${escapeHtml(fmt(created))}</span></div>
-                            ${s.caption ? `<div style="font-size:12.5px;color:var(--theme-text-muted, var(--admin-text-muted));margin-top:6px;overflow-wrap:anywhere;">“${escapeHtml(String(s.caption).slice(0, 140))}”</div>` : ''}
-                            ${texts ? `<div style="font-size:12px;color:var(--theme-text-muted, var(--admin-text-muted));margin-top:4px;overflow-wrap:anywhere;"><i class="fas fa-font"></i> ${escapeHtml(texts.slice(0, 140))}</div>` : ''}
-                            ${s.spotifyTrack && s.spotifyTrack.title ? `<div style="font-size:12px;color:var(--theme-text-muted, var(--admin-text-muted));margin-top:4px;"><i class="fab fa-spotify" style="color:#1db954;"></i> ${escapeHtml(String(s.spotifyTrack.title).slice(0, 80))}</div>` : ''}
+                                <span style="color:var(--admin-text-dim);"> · ${s.mediaType === 'video' ? 'Video' : 'Photo'} · ${escapeHtml(fmt(created))}</span></div>
+                            ${s.caption ? `<div style="font-size:12.5px;color:var(--admin-text-muted);margin-top:6px;overflow-wrap:anywhere;">“${escapeHtml(String(s.caption).slice(0, 140))}”</div>` : ''}
+                            ${texts ? `<div style="font-size:12px;color:var(--admin-text-muted);margin-top:4px;overflow-wrap:anywhere;"><i class="fas fa-font"></i> ${escapeHtml(texts.slice(0, 140))}</div>` : ''}
+                            ${s.spotifyTrack && s.spotifyTrack.title ? `<div style="font-size:12px;color:var(--admin-text-muted);margin-top:4px;"><i class="fab fa-spotify" style="color:#1db954;"></i> ${escapeHtml(String(s.spotifyTrack.title).slice(0, 80))}</div>` : ''}
                             ${removedLine}
                         </div>
                     </div>
@@ -5969,8 +6666,8 @@
                         await ref.update({ status: 'active', removedAt: firebase.firestore.FieldValue.delete(), removedBy: firebase.firestore.FieldValue.delete(), removalReason: firebase.firestore.FieldValue.delete() });
                         showToast('Story restored.', 'success');
                     } else if (action === 'delete') {
-                        const [rs, vs] = await Promise.all([ref.collection('reactions').get(), ref.collection('views').get()]);
-                        const b = db.batch(); rs.forEach(d => b.delete(d.ref)); vs.forEach(d => b.delete(d.ref)); b.delete(ref);
+                        const rs = await ref.collection('reactions').get();
+                        const b = db.batch(); rs.forEach(d => b.delete(d.ref)); b.delete(ref);
                         await b.commit();
                         showToast('Story deleted permanently.', 'success');
                     }
@@ -6110,6 +6807,7 @@
 
     <script src="idle-logout.js"></script>
     <script src="stories-shared.js?v=1.11.0"></script>
+    <script src="notes-music.js?v=1.0.0"></script>
     <script src="stories.js?v=1.11.0"></script>
 </body>
 </html>

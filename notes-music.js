@@ -140,6 +140,7 @@
     }
     function cardHtml(m, opts) {
         opts = opts || {};
+        injectStyles();
         const art = S().safeImgUrl(m.thumbnail);
         return `<div class="nm-card" data-src="${esc(m.previewUrl)}">${art ? `<img class="nm-art" src="${esc(art)}" alt="">` : '<span class="nm-ph"><i class="fas fa-music"></i></span>'}
             <div class="nm-meta"><b>${esc(m.title)}</b><small>${esc(m.artist || 'Song')} · ${fmt(m.previewSec)}</small><div class="nm-prog"><i></i></div></div>
@@ -318,6 +319,6 @@
         }
     };
 
-    window.NoteMusic = { hasContent, bubbleText, idOf, clean, setDraft, syncDraft, getDraft, getDraftForSave, mountModal, mountDetail, stop, openPicker };
+    window.NoteMusic = { hasContent, bubbleText, idOf, clean, cardHtml, injectStyles, setDraft, syncDraft, getDraft, getDraftForSave, mountModal, mountDetail, stop, openPicker };
     window.Threads = Threads;
 })();
