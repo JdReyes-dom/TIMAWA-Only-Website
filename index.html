@@ -2706,6 +2706,7 @@
             </div>
             <div class="member-modal-body">
                 <div class="member-modal-name" id="memberModalName">Name</div>
+                <div class="member-modal-location member-modal-occupation" id="memberModalOccupation" style="display:none;"><i class="fas fa-briefcase"></i><span></span></div>
                 <div class="member-modal-location" id="memberModalLocation"><i class="fas fa-map-marker-alt"></i><span>Location</span></div>
 
                 <div id="memberModalMetaGrid" class="member-modal-meta-grid" style="display:none;"></div>
@@ -2714,7 +2715,7 @@
                     <i class="fas fa-lock"></i>
                     <div class="locked-text">
                         <strong>Want to see more?</strong>
-                        Sign in to view location, birthday, availability, and love life.
+                        Sign in to unlock the full profile: location, birthday, availability, love life and social links.
                     </div>
                     <a href="login.html" class="locked-cta">Sign In</a>
                 </div>
@@ -2870,8 +2871,8 @@
                 <div style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;text-align:right;">
                     <span id="titaNoteCount">0</span>/60
                 </div>
-                <div id="titaNoteReplaceRow"></div>
                 <div id="titaNoteMusicRow"></div>
+                <div id="titaNoteReplaceRow"></div>
                 <div id="titaNoteStatus" style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;display:none;">
                     <i class="fas fa-clock"></i> <span></span>
                 </div>
@@ -6212,6 +6213,7 @@ function startHighlightReply(commentId, authorName) {
                 }
 
                 document.getElementById('titaLauncher').classList.add('visible');
+                const mBell = document.querySelector('.navbar-mobile-bell'); if (mBell) mBell.style.display = '';
 
                 const isAdmin = data?.isAdmin === true;
                 const adminLink = isAdmin
@@ -6265,6 +6267,7 @@ function startHighlightReply(commentId, authorName) {
 
                 document.getElementById('titaLauncher').classList.remove('visible');
                 closeTitaPanel();
+                const mBell = document.querySelector('.navbar-mobile-bell'); if (mBell) mBell.style.display = 'none';      // visitors don't get announcements
 
                 authLinks.innerHTML = `
                     <a href="login.html" class="login-btn"><i class="fas fa-user"></i> Sign In</a>
@@ -6762,7 +6765,12 @@ function startHighlightReply(commentId, authorName) {
             }
 
             document.getElementById('memberModalName').textContent = name;
-            document.getElementById('memberModalLocation').querySelector('span').textContent = member.location || 'Not set';
+            // visitors get name, occupation, bio and interests only; everything else needs an account
+            const occEl = document.getElementById('memberModalOccupation');
+            if (occEl) { occEl.querySelector('span').textContent = member.occupation || ''; occEl.style.display = member.occupation ? 'flex' : 'none'; }
+            const locEl = document.getElementById('memberModalLocation');
+            locEl.querySelector('span').textContent = member.location || 'Not set';
+            locEl.style.display = isUserLoggedIn ? 'flex' : 'none';
 
             document.getElementById('memberModalBio').textContent = member.bio || 'No bio provided.';
 
@@ -6785,7 +6793,7 @@ function startHighlightReply(commentId, authorName) {
             if (member.twitter) socialsHtml += `<a href="https://twitter.com/${encodeURIComponent(member.twitter.replace('@',''))}" target="_blank" rel="noopener" title="Twitter / X"><i class="fab fa-twitter"></i></a>`;
             if (member.tiktok) socialsHtml += `<a href="https://tiktok.com/@${encodeURIComponent(member.tiktok.replace('@',''))}" target="_blank" rel="noopener" title="TikTok"><i class="fab fa-tiktok"></i></a>`;
             if (member.facebook) socialsHtml += `<a href="${escapeAttr(member.facebook)}" target="_blank" rel="noopener" title="Facebook"><i class="fab fa-facebook"></i></a>`;
-            if (socialsHtml) {
+            if (isUserLoggedIn && socialsHtml) {
                 socialsSection.style.display = 'block';
                 socialsEl.innerHTML = socialsHtml;
             } else {
@@ -6841,6 +6849,7 @@ function startHighlightReply(commentId, authorName) {
             }
 
             const dlBtn = document.getElementById('memberModalDownloadBtn');
+            dlBtn.style.display = isUserLoggedIn ? '' : 'none';
             if (photoUrl) {
                 dlBtn.disabled = false;
                 dlBtn.innerHTML = '<i class="fas fa-download"></i> Download Profile Picture';
@@ -6864,6 +6873,7 @@ function startHighlightReply(commentId, authorName) {
         }
 
         async function downloadCurrentMemberAvatar() {
+            if (!isUserLoggedIn) { showToast('Sign in to download profile pictures.', 'warn'); return; }
             if (!currentMember || !currentMember.photoURL) {
                 showToast('No profile picture available.', 'warn');
                 return;
@@ -7292,9 +7302,8 @@ function startHighlightReply(commentId, authorName) {
                     const commentCount = noteCommentCounts[member.id] || 0;
 
                     noteBubbleHtml = `
-                        <div class="member-note-bubble" data-note-uid="${escapeAttr(member.id)}" onclick="event.stopPropagation(); openNoteModal('${escapeAttr(member.id)}')" title="Tap to read full note${isUserLoggedIn && commentCount > 0 ? ' and replies' : ''}">
-                            <i class=\"fas ${note.music ? 'fa-music' : 'fa-comment-dots'}\"></i>
-                            <span class="note-text-preview">${escapeHtml(NoteMusic.bubbleText(note))}</span>
+                        <div class="member-note-bubble${NoteMusic.clean(note.music) ? ' has-music' : ''}" data-note-uid="${escapeAttr(member.id)}" onclick="event.stopPropagation(); openNoteModal('${escapeAttr(member.id)}')" title="Tap to read full note${isUserLoggedIn && commentCount > 0 ? ' and replies' : ''}">
+                            ${NoteMusic.bubbleInner(note, '<i class="fas fa-comment-dots"></i><span class="note-text-preview">' + escapeHtml(note.text || '') + '</span>')}
                             ${isExpiringSoon ? '<i class="fas fa-hourglass-half" style="color:#ef4444;font-size:11px;"></i>' : ''}
                             ${isUserLoggedIn && commentCount > 0 ? `<span class="note-comment-count"><i class="fas fa-comment"></i> ${commentCount}</span>` : ''}
                         </div>
@@ -7309,7 +7318,7 @@ function startHighlightReply(commentId, authorName) {
                             <div class="avatar-circle">${avatarContent}</div>
                             <div class="member-actions">
                                 <button class="member-view" title="View profile" onclick="event.stopPropagation(); openMemberModal('${memberIdSafe}')"><i class="fas fa-expand"></i></button>
-                                ${hasImage ? `<button class="member-download" title="Download profile picture" onclick="event.stopPropagation(); quickDownloadMemberAvatar('${memberIdSafe}')"><i class="fas fa-download"></i></button>` : ''}
+                                ${(hasImage && isUserLoggedIn) ? `<button class="member-download" title="Download profile picture" onclick="event.stopPropagation(); quickDownloadMemberAvatar('${memberIdSafe}')"><i class="fas fa-download"></i></button>` : ''}
                             </div>
                         </div>
                         <div class="member-body">
@@ -7319,7 +7328,7 @@ function startHighlightReply(commentId, authorName) {
                             ${loveLifeRow}
                             <div class="member-bio">${escapeHtml(bio)}</div>
                             ${interests.length ? `<div class="member-interests">${interests.map(t => `<span class="interest-tag">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
-                            ${socialsHtml ? `<div class="member-socials">${socialsHtml}</div>` : ''}
+                            ${(isUserLoggedIn && socialsHtml) ? `<div class="member-socials">${socialsHtml}</div>` : ''}
                             ${lockHint}
                         </div>
                     </div>
@@ -7336,6 +7345,7 @@ function startHighlightReply(commentId, authorName) {
         }
 
         async function quickDownloadMemberAvatar(memberId) {
+            if (!isUserLoggedIn) { showToast('Sign in to download profile pictures.', 'warn'); return; }
             const member = carouselItemCache[`users:${memberId}`];
             if (!member || !member.photoURL) return;
             const prev = currentMember;
@@ -8286,7 +8296,7 @@ function startHighlightReply(commentId, authorName) {
     </script>
 
     <script src="stories-shared.js?v=1.11.1"></script>
-    <script src="notes-music.js?v=1.0.0"></script>
+    <script src="notes-music.js?v=1.1.0"></script>
     <script src="stories.js?v=1.2.0"></script>
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
