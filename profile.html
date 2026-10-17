@@ -3099,12 +3099,11 @@
         function renderThemeGrid() {
             const grid = document.getElementById('themeGrid');
             if (!grid) return;
-
-            let html = '';
-            Object.keys(THEMES).forEach(key => {
+            const btn = (key) => {
                 const theme = THEMES[key];
+                if (!theme) return '';
                 const isActive = key === (selectedTheme && selectedTheme.preset);
-                html += `
+                return `
                     <button type="button"
                             class="theme-preset ${isActive ? 'active' : ''}"
                             data-theme="${key}"
@@ -3115,7 +3114,16 @@
                         ${theme.sub ? `<div class="preset-sub">${theme.sub}</div>` : ''}
                     </button>
                 `;
+            };
+            // v10: grouped by THEME_GROUPS (Happening today / Cozy Places / Seasons / Holidays); anything ungrouped goes last
+            let html = '', used = {};
+            (window.THEME_GROUPS || []).forEach(g => {
+                const keys = (g.keys || []).filter(k => THEMES[k]);
+                if (!keys.length) return;
+                html += `<div class="tw-gtitle">${g.emoji || ''} ${g.label}</div>`;
+                keys.forEach(k => { used[k] = 1; html += btn(k); });
             });
+            Object.keys(THEMES).forEach(k => { if (!used[k]) html += btn(k); });
             grid.innerHTML = html;
         }
 
