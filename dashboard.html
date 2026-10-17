@@ -7673,8 +7673,8 @@
                 <div style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;text-align:right;">
                     <span id="titaNoteCount">0</span>/60
                 </div>
-                <div id="titaNoteMusicRow"></div>
                 <div id="titaNoteReplaceRow"></div>
+                <div id="titaNoteMusicRow"></div>
                 <div id="titaNoteStatus" style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;display:none;">
                     <i class="fas fa-clock"></i> <span></span>
                 </div>
@@ -15354,8 +15354,9 @@ function startReplyTo(commentId, authorName) {
                     const isExpiringSoon = expireAt && (expireAt - new Date()) < 2 * 60 * 60 * 1000;
                     const commentCount = noteCommentCounts[docId] || 0;
                     noteBubbleHtml = `
-                        <div class="note-bubble${NoteMusic.clean(note.music) ? ' has-music' : ''}" data-note-uid="${memberIdSafe}" onclick="event.stopPropagation(); openNoteModal('${memberIdSafe}')">
-                            ${NoteMusic.bubbleInner(note, '<i class="fas fa-comment-dots"></i><span>' + escapeHtml(note.text || '') + '</span>')}
+                        <div class="note-bubble" data-note-uid="${memberIdSafe}" onclick="event.stopPropagation(); openNoteModal('${memberIdSafe}')">
+                            <i class=\"fas ${note.music ? 'fa-music' : 'fa-comment-dots'}\"></i>
+                            <span>${escapeHtml(NoteMusic.bubbleText(note))}</span>
                             ${isExpiringSoon ? '<i class="fas fa-hourglass-half" style="color:#ef4444;font-size:10px;"></i>' : ''}
                             ${commentCount > 0 ? `<span class="note-comment-count"><i class="fas fa-comment"></i> ${commentCount}</span>` : ''}
                         </div>
@@ -16005,7 +16006,7 @@ function startReplyTo(commentId, authorName) {
     </script>
 
     <script src="stories-shared.js?v=1.11.1"></script>
-    <script src="notes-music.js?v=1.1.0"></script>
+    <script src="notes-music.js?v=1.0.0"></script>
     <script src="stories.js?v=1.11.0"></script>
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>

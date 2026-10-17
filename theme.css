@@ -6,7 +6,6 @@
    ★ CONCEPTS ★  every theme is a different scene, except forest / sakura /
    aurora, which keep their concept and were upgraded.
 
-   ★ v10 ★ HOLIDAY-ONLY THEMES: 13 dedicated themes (h*) that appear in the picker only on their day (see theme.js: HOLIDAY_THEMES / TW_HOLIDAY).
    ★ v9 ★  Aurora ground, Summer on mobile, Spring sun, NEW Xmas (village square) & Winter (ice rink), DESKTOP scroll smoothness,
            AUTO HOLIDAY THEMES (see theme.js: TW_HOLIDAY).
    ★ v8 ★  DESKTOP PERF: native OS cursor (no JS per move), no will-change layers, performance tiers
@@ -120,100 +119,6 @@
    A pastel glass conservatory: arched glazed windows, hanging flower
    baskets, potted peonies / tulips / daisies on a tiled floor, soft
    light shafts and drifting petals. Centre stays clear for content.
-   Animated: baskets + pots sway, light shafts breathe (::before),
-   petals fall (::after), one butterfly flutters across.
-   ================================================================ */
-[data-timawa-theme="pink"] .theme-bg-base{background:linear-gradient(180deg,#fff0f7 0%,#ffdcec 55%,#fbc6dc 100%)}
-[data-timawa-theme="pink"][data-timawa-mode="dark"] .theme-bg-base{background:linear-gradient(180deg,#1b0d18 0%,#2a1427 60%,#1a0e16 100%)}
-[data-timawa-theme="pink"] .theme-bg-shapes{--bl-fh:clamp(46px,9vh,92px);
- --bl-frame:#fffafc;--bl-pane:rgba(255,206,228,.34);--bl-beam:rgba(255,255,255,.5);--bl-sh:rgba(214,90,140,.2);
- --bl-leaf:#7cbc8c;--bl-leaf2:#5fa376;--bl-pot:#eba88f;--bl-pot2:#d98a70;
- --bl-f1:#f57fb0;--bl-f2:#fff4f8;--bl-f3:#c9a6f2;--bl-f4:#e0407f;--bl-fc:#ffd45c;--bl-p1:#f79bc2;--bl-p2:#ffb9d6;--bl-p3:#e4508f;
- --bl-t1:#fbd3e3;--bl-t2:#f6bdd3;--bl-obj:1}
-[data-timawa-theme="pink"][data-timawa-mode="dark"] .theme-bg-shapes{
- --bl-frame:#6a3c5e;--bl-pane:rgba(255,150,210,.06);--bl-beam:rgba(255,170,230,.11);--bl-sh:rgba(0,0,0,.4);
- --bl-leaf:#30694d;--bl-leaf2:#245640;--bl-pot:#8c4c54;--bl-pot2:#6d3a43;
- --bl-f1:#d65a98;--bl-f2:#e8cce0;--bl-f3:#9a78c8;--bl-f4:#b3306a;--bl-fc:#e8b84a;--bl-p1:#c94c8a;--bl-p2:#e070a8;--bl-p3:#a22e68;
- --bl-t1:#2c1727;--bl-t2:#361b2f;--bl-obj:.92}
-.bl-arch{left:0;top:0;width:100%;height:calc(100% - var(--bl-fh) + 2px)}
-.bl-arch .pn{fill:var(--bl-pane)}
-.bl-arch .fr{fill:none;stroke:var(--bl-frame);stroke-width:3;vector-effect:non-scaling-stroke}
-.bl-arch .pn{vector-effect:non-scaling-stroke}
-.bl-floor{left:0;right:0;bottom:0;height:var(--bl-fh);box-shadow:0 -1px 0 var(--bl-frame),0 -16px 34px var(--bl-sh);
- background:repeating-conic-gradient(var(--bl-t1) 0% 25%,var(--bl-t2) 0% 50%) 0 0/clamp(40px,5vw,64px) clamp(40px,5vw,64px)}
-.bl-hang{top:0;width:clamp(78px,9vw,132px);opacity:var(--bl-obj);transform-origin:50% 0;animation:twSway1 7s ease-in-out infinite alternate;}
-.bl-hang.h1{left:9%}
-.bl-hang.h2{right:12%;width:clamp(96px,11vw,160px);animation-duration:8.5s;animation-delay:-3s}
-.bl-hang.h3{left:30%;width:clamp(60px,7vw,98px);animation-delay:-5s}
-.bl-hang .cd,.bl-hang .vn{fill:none;stroke:var(--bl-leaf2);stroke-width:2.2;stroke-linecap:round}
-.bl-hang .cd{stroke:var(--bl-pot2);stroke-width:1.8}
-.bl-pots{bottom:calc(var(--bl-fh) - 6px);width:clamp(170px,25vw,380px);opacity:var(--bl-obj);transform-origin:50% 100%;animation:twSway1 8s ease-in-out infinite alternate;}
-.bl-pots.l{left:1.5%}
-.bl-pots.r{right:1.5%;scale:-1 1;animation-delay:-4s}
-.bl-hang .po,.bl-pots .po{fill:var(--bl-pot)}.bl-hang .po2,.bl-pots .po2{fill:var(--bl-pot2);stroke:none}
-.bl-hang path.po2{fill:none;stroke:var(--bl-pot2);stroke-width:1.6}
-.bl-hang rect.po2{fill:var(--bl-pot2)}
-.bl-hang .lf,.bl-pots .lf{fill:var(--bl-leaf)}.bl-pots .lf2{fill:none;stroke:var(--bl-leaf2);stroke-width:3;stroke-linecap:round}
-.bl-hang .f1,.bl-pots .f1{fill:var(--bl-f1)}.bl-hang .f2,.bl-pots .f2{fill:var(--bl-f2)}.bl-hang .f3{fill:var(--bl-f3)}.bl-hang .f4,.bl-pots .f4{fill:var(--bl-f4)}
-.bl-hang .fc,.bl-pots .fc{fill:var(--bl-fc)}
-.bl-pots .p1{fill:var(--bl-p1)}.bl-pots .p2{fill:var(--bl-p2)}.bl-pots .p3{fill:var(--bl-p3)}
-.bl-fly{left:0;top:30%;width:clamp(26px,3vw,40px);opacity:var(--bl-obj);animation:blFly 52s linear infinite;}
-.bl-fly .wg{transform-box:fill-box;transform-origin:50% 50%;animation:blFlap .7s ease-in-out infinite alternate}
-.bl-fly .w1{fill:var(--bl-f1)}.bl-fly .w2{fill:var(--bl-f3)}.bl-fly .bd{stroke:var(--bl-leaf2);stroke-width:1.8;stroke-linecap:round}
-@keyframes blFlap{from{scale:1 1}to{scale:.28 1}}
-@keyframes blFly{0%{transform:translate3d(-8vw,14vh,0) rotate(12deg)}18%{transform:translate3d(20vw,-4vh,0) rotate(-8deg)}38%{transform:translate3d(44vw,10vh,0) rotate(10deg)}60%{transform:translate3d(66vw,-2vh,0) rotate(-10deg)}80%{transform:translate3d(88vw,12vh,0) rotate(8deg)}100%{transform:translate3d(110vw,2vh,0) rotate(-6deg)}}
-
-/* ================================================================
-   -------- CAFE — "Cozy Corner" --------
-   A lamp-lit corner of a cosy cafe: warm wallpaper and wood panelling,
-   three pendant lamps spilling amber light, twinkling string lights,
-   a shelf of books and a plant, a wooden counter with a steaming latte
-   and croissant, and a cat asleep on a cushion. Centre stays calm.
-   Animated (3): .cf-lights twinkle, .cf-steam rise, .cf-cat breathe.
-   ================================================================ */
-[data-timawa-theme="cafe"] .theme-bg-base{background:linear-gradient(180deg,#f9e9d0 0%,#f1d3a6 55%,#e6bb86 100%)}
-[data-timawa-theme="cafe"][data-timawa-mode="dark"] .theme-bg-base{background:linear-gradient(180deg,#140b06 0%,#22140a 60%,#2f1c0e 100%)}
-[data-timawa-theme="cafe"] .theme-bg-shapes{--cf-th:clamp(70px,15vh,150px);--cf-mw:clamp(120px,16vw,230px);
- --cf-wood:#a56a3c;--cf-wood2:#7e4a24;--cf-hi:#c78a55;--cf-grain:rgba(70,35,10,.08);--cf-pan:#e8c99d;--cf-pan2:#d3ae7c;--cf-rail:#bd8a56;
- --cf-glow:rgba(255,196,110,.5);--cf-amb:rgba(255,205,125,.38);--cf-shade:#d9803f;--cf-shade2:#a85a2a;--cf-cord:#6b4a2c;--cf-dot:rgba(150,100,50,.13);
- --cf-mug:#fbf3e6;--cf-cof:#5a3520;--cf-st:rgba(140,100,60,.4);--cf-cat:#e9a65e;--cf-cat2:#b8742e;--cf-cu:#c46a52;--cf-cu2:#a3523d;--cf-obj:1}
-[data-timawa-theme="cafe"][data-timawa-mode="dark"] .theme-bg-shapes{--cf-wood:#4a2b16;--cf-wood2:#2e1a0d;--cf-hi:#6a4326;--cf-grain:rgba(0,0,0,.2);--cf-pan:#2a1a10;--cf-pan2:#20140b;--cf-rail:#3d2616;
- --cf-glow:rgba(255,170,70,.5);--cf-amb:rgba(255,170,80,.2);--cf-shade:#b8682c;--cf-shade2:#7d421b;--cf-cord:#8a6a48;--cf-dot:rgba(255,200,130,.05);
- --cf-mug:#e9dcc6;--cf-cof:#3a2012;--cf-st:rgba(255,235,205,.4);--cf-cat:#c98840;--cf-cat2:#8f5a24;--cf-cu:#8c4a3a;--cf-cu2:#6e3a2e;--cf-obj:.85}
-.cf-panel{left:0;right:0;bottom:var(--cf-th);height:24%;
- background:linear-gradient(var(--cf-rail),var(--cf-rail)) 0 0/100% 8px no-repeat,linear-gradient(180deg,transparent 40%,rgba(0,0,0,.1)),repeating-linear-gradient(90deg,var(--cf-pan) 0 100px,var(--cf-pan2) 100px 103px)}
-.cf-counter{left:0;right:0;bottom:0;height:var(--cf-th);box-shadow:0 -10px 30px rgba(0,0,0,.16);
- background:repeating-linear-gradient(90deg,transparent 0 46px,var(--cf-grain) 46px 48px,transparent 48px 120px),linear-gradient(180deg,var(--cf-hi) 0 6px,var(--cf-wood) 6px 34%,var(--cf-wood2))}
-.cf-lamp{--w:clamp(54px,6.4vw,92px);top:var(--c);width:var(--w);height:calc(var(--w)*.56);border-radius:50% 50% 8% 8%/92% 92% 10% 10%;
- background:linear-gradient(90deg,var(--cf-shade2),var(--cf-shade) 38%,color-mix(in srgb,var(--cf-shade) 70%,#fff) 52%,var(--cf-shade2))}
-.cf-lamp::before{content:"";position:absolute;left:calc(50% - 1px);bottom:100%;width:2px;height:var(--c);background:var(--cf-cord)}
-.cf-lamp::after{content:"";position:absolute;left:50%;top:100%;width:calc(var(--w)*5);aspect-ratio:1;translate:-50% -50%;border-radius:50%;
- background:radial-gradient(circle,rgba(255,244,200,.95) 0 2.2%,var(--cf-glow) 9%,transparent 62%)}
-.cf-lamp.l1{left:9%;--c:15vh}
-.cf-lamp.l2{left:21%;--c:7vh;--w:clamp(44px,5vw,72px)}
-.cf-lamp.l3{right:8%;--c:11vh}
-.cf-lights{left:0;right:0;top:0;height:clamp(34px,4.6vw,56px);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 46'%3E %3Cpath d='M0 4 Q70 44 140 4' fill='none' stroke='%236b4a2c' stroke-width='1.6'/%3E %3Cg%3E%3Ccircle cx='28' cy='17' r='9' fill='%23ffd27a' fill-opacity='.28'/%3E%3Ccircle cx='28' cy='17' r='3.6' fill='%23ffd27a'/%3E %3Ccircle cx='70' cy='24' r='9' fill='%23ffb4a0' fill-opacity='.28'/%3E%3Ccircle cx='70' cy='24' r='3.6' fill='%23ffb4a0'/%3E %3Ccircle cx='112' cy='17' r='9' fill='%23ffe9a8' fill-opacity='.3'/%3E%3Ccircle cx='112' cy='17' r='3.6' fill='%23ffe9a8'/%3E%3C/g%3E%3C/svg%3E") 0 0/clamp(110px,10vw,150px) auto repeat-x;animation:twOp 3.2s ease-in-out infinite alternate;}
-.cf-shelf{right:4%;top:27%;width:clamp(150px,16vw,240px);opacity:var(--cf-obj)}
-.cf-shelf .w{fill:var(--cf-wood)}
-.cf-cat{left:8%;bottom:calc(var(--cf-th) - 8px);width:clamp(130px,17vw,250px)}
-.cf-cat .cu{fill:var(--cf-cu)}.cf-cat .cu2{fill:var(--cf-cu2)}.cf-cat .c{fill:var(--cf-cat)}
-.cf-cat .tl{fill:none;stroke:var(--cf-cat);stroke-width:15;stroke-linecap:round}
-.cf-cat .s{fill:none;stroke:var(--cf-cat2);stroke-width:5;stroke-linecap:round;opacity:.8}
-.cf-cat .e{fill:none;stroke:#5a3a1a;stroke-width:2.4;stroke-linecap:round}
-.cf-cat .b{transform-box:fill-box;transform-origin:50% 100%;animation:cfBreathe 4.5s ease-in-out infinite alternate;}
-.cf-mug{right:7%;bottom:calc(var(--cf-th) - 10px);width:var(--cf-mw)}
-.cf-mug .m{fill:var(--cf-mug)}.cf-mug .h{fill:none;stroke:var(--cf-mug);stroke-width:9;stroke-linecap:round}.cf-mug .c{fill:var(--cf-cof)}
-.cf-steam{width:calc(var(--cf-mw)*.3);height:calc(var(--cf-mw)*.8);right:calc(7% + var(--cf-mw)*.2);bottom:calc(var(--cf-th) - 10px + var(--cf-mw)*.34);
- background:radial-gradient(ellipse 38% 16% at 42% 86%,var(--cf-st),transparent),radial-gradient(ellipse 34% 16% at 60% 58%,var(--cf-st),transparent),radial-gradient(ellipse 32% 15% at 44% 30%,var(--cf-st),transparent);
- animation:cfSteam 5.5s ease-in-out infinite;}
-@keyframes cfBreathe{from{scale:1}to{scale:1.03 1.06}}
-@keyframes cfSteam{0%{transform:translate3d(0,16px,0);opacity:0}30%{opacity:1}100%{transform:translate3d(10px,-30px,0);opacity:0}}
-
-/* ================================================================
-   -------- CRIMSON — "Rose Park" --------
-   A public rose garden: a rose-covered arbour on the left, a flowering
-   hedge along the horizon, blossom trees, round rose bushes in the
-   foreground, wrought-iron lamp posts, a parkd drifting petals. Centre stays clear for content.
    Animated: baskets + pots sway, light shafts breathe (::before),
    petals fall (::after), one butterfly flutters across.
    ================================================================ */

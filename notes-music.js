@@ -56,16 +56,6 @@
         .nm-replacing .tx{flex:1;min-width:0;line-height:1.35}.nm-replacing b{display:block;font-size:13px}.nm-replacing small{display:block;font-size:11.5px;color:var(--theme-text-muted,#666)}
         .nm-replacing button{border:0;border-radius:10px;padding:7px 12px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;background:var(--theme-bg-soft,#f3f4f6);color:var(--theme-text,#1a1a2e);flex:0 0 auto}
         .nm-replace:focus-visible,.nm-replacing button:focus-visible{outline:2px solid var(--theme-primary,#1089d3);outline-offset:2px}
-        /* member note bubble with a song: title (pans when too long) / artist / text */
-        .member-card .note-bubble.has-music,.member-card .member-note-bubble.has-music{align-items:center;gap:8px;border-radius:16px;padding:7px 12px;white-space:normal;text-overflow:clip}
-        .member-card .has-music .nm-bi{font-size:13px;flex:0 0 auto}
-        .member-card .has-music .nm-bub{display:flex;flex-direction:column;align-items:flex-start;min-width:0;width:max-content;max-width:min(170px,100%);line-height:1.25;text-align:left;overflow:hidden}
-        .member-card .has-music .nm-bt{display:block;width:100%;overflow:hidden;white-space:nowrap;font-weight:800;font-size:12.5px;text-overflow:clip}
-        .member-card .has-music .nm-marq{display:inline-block;white-space:nowrap;overflow:visible;text-overflow:clip}
-        .member-card .has-music .nm-bt.pan .nm-marq{animation:nmPan var(--pan-t,6s) ease-in-out infinite alternate;will-change:transform}
-        .member-card .has-music .nm-ba{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;opacity:.8}
-        .member-card .has-music .nm-bx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;font-size:12px;font-weight:600;margin-top:2px;word-break:break-word;text-overflow:clip}
-        @keyframes nmPan{0%,14%{transform:translateX(0)}86%,100%{transform:translateX(calc(var(--pan,0) * -1px))}}
         /* picker panel */
         .nm-ov{position:fixed;inset:0;z-index:10120;display:flex;align-items:center;justify-content:center;padding:16px;font-family:inherit}
         .nm-bd{position:absolute;inset:0;background:rgba(8,8,14,.55);opacity:0;transition:opacity .18s}
@@ -107,7 +97,7 @@
         .reply-ref:focus-visible{outline:2px solid var(--theme-primary,#1089d3)}
         .note-comment.nm-flash,.highlight-comment.nm-flash{animation:nmFlash 1.3s ease}
         @keyframes nmFlash{0%,60%{background:color-mix(in srgb,var(--theme-primary,#1089d3) 16%,transparent)}100%{background:transparent}}
-        @media (prefers-reduced-motion:reduce){.nm-bt.pan .nm-marq{animation:none!important}.nm-bt{text-overflow:ellipsis!important}.nm-eq i,.nm-ov *,.note-comment.nm-flash,.highlight-comment.nm-flash{animation:none!important;transition:none!important}}`;
+        @media (prefers-reduced-motion:reduce){.nm-eq i,.nm-ov *,.note-comment.nm-flash,.highlight-comment.nm-flash{animation:none!important;transition:none!important}}`;
         document.head.appendChild(st);
     }
 
@@ -125,28 +115,6 @@
         const m = clean(n.music); return m ? m.title + (m.artist ? ' · ' + m.artist : '') : '';
     }
     const idOf = n => { const m = n && clean(n.music); return m ? m.trackId : ''; };
-
-    // inner HTML of a member's note bubble. Song notes: title (pans if too long), artist, then the text (like IG).
-    // Notes without a song keep the page's own markup (passed in as `fallback`).
-    function bubbleInner(note, fallback) {
-        const m = clean(note && note.music); if (!m) return fallback;
-        const t = String(note.text || '').trim();
-        return `<i class="fas fa-music nm-bi"></i><span class="nm-bub"><span class="nm-bt"><span class="nm-marq">${esc(m.title)}</span></span>${m.artist ? `<span class="nm-ba">${esc(m.artist)}</span>` : ''}${t ? `<span class="nm-bx">${esc(t)}</span>` : ''}</span>`;
-    }
-    // long titles pan back and forth (distance measured, so short titles stay still)
-    function fitMarquees(root) {
-        (root || document).querySelectorAll('.nm-bt:not([data-fit])').forEach(bt => {
-            const mq = bt.firstElementChild; if (!mq || !bt.clientWidth) return;       // hidden for now: measure later
-            bt.dataset.fit = '1';
-            const over = Math.ceil(mq.scrollWidth - bt.clientWidth);
-            if (over > 2) { bt.classList.add('pan'); bt.style.setProperty('--pan', over); bt.style.setProperty('--pan-t', Math.max(4, over / 16 + 3).toFixed(1) + 's'); }
-        });
-    }
-    let fitQueued = false;
-    const queueFit = () => { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fitMarquees(); }); };
-    try { new MutationObserver(queueFit).observe(document.documentElement, { childList: true, subtree: true }); } catch (e) { /* ignore */ }
-    window.addEventListener('resize', () => { document.querySelectorAll('.nm-bt[data-fit]').forEach(b => { b.removeAttribute('data-fit'); b.classList.remove('pan'); }); queueFit(); });
-    setInterval(() => { if (document.querySelector('.nm-bt:not([data-fit])')) fitMarquees(); }, 2000);
 
     // ------------------------------------------------------------ audio (one shared player)
     let audio = null, cur = null;
@@ -216,7 +184,6 @@
     const expMs = n => { const e = n && n.expireAt; if (!e) return 0; if (e.toMillis) return e.toMillis(); if (e.seconds) return e.seconds * 1000; const t = new Date(e).getTime(); return isNaN(t) ? 0 : t; };
     const isActive = n => hasContent(n) && expMs(n) > Date.now();
     const isReplacing = () => replacing;
-    const canEditSong = () => replacing || !isActive(liveNote);
     function renderReplace() {
         const host = document.getElementById('titaNoteReplaceRow'); if (!host) return;
         injectStyles();
@@ -230,7 +197,7 @@
     function setReplaceNote(note, keepMode) {
         liveNote = note || null;
         if (!keepMode) { replacing = false; replaceSnap = null; }
-        renderRow(); renderReplace();
+        renderReplace();
     }
     async function startReplace() {
         if (replacing) return;
@@ -255,20 +222,19 @@
     const syncDraft = m => { if (ov) return; setDraft(m); };      // live snapshot: never overwrite a song that is being picked
     const getDraft = () => draft;
     function getDraftForSave() {
-        const src = canEditSong() ? draft : clean(liveNote && liveNote.music);     // locked: the live note keeps the song it has
-        if (!src) return null;
-        return { provider: 'itunes', trackId: src.trackId, title: src.title, artist: src.artist, thumbnail: src.thumbnail || '', previewUrl: src.previewUrl, previewSec: src.previewSec, startSec: 0, clipSec: src.previewSec };
+        if (!draft) return null;
+        return { provider: 'itunes', trackId: draft.trackId, title: draft.title, artist: draft.artist, thumbnail: draft.thumbnail || '', previewUrl: draft.previewUrl, previewSec: draft.previewSec, startSec: 0, clipSec: draft.previewSec };
     }
     function renderRow() {
         const host = document.getElementById('titaNoteMusicRow'); if (!host) return;
         injectStyles();
         host.className = 'nm-row';
-        const locked = !canEditSong();      // a live note's song can't be edited (or added) until Replace is tapped
-        if (!draft) { host.innerHTML = locked ? '' : '<button type="button" class="nm-add" data-nm="open"><span class="nm-addic"><i class="fas fa-music"></i></span><span>Add a song</span><small>optional</small></button>'; return; }
+        if (!draft) { host.innerHTML = '<button type="button" class="nm-add" data-nm="open"><span class="nm-addic"><i class="fas fa-music"></i></span><span>Add a song</span><small>optional</small></button>'; return; }
         const art = S().safeImgUrl(draft.thumbnail);
         host.innerHTML = `<div class="nm-chip">${art ? `<img class="nm-art" src="${esc(art)}" alt="">` : '<span class="nm-ph"><i class="fas fa-music"></i></span>'}
             <div class="nm-meta"><b>${esc(draft.title)}</b><small>${esc(draft.artist || 'Song')} · ${fmt(draft.previewSec)}</small></div>
-            ${locked ? '' : '<button type="button" class="nm-ib" data-nm="open" aria-label="Change song"><i class="fas fa-pen"></i></button><button type="button" class="nm-ib danger" data-nm="remove" aria-label="Remove song"><i class="fas fa-xmark"></i></button>'}</div>`;
+            <button type="button" class="nm-ib" data-nm="open" aria-label="Change song"><i class="fas fa-pen"></i></button>
+            <button type="button" class="nm-ib danger" data-nm="remove" aria-label="Remove song"><i class="fas fa-xmark"></i></button></div>`;
     }
 
     // ------------------------------------------------------------ picker panel
@@ -329,7 +295,7 @@
         if (t) {
             const a = t.dataset.nm;
             e.stopPropagation();      // these buttons re-render themselves; pages would then see a detached target as "outside" and close Tita Tima
-            if (a === 'open') { if (canEditSong()) openPicker(); }
+            if (a === 'open') openPicker();
             else if (a === 'cancel') cancelPanel();
             else if (a === 'done') donePanel();
             else if (a === 'replace') startReplace();
@@ -367,7 +333,6 @@
         setTimeout(() => el.classList.remove('nm-flash'), 1400);
     }
     function initRows() { renderRow(); renderReplace(); }
-    injectStyles();
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initRows); else initRows();
 
     // ------------------------------------------------------------ comment threads
@@ -406,6 +371,6 @@
         }
     };
 
-    window.NoteMusic = { hasContent, bubbleText, bubbleInner, fitMarquees, idOf, clean, cardHtml, injectStyles, canEditSong, setDraft, syncDraft, isReplacing, isActive, setReplaceNote, getDraft, getDraftForSave, mountModal, mountDetail, stop, openPicker };
+    window.NoteMusic = { hasContent, bubbleText, idOf, clean, cardHtml, injectStyles, setDraft, syncDraft, isReplacing, isActive, setReplaceNote, getDraft, getDraftForSave, mountModal, mountDetail, stop, openPicker };
     window.Threads = Threads;
 })();
