@@ -2298,6 +2298,7 @@
                         <span class="count" id="usersCount">0 users</span>
                         <button class="batch-toggle-btn" onclick="toggleBatchMode('users')"><i class="fas fa-check-square"></i> Select</button>
                         <button class="btn-secondary" onclick="loadAppUsers(true)"><i class="fas fa-sync"></i> Refresh</button>
+                        <button class="btn-secondary" onclick="publishMemberCards(true)" title="Publish name, bio, occupation, interests and photo of every member for visitors"><i class="fas fa-bullhorn"></i> Publish member cards</button>
                     </div>
                 </div>
                 <div class="batch-toolbar" id="batchToolbar-users">
@@ -6305,12 +6306,27 @@
                     allAppUsers = [];
                     snapshot.forEach(doc => allAppUsers.push({ id: doc.id, ...doc.data() }));
                     dataCache.users = allAppUsers.slice();
+                    publishMemberCards(false);       // keep the visitor-visible member cards in step with the real accounts
                     if (countEl) countEl.textContent = `${allAppUsers.length} user${allAppUsers.length !== 1 ? 's' : ''}`;
                     filterUsers();
                 }, (error) => {
                     console.error('Error loading app users:', error);
                     if (grid) grid.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Could not load users</h3><p>${escapeHtml(error.message)}</p></div>`;
                 });
+        }
+
+        // visitors see a small public card per member (publicProfiles). Writes the ones that are missing / changed.
+        let _publishingCards = false;
+        async function publishMemberCards(manual) {
+            if (_publishingCards || !window.PublicProfile || !allAppUsers.length) return;
+            _publishingCards = true;
+            try {
+                const n = await PublicProfile.backfill(allAppUsers);
+                if (manual) showToast(n ? `Published ${n} member card${n !== 1 ? 's' : ''} for visitors.` : 'All member cards are already up to date.', 'success');
+            } catch (e) {
+                console.warn('publishMemberCards', e);
+                if (manual) showToast('Could not publish member cards: ' + (e.message || e.code), 'error');
+            } finally { _publishingCards = false; }
         }
 
         function filterUsers() {
@@ -6808,6 +6824,7 @@
     <script src="idle-logout.js"></script>
     <script src="stories-shared.js?v=1.11.1"></script>
     <script src="notes-music.js?v=1.1.0"></script>
-    <script src="stories.js?v=1.11.0"></script>
+    <script src="stories.js?v=1.12.0"></script>
+    <script src="public-profile.js?v=1.0.0"></script>
 </body>
 </html>

@@ -2183,10 +2183,9 @@
 
             const linkBtn = document.getElementById('annViewLinkBtn');
             const linkLabel = document.getElementById('annViewLinkLabel');
-            const safeLink = safeHttpUrl(item.link, true);
-            if (safeLink) {
+            if (item.link) {
                 linkBtn.style.display = 'inline-flex';
-                linkBtn.href = safeLink;
+                linkBtn.href = item.link;
                 linkLabel.textContent = item.linkLabel || 'Open Link';
             } else linkBtn.style.display = 'none';
 
@@ -2521,37 +2520,23 @@
 
         async function getCurrentUserProfileCached(user) {
             const CACHE_KEY = 'timawa_me_' + user.uid;
-            window.__profileFromCache = false;
             try {
                 const raw = sessionStorage.getItem(CACHE_KEY);
                 if (raw) {
                     const parsed = JSON.parse(raw);
-                    if (parsed && parsed.v === 2 && parsed.uid === user.uid && (Date.now() - parsed.t) < USER_PROFILE_CACHE_TTL && parsed.data && typeof parsed.data === 'object') {
-                        window.__profileFromCache = true;
+                    if (parsed && parsed.uid === user.uid && (Date.now() - parsed.t) < USER_PROFILE_CACHE_TTL) {
                         return parsed.data;
                     }
                 }
             } catch (e) {}
             const doc = await db.collection('users').doc(user.uid).get();
-            const data = doc.exists ? plainData(doc.data() || {}) : {};
-            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ v: 2, uid: user.uid, t: Date.now(), data })); } catch (e) {}
+            const data = doc.data() || {};
+            try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ uid: user.uid, t: Date.now(), data })); } catch (e) {}
             return data;
         }
 
         function saveCurrentUserProfileCache(uid, data) {
-            try { sessionStorage.setItem('timawa_me_' + uid, JSON.stringify({ v: 2, uid, t: Date.now(), data })); } catch (e) {}
-        }
-
-        // the cached copy shows instantly; this quietly checks Firestore and refreshes the page if another device changed the profile
-        async function refreshProfileFromServer() {
-            if (!window.__profileFromCache || !currentUser || isOffline) return;
-            try {
-                const doc = await db.collection('users').doc(currentUser.uid).get({ source: 'server' });
-                const fresh = doc.exists ? plainData(doc.data() || {}) : {};
-                const same = JSON.stringify(fresh) === JSON.stringify(profileData || {});
-                saveCurrentUserProfileCache(currentUser.uid, fresh);
-                if (!same && !window.__profileFormDirty) { window.__profileFromCache = false; await loadProfile(); }
-            } catch (e) { /* offline or blocked: keep the cached copy */ }
+            try { sessionStorage.setItem('timawa_me_' + uid, JSON.stringify({ uid, t: Date.now(), data })); } catch (e) {}
         }
 
         function compressImage(file, maxWidth = 400, maxHeight = 400, quality = 0.7) {
@@ -2589,64 +2574,6 @@
             });
         }
 
-        // ---------- v11: data-safety helpers (Firebase / Cloudinary) ----------
-        // only http(s) (and optionally mailto) links are ever used as href / src; relative links are resolved
-        function safeHttpUrl(u, allowMailto) {
-            if (typeof u !== 'string') return '';
-            const s = u.trim(); if (!s) return '';
-            try {
-                const x = new URL(s, location.href);
-                if (x.protocol === 'https:' || x.protocol === 'http:' || (allowMailto && x.protocol === 'mailto:')) return x.href;
-            } catch (e) { /* invalid */ }
-            return '';
-        }
-        // Cloudinary: serve a small, auto-format, face-aware 400px avatar (the stored URL is left untouched)
-        function cdnAvatar(u) {
-            const s = safeHttpUrl(u); if (!s) return '';
-            if (/^https:\/\/res\.cloudinary\.com\//.test(s) && s.indexOf('/image/upload/') > -1 && !/\/upload\/[^/]*(f_auto|w_\d)/.test(s)) {
-                return s.replace('/image/upload/', '/image/upload/f_auto,q_auto,w_400,h_400,c_fill,g_auto/');
-            }
-            return s;
-        }
-        // builds the avatar from DOM nodes (never from a string of HTML, so a bad photoURL cannot break the page) and re-attaches the uploader
-        function renderAvatar(src) {
-            const el = document.getElementById('heroAvatar'); if (!el) return;
-            const url = (typeof src === 'string' && src.indexOf('data:image/') === 0) ? src : cdnAvatar(src);
-            if (!url) return;
-            el.textContent = '';
-            const img = document.createElement('img');
-            img.alt = 'Profile Photo'; img.decoding = 'async'; img.src = url;
-            img.onerror = function () {
-                img.remove();
-                if (!el.querySelector('#heroAvatarText')) { const sp = document.createElement('span'); sp.id = 'heroAvatarText'; sp.textContent = '👤'; el.insertBefore(sp, el.firstChild); }
-            };
-            const label = document.createElement('label'); label.className = 'photo-upload-btn-overlay';
-            const ic = document.createElement('i'); ic.className = 'fas fa-camera';
-            const input = document.createElement('input'); input.type = 'file'; input.id = 'photoInput'; input.accept = 'image/*';
-            input.addEventListener('change', handlePhotoUpload);
-            label.appendChild(ic); label.appendChild(input);
-            el.appendChild(img); el.appendChild(label);
-        }
-        // Firestore Timestamps -> plain { seconds, nanoseconds } so the same shape is used live and from the cache
-        function plainData(v) {
-            if (v === null || v === undefined) return v;
-            if (typeof v.toMillis === 'function') return { seconds: Math.floor(v.toMillis() / 1000), nanoseconds: 0 };
-            if (Array.isArray(v)) return v.map(plainData);
-            if (typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype) { const o = {}; Object.keys(v).forEach(k => { o[k] = plainData(v[k]); }); return o; }
-            return v;
-        }
-        // the theme written to Firestore is never a holiday-only theme (those exist for one day): store the last regular theme instead
-        function themeForStorage(t, existing) {
-            const key = t && t.preset, mode = t && t.mode === 'dark' ? 'dark' : 'light';
-            if (key && window.HOLIDAY_THEMES && window.HOLIDAY_THEMES[key]) {
-                let prev = null; try { prev = localStorage.getItem('tw_hol_prev'); } catch (e) { /* ignore */ }
-                const fromDoc = existing && existing.preset;
-                const pick = [prev, fromDoc, DEFAULT_THEME.preset].filter(k => k && THEMES[k] && !(window.HOLIDAY_THEMES && window.HOLIDAY_THEMES[k]))[0] || DEFAULT_THEME.preset;
-                return { preset: pick, mode: mode };
-            }
-            return { preset: key, mode: mode };
-        }
-
         async function uploadToCloudinary(file) {
             const formData = new FormData();
             formData.append('file', file);
@@ -2654,28 +2581,20 @@
             formData.append('folder', 't-imawa/profiles');
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
-                let settled = false;
-                const finish = (fn, v) => { if (settled) return; settled = true; fn(v); };
                 xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`);
-                xhr.timeout = 60000;
                 xhr.upload.onprogress = function(event) {
-                    if (event.lengthComputable) updateProgress((event.loaded / event.total) * 100);
-                };
-                xhr.onload = function() {
-                    let body = null;
-                    try { body = JSON.parse(xhr.responseText); } catch (e) { /* not JSON */ }
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        const url = safeHttpUrl(body && (body.secure_url || body.url));
-                        if (url) { updateProgress(100); finish(resolve, url); }
-                        else finish(reject, new Error('The upload finished but no image address was returned.'));
-                    } else {
-                        const msg = (body && body.error && body.error.message) || xhr.statusText || ('HTTP ' + xhr.status);
-                        finish(reject, new Error('Upload failed: ' + msg));
+                    if (event.lengthComputable) {
+                        const percent = (event.loaded / event.total) * 100;
+                        updateProgress(percent);
                     }
                 };
-                xhr.onerror = function() { finish(reject, new Error('Network error while uploading.')); };
-                xhr.ontimeout = function() { finish(reject, new Error('The upload timed out. Please try again.')); };
-                xhr.onabort = function() { finish(reject, new Error('Upload cancelled.')); };
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response.secure_url);
+                    } else reject(new Error('Upload failed: ' + xhr.statusText));
+                };
+                xhr.onerror = function() { reject(new Error('Network error')); };
                 xhr.send(formData);
             });
         }
@@ -2705,9 +2624,8 @@
                 showMessage('⚠️ Using offline mode. Please check your connection.', 'error');
             }
 
-            try { loadAnnouncements(user); } catch (e) { console.warn('announcements:', e && e.message); }
-            Promise.resolve().then(() => runAutoGeneration(user, profileData || {})).catch(e => console.warn('auto-generation:', e && e.message));
-            refreshProfileFromServer();
+            loadAnnouncements(user);
+            runAutoGeneration(user, profileData || {});
 
             if (profileData?.createdAt) {
                 try {
@@ -2716,7 +2634,7 @@
                         : new Date(profileData.createdAt);
                     const ageSeconds = (Date.now() - created.getTime()) / 1000;
                     if (ageSeconds < 90) {
-                        Promise.resolve(autoGenerateMemberAnnouncement(user, profileData)).catch(() => {});
+                        autoGenerateMemberAnnouncement(user, profileData);
                     }
                 } catch (e) {}
             }
@@ -2772,7 +2690,8 @@
 
                     if (profileData.photoURL) {
                         const avatarEl = document.getElementById('heroAvatar');
-                        renderAvatar(profileData.photoURL);
+                        avatarEl.innerHTML = `<img src="${profileData.photoURL}" alt="Profile Photo" /><label class="photo-upload-btn-overlay"><i class="fas fa-camera"></i><input type="file" id="photoInput" accept="image/*" /></label>`;
+                        document.getElementById('photoInput').addEventListener('change', handlePhotoUpload);
                     }
                 } else {
                     const displayName = currentUser.displayName || currentUser.email || 'User';
@@ -2835,12 +2754,12 @@
 
                         if (profileData.photoURL) {
                             const avatarEl = document.getElementById('heroAvatar');
-                            renderAvatar(profileData.photoURL);
+                            avatarEl.innerHTML = `<img src="${profileData.photoURL}" alt="Profile Photo" /><label class="photo-upload-btn-overlay"><i class="fas fa-camera"></i><input type="file" id="photoInput" accept="image/*" /></label>`;
+                            document.getElementById('photoInput').addEventListener('change', handlePhotoUpload);
                         }
                         updateLoveLifeBadge(profileData.loveLife || '');
                         updateStatusBadge(profileData.status || 'available');
                         selectedFile = null;
-                        window.__profileFormDirty = false;
                         showToast('Form reset to saved values', 'info');
                     }
                 }
@@ -2877,11 +2796,6 @@
         async function handlePhotoUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
-            if (!/^image\//.test(file.type || '')) {
-                showToast('Please choose an image file (JPG, PNG, WebP…).', 'warn');
-                try { e.target.value = ''; } catch (er) {}
-                return;
-            }
             if (file.size > 10 * 1024 * 1024) {
                 showToast('Photo too large! Please choose an image under 10MB.', 'warn');
                 return;
@@ -2893,7 +2807,8 @@
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const avatarEl = document.getElementById('heroAvatar');
-                    renderAvatar(event.target.result);
+                    avatarEl.innerHTML = `<img src="${event.target.result}" alt="Profile Photo" /><label class="photo-upload-btn-overlay"><i class="fas fa-camera"></i><input type="file" id="photoInput" accept="image/*" /></label>`;
+                    document.getElementById('photoInput').addEventListener('change', handlePhotoUpload);
                     hideMessage();
                     showToast(`Photo compressed (${Math.round(compressedFile.size / 1024)}KB). Click Save to upload.`, 'info', 3500);
                 };
@@ -2957,8 +2872,7 @@
             const existingFacebook = existing.facebook || '';
 
             const existingTheme = existing.theme || DEFAULT_THEME;
-            const themeToSave = themeForStorage(selectedTheme, existing.theme);   // never a one-day holiday theme
-            const themeChanged = existingTheme.preset !== themeToSave.preset || existingTheme.mode !== themeToSave.mode;
+            const themeChanged = existingTheme.preset !== selectedTheme.preset || existingTheme.mode !== selectedTheme.mode;
             const hasPhotoChange = !!selectedFile;
 
             const hasChanges =
@@ -3012,23 +2926,21 @@
                     bio, location, birthday, occupation, interests,
                     status, loveLife: loveLife || '',
                     instagram, twitter, tiktok, facebook,
-                    theme: { preset: themeToSave.preset, mode: themeToSave.mode },
+                    theme: { preset: selectedTheme.preset, mode: selectedTheme.mode },
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 if (photoURL) updateData.photoURL = photoURL;
 
                 await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
-                // the server-timestamp sentinel must not be kept in memory / cache: use a plain timestamp-shaped value instead
-                const mergedData = { ...(profileData || {}), ...updateData, updatedAt: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 } };
+                const mergedData = { ...(profileData || {}), ...updateData };
                 saveCurrentUserProfileCache(currentUser.uid, mergedData);
 
                 persistThemeLocally(selectedTheme);
                 broadcastThemeChange(selectedTheme);
 
-                const authPatch = {};
-                if (displayName && displayName !== currentUser.displayName) authPatch.displayName = displayName;
-                if (photoURL) authPatch.photoURL = photoURL;
-                if (Object.keys(authPatch).length) { try { await currentUser.updateProfile(authPatch); } catch (authError) {} }
+                if (displayName && displayName !== currentUser.displayName) {
+                    try { await currentUser.updateProfile({ displayName: displayName }); } catch (authError) {}
+                }
 
                 document.getElementById('heroName').textContent = displayName || currentUser.displayName || 'User';
                 document.getElementById('heroNameDisplay').textContent = displayName || currentUser.displayName || 'User';
@@ -3037,10 +2949,8 @@
                 else document.getElementById('heroRole').textContent = '🌟 Community Member';
                 updateStatusBadge(status);
                 updateLoveLifeBadge(loveLife);
-                if (photoURL) renderAvatar(photoURL);
 
                 profileData = mergedData;
-                window.__profileFormDirty = false;
                 selectedFile = null;
                 document.getElementById('photoInput').value = '';
 
@@ -3065,9 +2975,6 @@
             }
         });
 
-        ['input', 'change'].forEach(function (evn) {
-            document.getElementById('profileForm').addEventListener(evn, function () { window.__profileFormDirty = true; });
-        });
         document.getElementById('status').addEventListener('change', function() { updateStatusBadge(this.value); });
         document.getElementById('loveLife').addEventListener('change', function() { updateLoveLifeBadge(this.value); });
 
@@ -3098,16 +3005,11 @@
             });
         });
 
-        // v9: passive listener + only touch the style when the state actually changes (smoother scrolling on phones)
-        (function () {
-            let navShadowOn = false;
-            window.addEventListener('scroll', function() {
-                const on = window.scrollY > 50;
-                if (on === navShadowOn) return;
-                navShadowOn = on;
-                document.getElementById('navbar').style.boxShadow = on ? '0 4px 20px rgba(0,0,0,0.05)' : 'none';
-            }, { passive: true });
-        })();
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) navbar.style.boxShadow = '0 4px 20px rgba(0,0,0,0.05)';
+            else navbar.style.boxShadow = 'none';
+        });
 
         async function logout() {
             showConfirm({
@@ -3192,11 +3094,12 @@
         function renderThemeGrid() {
             const grid = document.getElementById('themeGrid');
             if (!grid) return;
-            const btn = (key) => {
+
+            let html = '';
+            Object.keys(THEMES).forEach(key => {
                 const theme = THEMES[key];
-                if (!theme) return '';
                 const isActive = key === (selectedTheme && selectedTheme.preset);
-                return `
+                html += `
                     <button type="button"
                             class="theme-preset ${isActive ? 'active' : ''}"
                             data-theme="${key}"
@@ -3207,16 +3110,7 @@
                         ${theme.sub ? `<div class="preset-sub">${theme.sub}</div>` : ''}
                     </button>
                 `;
-            };
-            // v10: grouped by THEME_GROUPS (Happening today / Cozy Places / Seasons / Holidays); anything ungrouped goes last
-            let html = '', used = {};
-            (window.THEME_GROUPS || []).forEach(g => {
-                const keys = (g.keys || []).filter(k => THEMES[k]);
-                if (!keys.length) return;
-                html += `<div class="tw-gtitle">${g.emoji || ''} ${g.label}</div>`;
-                keys.forEach(k => { used[k] = 1; html += btn(k); });
             });
-            Object.keys(THEMES).forEach(k => { if (!used[k]) html += btn(k); });
             grid.innerHTML = html;
         }
 
@@ -3340,5 +3234,6 @@
 
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
+    <script src="public-profile.js?v=1.0.0"></script>
 </body>
 </html>

@@ -32,7 +32,7 @@
     const CFG = Object.assign({
         IMAGE_MS: 6000,
         MAX_REPLY: 300,
-        composerSrc: 'stories-composer.js?v=1.11.0',
+        composerSrc: 'stories-composer.js?v=1.12.0',
         spotifySearchUrl: '',
         allowStoryDelete: true,        // pages can override via window.STORIES_CONFIG
         allowStoryViews: true          // pages can override via window.STORIES_CONFIG
@@ -54,6 +54,7 @@
         unsub: null,
         seen: {},
         chatEnabled: null,
+        guest: false,        // visitor (not signed in): can WATCH stories, nothing else
         skew: 0              // serverTime - deviceTime (ms), learnt after publish
     };
     const now = () => Date.now() + st.skew;
@@ -71,7 +72,7 @@
     }
 
     // ------------------------------------------------------------ seen state (per device)
-    function seenKey() { return 'timawa_story_seen_' + (st.me ? st.me.uid : 'x'); }
+    function seenKey() { return 'timawa_story_seen_' + (st.me ? st.me.uid : 'guest'); }
     function loadSeen() {
         try { st.seen = JSON.parse(localStorage.getItem(seenKey()) || '{}') || {}; } catch (e) { st.seen = {}; }
         const cut = Date.now() - 36 * 3600 * 1000;
@@ -157,7 +158,7 @@
     }
     function stopListener() { if (st.unsub) { st.unsub(); st.unsub = null; } }
     // drop expired stories from the UI without waiting for a snapshot
-    setInterval(() => { if (st.me && rawCache.length) { const before = st.stories.length; rebuild(rawCache); if (V.open && V.story && !isActive(V.story)) renderSlide(); void before; } }, 30000);
+    setInterval(() => { if ((st.me || st.guest) && rawCache.length) { const before = st.stories.length; rebuild(rawCache); if (V.open && V.story && !isActive(V.story)) renderSlide(); void before; } }, 30000);
 
     function chatEnabled() {
         if (st.chatEnabled !== null) return Promise.resolve(st.chatEnabled);
@@ -177,10 +178,22 @@
         const ms = mounts();
         if (!ms.length) return;
         ms.forEach(m => {
-            if (!st.me) { m.hidden = true; m.innerHTML = ''; return; }
+            if (!st.me && !st.guest) { m.hidden = true; m.innerHTML = ''; return; }
+            if (st.guest && (st.error || (st.loaded && !st.groups.length))) { m.hidden = true; m.innerHTML = ''; m._sig = ''; return; }    // visitors only see the row when there is something to watch
             m.hidden = false;
             m.classList.add('st-row-wrap');
             let h = '<div class="st-row" role="list" aria-label="Stories">';
+            if (st.guest) {
+                if (!st.loaded) h += '<div class="st-item st-skel"><span class="st-ring"><span class="st-av"></span></span><span class="st-name">&nbsp;</span></div>'.repeat(3);
+                st.groups.forEach(g => {
+                    h += `<button class="st-item" data-uid="${S.esc(g.uid)}" data-act="view" role="listitem" aria-label="View ${S.esc(g.name)}'s story">
+                            <span class="st-ring ${g.hasUnseen ? '' : 'seen'}"><span class="st-av">${avatarHtml(g.name, g.photo)}</span></span>
+                            <span class="st-name">${S.esc(g.name.split(' ')[0])}</span></button>`;
+                });
+                h += '<a class="st-row-msg" href="login.html" style="align-self:center;margin-left:auto;font-weight:700;text-decoration:none;white-space:nowrap;color:var(--theme-primary);">Sign in to react &amp; reply</a></div>';
+                if (m._sig === h) return;
+                m._sig = h; m.innerHTML = h; return;
+            }
             const mine = st.byOwner.get(st.me.uid);
             h += `<div class="st-item" role="listitem"><button class="st-item" data-uid="${S.esc(st.me.uid)}" data-act="${mine ? 'view' : 'add'}" aria-label="${mine ? 'View your story' : 'Add story'}" style="width:74px">
                     <span class="st-ring ${mine ? (mine.hasUnseen ? '' : 'seen') : 'none'}"><span class="st-av">${avatarHtml(st.me.name, st.me.photo)}</span></span>
@@ -218,7 +231,7 @@
         document.querySelectorAll('.member-card[data-member-id]').forEach(card => {
             const av = card.querySelector(AV_SEL.replace(/\.member-card /g, ''));
             if (!av) return;
-            const g = st.me ? st.byOwner.get(card.dataset.memberId) : null;
+            const g = (st.me || st.guest) ? st.byOwner.get(card.dataset.memberId) : null;
             av.classList.toggle('st-has', !!g);
             av.classList.toggle('st-seen', !!g && !g.hasUnseen);
         });
@@ -430,7 +443,7 @@
     }
 
     function openUser(uid, startId, originEl) {
-        if (!st.me) { toast('Sign in to view stories', 'warn'); return; }
+        if (!st.me && !st.guest) return;
         const g = st.byOwner.get(uid);
         if (!g) { toast('This story has expired.', 'info'); return; }
         buildViewer();
@@ -529,7 +542,7 @@
         if (V.si >= g.stories.length) V.si = g.stories.length - 1;
         const s = g.stories[V.si];
         V.story = s;
-        const q = V.q, mine = s.ownerUid === st.me.uid;
+        const q = V.q, mine = !!st.me && s.ownerUid === st.me.uid;
 
         // header + progress
         q.av.innerHTML = avatarHtml(g.name, g.photo, 80);
@@ -711,6 +724,11 @@
     // ---- reactions + replies
     function renderInteract(s, mine) {
         const q = V.q;
+        if (!st.me) {                       // visitor: watch only. No reactions, replies or view tracking.
+            q.form.hidden = true; q.own.hidden = true; q.sum.innerHTML = '';
+            q.note.hidden = false; q.note.innerHTML = '<a href="login.html" style="color:inherit;font-weight:700;">Sign in</a> to react and reply';
+            return;
+        }
         q.form.hidden = mine; q.own.hidden = !mine; q.note.hidden = true;
         q.input.hidden = false; q.heart.hidden = false; q.send.hidden = false;
         buildTray();
@@ -979,7 +997,14 @@
 
     // ------------------------------------------------------------ boot
     async function onUser(user) {
-        if (!user) { st.me = null; stopListener(); st.stories = []; st.groups = []; st.byOwner = new Map(); rawCache = []; renderRow(); decorateAvatars(); return; }
+        if (!user) {
+            // visitor mode: stories are public to watch (rules: stories read = true)
+            st.me = null; st.guest = true; stopListener(); st.stories = []; st.groups = []; st.byOwner = new Map(); rawCache = [];
+            loadSeen(); renderRow(); decorateAvatars();
+            startListener(); watchGrid(); setTimeout(watchGrid, 1500); setTimeout(watchGrid, 4000);
+            return;
+        }
+        st.guest = false;
         let name = user.displayName || user.email || 'Member', photo = user.photoURL || '';
         st.me = { uid: user.uid, name, photo };
         loadSeen(); renderRow();
@@ -992,5 +1017,5 @@
     function boot() { auth.onAuthStateChanged(onUser); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 
-    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.11.0' };
+    window.Stories = { openUser, openById, openComposer, renderChatRef, isActive: id => !!st.stories.find(s => s.id === id), refreshChatRefs, version: '1.12.0' };
 })();
