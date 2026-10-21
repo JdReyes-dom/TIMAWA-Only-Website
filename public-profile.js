@@ -1,7 +1,7 @@
 /* ================================================================
    public-profile.js · TIMAWA — keeps each member's PUBLIC card up to date   (v1.0)
-   index.html shows visitors (not signed in) only: name, bio, occupation,
-   interests and photo. Those five fields live in `publicProfiles/{uid}`;
+   index.html shows visitors (not signed in) every member's public card: only name, bio,
+   occupation, interests and photo. Those five fields live in `publicProfiles/{uid}`;
    the full profile (email, birthday, location, socials ...) stays in `users`.
 
    - Load this on every signed-in page (dashboard, profile, calendar, admin).

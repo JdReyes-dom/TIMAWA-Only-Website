@@ -3012,6 +3012,7 @@
         let membersSource = null;            // 'publicProfiles' (visitors) | 'users' (members)
         let _lastAuthIsUser = false;
         const sectionRetry = {};
+        let membersWatchdog = null;
 
         // visible state when a section can't be loaded (never leave a blank / endless "Loading…" area)
         function sectionErrorHtml(key, icon, title, hint, retryFn) {
@@ -7200,52 +7201,59 @@ function startHighlightReply(commentId, authorName) {
             }
         }
 
-function loadMembersFromFirestore(source, tried) {
+        function loadMembersFromFirestore(source, tried) {
             const grid = document.getElementById('membersGrid');
             const countDisplay = document.getElementById('memberCountDisplay');
-            // visitors read the public cards, members read the full profiles; if the first source has nothing / is refused, try the other once
+            // members: full profiles (users). visitors: the public card of every member (name, bio, occupation, interests, photo).
             const src = source || (isUserLoggedIn ? 'users' : 'publicProfiles');
+            const guestMode = src === 'publicProfiles' && !isUserLoggedIn;
             const seen = (tried || []).concat(src);
             const other = src === 'users' ? 'publicProfiles' : 'users';
-            const canTryOther = seen.indexOf(other) === -1;
+            const canTryOther = !guestMode && seen.indexOf(other) === -1;     // visitors never fall back to the full list
             membersSource = src;
 
             if (unsubscribeMembers) unsubscribeMembers();
+            clearTimeout(membersWatchdog);
+            let answered = false;
+            const failView = () => {
+                countDisplay.textContent = '';
+                grid.innerHTML = sectionErrorHtml('members', 'users', 'Members can\'t be loaded', SECTION_ERR_HINT, () => { grid.innerHTML = '<div class="empty-state"><p>Loading members...</p></div>'; loadMembersFromFirestore(); });
+            };
+            // never leave the section on "Loading members..." (slow network / blocked request)
+            membersWatchdog = setTimeout(() => { if (!answered) { console.warn('Members did not load in time'); failView(); } }, 10000);
 
-            unsubscribeMembers = db.collection(src)
-                .orderBy('displayName', 'asc')
-                .limit(MEMBERS_LIMIT)
-                .onSnapshot((snapshot) => {
-                    if (snapshot.empty) {
-                        if (canTryOther) { loadMembersFromFirestore(other, seen); return; }
-                        grid.innerHTML = `
-                            <div class="empty-state">
-                                <i class="fas fa-users"></i>
-                                <h3>No Members Yet</h3>
-                                <p>Be the first to join!</p>
-                            </div>
-                        `;
-                        countDisplay.textContent = '0 members';
-                        return;
-                    }
-
-                    const count = snapshot.size;
-                    countDisplay.textContent = `${count} amazing member${count !== 1 ? 's' : ''}`;
-
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        userProfileCache[doc.id] = { id: doc.id, ...data };
-                        carouselItemCache[`users:${doc.id}`] = { id: doc.id, ...data };
-                    });
-
-                    renderMembersSection();
-                    if (src === 'users') syncMyPublicProfile();
-                }, (error) => {
-                    console.error('Error loading members (' + src + '):', error);
+            unsubscribeMembers = db.collection(src).orderBy('displayName', 'asc').limit(MEMBERS_LIMIT).onSnapshot((snapshot) => {
+                answered = true; clearTimeout(membersWatchdog);
+                if (snapshot.empty) {
                     if (canTryOther) { loadMembersFromFirestore(other, seen); return; }
-                    countDisplay.textContent = '';
-                    grid.innerHTML = sectionErrorHtml('members', 'users', 'Members can\'t be loaded', SECTION_ERR_HINT, () => { grid.innerHTML = '<div class="empty-state"><p>Loading members...</p></div>'; loadMembersFromFirestore(); });
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <h3>No Members Yet</h3>
+                            <p>${isUserLoggedIn ? 'Be the first to join!' : 'Members will appear here soon.'}</p>
+                        </div>
+                    `;
+                    countDisplay.textContent = '0 members';
+                    return;
+                }
+
+                const count = snapshot.size;
+                countDisplay.textContent = `${count} amazing member${count !== 1 ? 's' : ''}`;
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    userProfileCache[doc.id] = { id: doc.id, ...data };
+                    carouselItemCache[`users:${doc.id}`] = { id: doc.id, ...data };
                 });
+
+                renderMembersSection();
+                if (src === 'users') syncMyPublicProfile();
+            }, (error) => {
+                answered = true; clearTimeout(membersWatchdog);
+                console.error('Error loading members (' + src + '):', error);
+                if (canTryOther) { loadMembersFromFirestore(other, seen); return; }
+                failView();
+            });
         }
 
         function renderMembersSection() {
@@ -7266,7 +7274,7 @@ function loadMembersFromFirestore(source, tried) {
                         <div class="empty-state">
                             <i class="fas fa-users"></i>
                             <h3>No Members Yet</h3>
-                            <p>Be the first to join!</p>
+                            <p>${isUserLoggedIn ? 'Be the first to join!' : 'Members will appear here soon.'}</p>
                         </div>
                     `;
                 }
