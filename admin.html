@@ -3410,7 +3410,8 @@
             const t = readAdminThemeFromStorage();
             if (t && (!selectedAdminTheme || t.preset !== selectedAdminTheme.preset || t.mode !== selectedAdminTheme.mode)) { selectedAdminTheme = t; applyAdminTheme(t); }
         }
-        window.addEventListener('storage', e => { if (e.key === ADMIN_THEME_STORAGE_KEY) refreshAdminThemeFromStorage(); });
+        window.addEventListener('storage', e => { if (e.key === ADMIN_THEME_STORAGE_KEY || e.key === 'timawa_admin_theme_at') refreshAdminThemeFromStorage(); });
+        window.addEventListener('focus', refreshAdminThemeFromStorage);
         window.addEventListener('pageshow', refreshAdminThemeFromStorage);        // back / forward cache
         document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshAdminThemeFromStorage(); });
 
@@ -6061,13 +6062,17 @@
 
                 // Admin theme. The cached profile above can be up to 5 minutes old and used to OVERWRITE a theme that was
                 // just saved in the admin profile, so ask the server for the current value instead.
-                let savedTheme = data?.adminTheme || null;
+                let savedTheme = data?.adminTheme || null, savedAt = Number(data?.adminThemeAt) || 0;
                 try {
                     const fresh = await db.collection('users').doc(user.uid).get();
-                    if (fresh.exists) savedTheme = fresh.data().adminTheme || null;
+                    if (fresh.exists) { savedTheme = fresh.data().adminTheme || null; savedAt = Number(fresh.data().adminThemeAt) || 0; }
                 } catch (e) { /* offline: fall back to the cached copy */ }
-                if (savedTheme && ADMIN_THEMES[savedTheme.preset]) {
+                // Whichever was changed LAST wins: a pick made on the profile page a moment ago (still being written to the
+                // server) beats the older server copy; a newer choice made on another device beats this browser's copy.
+                const localAt = Number(localStorage.getItem('timawa_admin_theme_at')) || 0;
+                if (savedTheme && ADMIN_THEMES[savedTheme.preset] && !(localAt > savedAt && readAdminThemeFromStorage())) {
                     setAdminTheme({ preset: savedTheme.preset, mode: savedTheme.mode === 'dark' ? 'dark' : 'light' });
+                    if (savedAt) { try { localStorage.setItem('timawa_admin_theme_at', String(savedAt)); } catch (e) { /* ignore */ } }
                 }
 
                 loadAllData();
