@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- ═══ PWA: installable app + activity notifications ═══ -->
+    <meta name="theme-color" content="#1089d3" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="TIMAWA" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="stylesheet" href="pwa.css" />
     <title>TIMAWA - Dashboard</title>
 
     <!-- Firebase SDKs -->
@@ -3412,51 +3422,31 @@
             object-fit: cover;
         }
 
-        /* note bubble: above the profile picture (same idea as the homepage), follows the active theme */
         .member-card .note-bubble {
-            position: relative;
-            align-self: flex-start;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 6px;
-            background: var(--theme-card);
-            border: 1.5px solid color-mix(in srgb, var(--theme-primary) 38%, var(--theme-border));
-            color: var(--theme-text);
-            padding: 7px 16px;
-            border-radius: 22px;
-            font-size: 12.5px;
-            font-weight: 700;
-            text-align: center;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+            border: 1.5px solid #fed7aa;
+            color: #9a3412;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 600;
             max-width: 100%;
-            margin: 0 0 16px;
+            margin-bottom: 8px;
             cursor: pointer;
-            box-shadow: 0 6px 16px color-mix(in srgb, var(--theme-primary) 16%, transparent);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        /* little tail pointing down at the profile picture */
-        .member-card .note-bubble::after {
-            content: '';
-            position: absolute;
-            left: 26px;
-            bottom: -7px;
-            width: 12px;
-            height: 12px;
-            background: var(--theme-card);
-            border-right: 1.5px solid color-mix(in srgb, var(--theme-primary) 38%, var(--theme-border));
-            border-bottom: 1.5px solid color-mix(in srgb, var(--theme-primary) 38%, var(--theme-border));
-            border-radius: 0 0 4px 0;
-            transform: rotate(45deg);
+            transition: all 0.2s ease;
+            overflow: hidden;
         }
 
         .member-card .note-bubble:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-primary) 24%, transparent);
+            background: #ffedd5;
+            transform: scale(1.02);
         }
 
         .member-card .note-bubble i {
-            color: var(--theme-primary);
+            color: #ea580c;
             font-size: 11px;
             flex-shrink: 0;
         }
@@ -3466,15 +3456,14 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             min-width: 0;
-            text-align: center;
         }
 
         .member-card .note-bubble .note-comment-count {
             display: inline-flex;
             align-items: center;
             gap: 3px;
-            background: color-mix(in srgb, var(--theme-primary) 14%, transparent);
-            color: var(--theme-primary);
+            background: rgba(234, 88, 12, 0.12);
+            color: #ea580c;
             padding: 1px 8px;
             border-radius: 50px;
             font-size: 10px;
@@ -7049,6 +7038,8 @@
             opacity: 0.3;
         }
     </style>
+    <link rel="stylesheet" href="mobile-nav.css?v=1.1.0" />
+    <link rel="stylesheet" href="tita-panel.css?v=2.0.0" />
 </head>
 <body>
     <!-- ===== LOADING OVERLAY ===== -->
@@ -7135,8 +7126,9 @@
             <li><a href="index.html#things-to-do">Activities</a></li>
             <li><a href="index.html#members-section">Members</a></li>
             <li><a href="calendar.html"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
-            <li><a href="dashboard.html" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="dashboard.html" class="active"><i class="fas fa-house"></i> Dashboard</a></li>
             <li><a href="profile.html"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="squad-wheel.html"><i class="fas fa-dharmachakra"></i> Spin &amp; Poll</a></li>
             <li class="announcement-li">
                 <div class="announcement-wrapper">
                     <button class="announcement-bell" id="announcementBell" onclick="toggleAnnouncementPopup(event, 'desktop')" aria-label="Announcements">
@@ -7670,7 +7662,8 @@
         <span class="tita-badge" id="titaBadge"></span>
     </button>
 
-    <div id="titaPanel" class="tita-panel" role="dialog" aria-labelledby="titaTitle">
+        <div id="titaPanel" class="tita-panel" role="dialog" aria-modal="true" aria-labelledby="titaTitle">
+        <div class="tita-grab" id="titaGrab" aria-hidden="true"><span></span></div>
         <div class="tita-header">
             <div class="tita-avatar"><i class="fas fa-robot"></i></div>
             <div class="tita-header-info">
@@ -7679,38 +7672,31 @@
             </div>
             <button class="tita-close" onclick="closeTitaPanel()" aria-label="Close"><i class="fas fa-times"></i></button>
         </div>
+
         <div class="tita-body">
-                    <div class="tita-body">
             <div class="tita-greeting" id="titaGreeting">
-                Kumusta, <strong id="titaGreetName">ka-TIMAWA</strong>! Gusto mo ba mag-update ng status? Fill out lang dito, save agad. 😊
+                Kumusta, <strong id="titaGreetName">ka-TIMAWA</strong>! Note, status at location lang ang kaya kong i-update. 😊
             </div>
 
             <div class="tita-field">
-                <label>
-                    <i class="fas fa-comment-dots"></i> Quick Note
-                    <span style="color:var(--theme-text-dim);font-weight:500;text-transform:none;letter-spacing:0;font-size:11px;">(60 chars · expires in 24h)</span>
-                </label>
-                <input type="text" id="titaNote" placeholder="Coffee later? ☕" maxlength="60" />
-                <div style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;text-align:right;">
-                    <span id="titaNoteCount">0</span>/60
+                <div class="tita-label-row">
+                    <label for="titaNote"><i class="fas fa-comment-dots"></i> Quick Note</label>
+                    <span class="tita-counter"><span id="titaNoteCount">0</span>/60</span>
                 </div>
+                <input type="text" id="titaNote" placeholder="Coffee later? ☕" maxlength="60" autocomplete="off" />
                 <div id="titaNoteMusicRow"></div>
                 <div id="titaNoteReplaceRow"></div>
-                <div id="titaNoteStatus" style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;display:none;">
+                <div class="tita-note-meta" id="titaNoteStatus" style="display:none;">
                     <i class="fas fa-clock"></i> <span></span>
                 </div>
-                <div style="font-size:10px;color:#dc2626;margin-top:6px;">
-                    <i class="fas fa-exclamation-triangle"></i> Changing the note text or song will delete all existing replies.
-                </div>
+                <p class="tita-warning">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>Changing the note text or song deletes its existing replies.</span>
+                </p>
             </div>
 
             <div class="tita-field">
-                <label><i class="fas fa-user"></i> Username</label>
-                <input type="text" id="titaUsername" placeholder="Your display name" />
-            </div>
-
-            <div class="tita-field">
-                <label><i class="fas fa-circle"></i> Status</label>
+                <label for="titaStatus"><i class="fas fa-circle"></i> Status</label>
                 <select id="titaStatus">
                     <option value="available">🟢 Available</option>
                     <option value="busy">🔴 Busy</option>
@@ -7719,18 +7705,8 @@
                 </select>
             </div>
 
-            <div class="tita-field">
-                <label><i class="fas fa-heart-broken"></i> Love Life</label>
-                <select id="titaLoveLife">
-                    <option value="">— Not set —</option>
-                    <option value="Single">💔 Single</option>
-                    <option value="MU">💞 MU (Mutual Understanding)</option>
-                    <option value="Married">💍 Married</option>
-                </select>
-            </div>
-
             <div class="tita-field" id="titaLocationField">
-                <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                <label for="titaLocationSelect"><i class="fas fa-map-marker-alt"></i> Location</label>
                 <select id="titaLocationSelect" onchange="titaToggleCustomLocation()">
                     <option value="">Select your location</option>
                     <option value="Alabat, Quezon">📍 Alabat, Quezon</option>
@@ -7742,27 +7718,23 @@
                     <option value="Santa Cruz, Laguna">📍 Santa Cruz, Laguna</option>
                     <option value="custom">✏️ Others (Customize)</option>
                 </select>
-                <input type="text" id="titaCustomLocation" placeholder="Enter your location..." style="display:none; margin-top:6px;" />
+                <input type="text" id="titaCustomLocation" class="tita-custom-loc" placeholder="Enter your location..." autocomplete="off" />
             </div>
 
-            <div class="tita-field">
-                <label><i class="fas fa-info-circle"></i> Bio</label>
-                <textarea id="titaBio" placeholder="Short bio / about me..."></textarea>
-            </div>
+            <a class="tita-profile-link" href="profile.html">
+                <i class="fas fa-user-pen"></i>
+                <span>Name, bio, love life &amp; socials — edit in your profile</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
 
-            <div class="tita-field">
-                <label><i class="fas fa-heart"></i> Interests</label>
-                <input type="text" id="titaInterests" placeholder="e.g., Coffee, Gaming, Travel" />
-            </div>
+            <div class="tita-status-msg" id="titaStatusMsg" role="status"></div>
+        </div>
 
-            <div class="tita-actions">
-                <button class="tita-save" id="titaSaveBtn" onclick="titaSaveProfile()">
-                    <i class="fas fa-save"></i> Save Changes
-                </button>
-                <button class="tita-cancel" onclick="closeTitaPanel()">Close</button>
-            </div>
-
-            <div class="tita-status-msg" id="titaStatusMsg"></div>
+        <div class="tita-footer">
+            <button class="tita-save" id="titaSaveBtn" onclick="titaSaveProfile()">
+                <i class="fas fa-check"></i> Save changes
+            </button>
+            <button class="tita-cancel" onclick="closeTitaPanel()">Close</button>
         </div>
     </div>
 
@@ -15385,7 +15357,6 @@ function startReplyTo(commentId, authorName) {
 
                 html += `
                     <div class="member-card" data-member-id="${memberIdSafe}">
-                        ${noteBubbleHtml}
                         <div class="card-top">
                             <div class="avatar">
                                 ${avatarThumb ? `<img src="${avatarThumb}" alt="${escapeAttr(name)}" loading="lazy" decoding="async" />` : escapeHtml(initials)}
@@ -15401,6 +15372,7 @@ function startReplyTo(commentId, authorName) {
                                 <span class="status-label">${statusInfo.label}</span>
                             </div>
                         </div>
+                        ${noteBubbleHtml}
                         ${bio ? `<div class="bio">${escapeHtml(bio)}</div>` : ''}
                         ${interests.length ? `<div class="interests">${interests.map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>` : ''}
                         <div class="social-icons">
@@ -15711,32 +15683,38 @@ function startReplyTo(commentId, authorName) {
                 return;
             }
             const panel = document.getElementById('titaPanel');
-            panel.classList.add('open');
+            if (!panel) return;
             populateTitaFields();
-            document.getElementById('titaBadge').classList.remove('show');
+            panel.classList.add('open');
+            panel.setAttribute('aria-hidden', 'false');
+            try { document.getElementById('titaGrab').style.transform = ''; } catch (e) { /* ignore */ }
+            const badge = document.getElementById('titaBadge');
+            if (badge) badge.classList.remove('show');
+            // no auto-focus: keeps the mobile keyboard closed until the user taps a field
         }
 
         function closeTitaPanel() {
             const panel = document.getElementById('titaPanel');
-            if (panel) panel.classList.remove('open');
+            if (!panel) return;
+            panel.classList.remove('open');
+            panel.setAttribute('aria-hidden', 'true');
+            try { document.getElementById('titaGrab').style.transform = ''; } catch (e) { /* ignore */ }
         }
 
         function populateTitaFields() {
-            if (!titaUserData) return;
+            if (!titaUserData || !titaCurrentUser) return;
 
             const name = titaUserData.displayName || titaCurrentUser.displayName || titaCurrentUser.email || '';
             const status = titaUserData.status || 'available';
-            const loveLife = titaUserData.loveLife || '';
             const location = titaUserData.location || '';
-            const bio = titaUserData.bio || '';
-            const interests = titaUserData.interests || '';
 
-            document.getElementById('titaGreetName').textContent = name.split(' ')[0] || 'ka-TIMAWA';
-            document.getElementById('titaUsername').value = name;
-            document.getElementById('titaStatus').value = status;
-            document.getElementById('titaLoveLife').value = loveLife;
-            document.getElementById('titaBio').value = bio;
-            document.getElementById('titaInterests').value = interests;
+            const greetEl = document.getElementById('titaGreetName');
+            if (greetEl) greetEl.textContent = String(name).split(' ')[0] || 'ka-TIMAWA';
+
+            const statusEl = document.getElementById('titaStatus');
+            if (statusEl) {
+                statusEl.value = ['available', 'busy', 'away', 'dnd'].indexOf(status) >= 0 ? status : 'available';
+            }
 
             const presetLocations = [
                 'Alabat, Quezon', 'Perez, Quezon', 'Atimonan, Quezon',
@@ -15745,18 +15723,20 @@ function startReplyTo(commentId, authorName) {
             const selectEl = document.getElementById('titaLocationSelect');
             const customEl = document.getElementById('titaCustomLocation');
 
-            if (!location) {
-                selectEl.value = '';
-                customEl.value = '';
-                customEl.style.display = 'none';
-            } else if (presetLocations.includes(location)) {
-                selectEl.value = location;
-                customEl.value = '';
-                customEl.style.display = 'none';
-            } else {
-                selectEl.value = 'custom';
-                customEl.value = location;
-                customEl.style.display = 'block';
+            if (selectEl && customEl) {
+                if (!location) {
+                    selectEl.value = '';
+                    customEl.value = '';
+                    customEl.classList.remove('show');
+                } else if (presetLocations.indexOf(location) >= 0) {
+                    selectEl.value = location;
+                    customEl.value = '';
+                    customEl.classList.remove('show');
+                } else {
+                    selectEl.value = 'custom';
+                    customEl.value = location;
+                    customEl.classList.add('show');
+                }
             }
 
             const note = notesCache[titaCurrentUser.uid];
@@ -15764,28 +15744,37 @@ function startReplyTo(commentId, authorName) {
             const noteCount = document.getElementById('titaNoteCount');
             const noteStatus = document.getElementById('titaNoteStatus');
 
-            NoteMusic.setDraft(note ? note.music : null);
-            NoteMusic.setReplaceNote(note);
-            if (note && NoteMusic.hasContent(note)) {
-                noteInput.value = note.text || '';
-                noteCount.textContent = (note.text || '').length;
+            if (window.NoteMusic) {
+                NoteMusic.setDraft(note ? note.music : null);
+                NoteMusic.setReplaceNote(note);
+            }
+
+            if (note && window.NoteMusic && NoteMusic.hasContent(note)) {
+                if (noteInput) noteInput.value = note.text || '';
+                if (noteCount) noteCount.textContent = (note.text || '').length;
+
                 const expireAt = note.expireAt
                     ? (note.expireAt.seconds ? new Date(note.expireAt.seconds * 1000) : new Date(note.expireAt))
                     : null;
-                if (expireAt) {
+                if (expireAt && noteStatus) {
                     const hoursLeft = Math.max(0, Math.ceil((expireAt - new Date()) / (1000 * 60 * 60)));
-                    noteStatus.style.display = 'block';
+                    noteStatus.style.display = 'flex';
                     noteStatus.querySelector('span').textContent = `Current note expires in ${hoursLeft}h`;
+                } else if (noteStatus) {
+                    noteStatus.style.display = 'none';
                 }
             } else {
-                noteInput.value = '';
-                noteCount.textContent = '0';
-                noteStatus.style.display = 'none';
+                if (noteInput) noteInput.value = '';
+                if (noteCount) noteCount.textContent = '0';
+                if (noteStatus) noteStatus.style.display = 'none';
             }
 
             const msg = document.getElementById('titaStatusMsg');
-            msg.classList.remove('show');
-            msg.textContent = '';
+            if (msg) {
+                msg.classList.remove('show');
+                msg.textContent = '';
+                msg.className = 'tita-status-msg';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -15800,11 +15789,14 @@ function startReplyTo(commentId, authorName) {
         function titaToggleCustomLocation() {
             const select = document.getElementById('titaLocationSelect');
             const custom = document.getElementById('titaCustomLocation');
+            if (!select || !custom) return;
             if (select.value === 'custom') {
-                custom.style.display = 'block';
+                custom.style.display = '';
+                custom.classList.add('show');
                 custom.focus();
             } else {
-                custom.style.display = 'none';
+                custom.classList.remove('show');
+                custom.style.display = '';
                 custom.value = '';
             }
         }
@@ -15824,47 +15816,44 @@ function startReplyTo(commentId, authorName) {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
             try {
-                const displayName = document.getElementById('titaUsername').value.trim();
-                const status = document.getElementById('titaStatus').value;
-                const loveLife = document.getElementById('titaLoveLife').value;
-                const locationSelect = document.getElementById('titaLocationSelect').value;
-                const customLocation = document.getElementById('titaCustomLocation').value.trim();
-                const bio = document.getElementById('titaBio').value.trim();
-                const interests = document.getElementById('titaInterests').value.trim();
+                // ---- the only three things Tita Tima may change ----
+                const statusEl = document.getElementById('titaStatus');
+                const status = statusEl ? statusEl.value : 'available';
 
-                let location = '';
-                if (locationSelect === 'custom') {
-                    location = customLocation;
-                } else {
-                    location = locationSelect;
-                }
+                const locationSelectEl = document.getElementById('titaLocationSelect');
+                const customLocationEl = document.getElementById('titaCustomLocation');
+                const locationSelect = locationSelectEl ? locationSelectEl.value : '';
+                const customLocation = customLocationEl ? customLocationEl.value.trim() : '';
+                const location = locationSelect === 'custom' ? customLocation : locationSelect;
 
-                if (!displayName) {
+                if (locationSelect === 'custom' && !customLocation) {
                     showTitaSaveConfirmModal({
-                        title: 'Missing Username',
-                        message: 'Username cannot be empty. Please enter a display name.',
+                        title: 'Location needed',
+                        message: 'Type your location first, or pick one from the list.',
                         type: 'warn'
                     });
-                    btn.disabled = false;
-                    btn.innerHTML = originalHtml;
                     return;
                 }
 
-                titaShowStatus('📝 Saving changes...', 'info');
+                const displayName = titaUserData.displayName || titaCurrentUser.displayName || titaCurrentUser.email || '';
+
+                titaShowStatus('Saving your update…', 'info');
 
                 const updateData = {
-                    displayName,
                     status,
-                    loveLife,
                     location,
-                    bio,
-                    interests,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
+                // ★ Only status + location are written here (merge keeps everything else intact).
+                //   Name, bio, love life, interests and socials live in profile.html.
                 await db.collection('users').doc(titaCurrentUser.uid).set(updateData, { merge: true });
 
-                const noteText = document.getElementById('titaNote').value.trim().slice(0, 60);
+                // ============================================================
+                // ★ NOTE — only touched when the note text or song changed
+                // ============================================================
+                const noteInputEl = document.getElementById('titaNote');
+                const noteText = (noteInputEl ? noteInputEl.value.trim() : '').slice(0, 60);
                 const noteRef = db.collection('notes').doc(titaCurrentUser.uid);
                 const existingNote = notesCache[titaCurrentUser.uid];
                 const oldText = existingNote?.text || '';
@@ -15880,9 +15869,11 @@ function startReplyTo(commentId, authorName) {
                     }
 
                     if (willHaveNote) {
-                        // Replace (or no live note) = brand-new note with a full 24h; a plain edit keeps the current expiry
+                        // A brand-new / replaced note gets a fresh 24h; a plain edit keeps its expiry.
                         const freshNote = replacing || !NoteMusic.isActive(existingNote);
-                        const expireTs = freshNote ? firebase.firestore.Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)) : existingNote.expireAt;
+                        const expireTs = freshNote
+                            ? firebase.firestore.Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000))
+                            : existingNote.expireAt;
 
                         await noteRef.set({
                             uid: titaCurrentUser.uid,
@@ -15896,15 +15887,17 @@ function startReplyTo(commentId, authorName) {
                             expireAt: expireTs,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        NoteMusic.setReplaceNote({ text: noteText, music: noteMusic, expireAt: expireTs });     // ends Replace, shows the button for the new note
+                        NoteMusic.setReplaceNote({ text: noteText, music: noteMusic, expireAt: expireTs });
                     } else {
                         try { await noteRef.delete(); } catch (e) { /* ignore */ }
                         NoteMusic.setReplaceNote(null);
                     }
                 }
+                // Not changed: the note keeps its createdAt / expireAt and its replies.
 
                 titaUserData = { ...titaUserData, ...updateData };
                 userProfileCache[titaCurrentUser.uid] = { id: titaCurrentUser.uid, ...titaUserData };
+                renderMembersGridFromCache();
 
                 try {
                     sessionStorage.setItem('timawa_me_' + titaCurrentUser.uid, JSON.stringify({
@@ -15914,24 +15907,17 @@ function startReplyTo(commentId, authorName) {
                     }));
                 } catch (e) { /* ignore */ }
 
-                if (displayName !== titaCurrentUser.displayName) {
-                    try {
-                        await titaCurrentUser.updateProfile({ displayName });
-                    } catch (authErr) {
-                        console.warn('Could not update auth display name:', authErr);
-                    }
-                }
-
-                renderMembersGridFromCache();
+                titaShowStatus('Saved! ✨', 'success');
 
                 showTitaSaveConfirmModal({
                     title: 'Saved!',
-                    message: 'Anong susunod, \'nak? Your profile has been updated.',
+                    message: 'Status, location at note updated na. Anong susunod, \'nak?',
                     type: 'success'
                 });
 
             } catch (err) {
                 console.error('Tita save error:', err);
+                titaShowStatus('Could not save. Please try again.', 'error');
                 showTitaSaveConfirmModal({
                     title: 'Save Failed',
                     message: err.message || 'Something went wrong while saving. Please try again.',
@@ -15942,6 +15928,51 @@ function startReplyTo(commentId, authorName) {
                 btn.innerHTML = originalHtml;
             }
         }
+
+        // ★ Mobile bottom sheet: drag the grab handle down to dismiss.
+        (function initTitaSheet() {
+            function boot() {
+                const grab = document.getElementById('titaGrab');
+                const panel = document.getElementById('titaPanel');
+                if (!grab || !panel) return;
+
+                let startY = 0;
+                let delta = 0;
+                let dragging = false;
+
+                grab.addEventListener('touchstart', function (e) {
+                    if (!panel.classList.contains('open')) return;
+                    dragging = true;
+                    startY = e.touches[0].clientY;
+                    delta = 0;
+                    panel.style.transition = 'none';
+                    grab.style.cursor = 'grabbing';
+                }, { passive: true });
+
+                grab.addEventListener('touchmove', function (e) {
+                    if (!dragging) return;
+                    delta = Math.max(0, e.touches[0].clientY - startY);
+                    panel.style.transform = 'translateY(' + delta + 'px)';
+                }, { passive: true });
+
+                function endDrag() {
+                    if (!dragging) return;
+                    dragging = false;
+                    panel.style.transition = '';
+                    grab.style.cursor = '';
+                    panel.style.transform = '';
+                    if (delta > 96) closeTitaPanel();
+                }
+                grab.addEventListener('touchend', endDrag);
+                grab.addEventListener('touchcancel', endDrag);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', boot);
+            } else {
+                boot();
+            }
+        })();
 
         document.addEventListener('DOMContentLoaded', function() {
             const wrapper = document.getElementById('highlightsCarousel');
@@ -16026,10 +16057,15 @@ function startReplyTo(commentId, authorName) {
     </script>
 
     <script src="stories-shared.js?v=1.11.1"></script>
-    <script src="notes-music.js?v=1.2.0"></script>
+    <script src="notes-music.js?v=1.1.0"></script>
     <script src="stories.js?v=1.12.0"></script>
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
     <script src="public-profile.js?v=1.2.0"></script>
+    <script src="mobile-nav.js?v=1.1.0"></script>
+
+    <!-- ═══ PWA runtime (service worker, install prompt, push) ═══ -->
+    <script src="push-config.js"></script>
+    <script src="pwa.js" defer></script>
 </body>
 </html>

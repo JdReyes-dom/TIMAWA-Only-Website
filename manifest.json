@@ -1,0 +1,53 @@
+{
+  "name": "TIMAWA — Squad Hub",
+  "short_name": "TIMAWA",
+  "description": "The barkada hub: highlights, activities, coffee spins, places and the shared calendar.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./dashboard.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "launch_handler": { "client_mode": "navigate-existing" },
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#1089d3",
+  "categories": ["social", "lifestyle", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Calendar",
+      "short_name": "Calendar",
+      "description": "Open the squad calendar",
+      "url": "./calendar.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Jump to the highlights feed",
+      "url": "./dashboard.html",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

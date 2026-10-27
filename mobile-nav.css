@@ -1,0 +1,350 @@
+/* ================================================================
+   mobile-nav.css  ·  TIMAWA
+   Modern slide-in drawer for the mobile burger menu.
+
+   Loaded AFTER each page's own <style> so it can fully restyle the
+   menu without touching the desktop navbar markup.
+
+   The drawer itself is built by mobile-nav.js (cloned rows from the
+   page's own #navLinks), so links, active states and inline handlers
+   keep working. Only the presentation lives here.
+   ================================================================ */
+
+/* ---------- burger button (morphs into an X) ---------- */
+.mnav-burger {
+    width: 22px;
+    height: 16px;
+    position: relative;
+    display: inline-block;
+}
+.mnav-burger i {
+    position: absolute;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    border-radius: 2px;
+    background: currentColor;
+    transition: transform .34s cubic-bezier(.22, 1, .36, 1),
+                width .34s cubic-bezier(.22, 1, .36, 1),
+                opacity .2s ease,
+                top .34s cubic-bezier(.22, 1, .36, 1);
+}
+.mnav-burger i:nth-child(1) { top: 0; }
+.mnav-burger i:nth-child(2) { top: 7px; width: 74%; }
+.mnav-burger i:nth-child(3) { top: 14px; }
+body.mnav-open .mnav-burger i:nth-child(1) { top: 7px; transform: rotate(45deg); }
+body.mnav-open .mnav-burger i:nth-child(2) { opacity: 0; width: 0; }
+body.mnav-open .mnav-burger i:nth-child(3) { top: 7px; transform: rotate(-45deg); }
+
+.navbar .mobile-toggle {
+    width: 44px;
+    height: 44px;
+    padding: 0 !important;
+    border-radius: 14px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--theme-primary, var(--admin-primary, #7c3aed)) 10%, transparent) !important;
+    color: var(--theme-primary, var(--admin-primary, #7c3aed)) !important;
+    border: 1px solid color-mix(in srgb, var(--theme-primary, var(--admin-primary, #7c3aed)) 18%, transparent) !important;
+    transition: background .25s ease, transform .25s ease, box-shadow .25s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.navbar .mobile-toggle:hover {
+    background: color-mix(in srgb, var(--theme-primary, var(--admin-primary, #7c3aed)) 16%, transparent) !important;
+}
+.navbar .mobile-toggle:active { transform: scale(0.94); }
+body.mnav-open .navbar .mobile-toggle {
+    background: var(--theme-primary, var(--admin-primary, #7c3aed)) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--theme-primary, var(--admin-primary, #7c3aed)) 80%, transparent);
+}
+
+@media (max-width: 768px) {
+    .navbar .mobile-toggle { display: inline-flex; }
+}
+
+/* ---------- backdrop ---------- */
+.mnav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1390;
+    background: rgba(9, 11, 22, 0.48);
+    -webkit-backdrop-filter: blur(6px) saturate(120%);
+    backdrop-filter: blur(6px) saturate(120%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .32s ease;
+}
+.mnav-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ---------- drawer ---------- */
+.mnav-drawer {
+    --mnp: var(--theme-primary, var(--admin-primary, #7c3aed));
+    --mnp2: var(--theme-accent, var(--admin-accent, #8b5cf6));
+    --mn-soft: var(--theme-primary-soft, var(--admin-bg-soft, #f5f3ff));
+    --mn-card: var(--theme-card, var(--admin-card, #ffffff));
+    --mn-text: var(--theme-text, var(--admin-text, #1a1a2e));
+    --mn-muted: var(--theme-text-muted, var(--admin-text-muted, #555));
+    --mn-dim: var(--theme-text-dim, var(--admin-text-dim, #888));
+    --mn-border: var(--theme-border, var(--admin-border, #eef2f7));
+
+    position: fixed;
+    /* sits just under the app bar so the burger's X stays visible and the
+       drawer's own header is never covered (--mnav-top is set by the JS) */
+    top: var(--mnav-top, 78px);
+    right: 10px;
+    bottom: 10px;
+    z-index: 1400;
+    width: min(86vw, 340px);
+    display: flex;
+    flex-direction: column;
+    background: var(--mn-card);
+    color: var(--mn-text);
+    border: 1px solid var(--mn-border);
+    border-radius: 28px;
+    box-shadow: -18px 24px 70px -24px rgba(8, 10, 25, .55),
+                0 0 0 1px color-mix(in srgb, var(--mnp) 8%, transparent);
+    overflow: hidden;
+    transform: translateX(calc(100% + 26px)) scale(0.98);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform .42s cubic-bezier(.22, 1, .36, 1),
+                opacity .26s ease,
+                visibility 0s linear .42s;
+}
+body.mnav-open .mnav-drawer {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform .42s cubic-bezier(.22, 1, .36, 1),
+                opacity .26s ease,
+                visibility 0s;
+}
+
+/* header */
+.mnav-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 18px 16px;
+    background:
+        radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--mnp2) 26%, transparent) 0%, transparent 60%),
+        linear-gradient(135deg, color-mix(in srgb, var(--mnp) 12%, var(--mn-card)) 0%, var(--mn-card) 100%);
+    border-bottom: 1px solid var(--mn-border);
+    flex-shrink: 0;
+}
+.mnav-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--mnp) 0%, var(--mnp2) 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 17px;
+    letter-spacing: .5px;
+    box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--mnp) 80%, transparent);
+    flex-shrink: 0;
+}
+.mnav-head-text { flex: 1; min-width: 0; }
+.mnav-head-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .2px;
+    line-height: 1.2;
+}
+.mnav-head-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--mn-dim);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-top: 2px;
+}
+.mnav-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--mn-border);
+    background: var(--mn-soft);
+    color: var(--mn-muted);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .22s ease;
+    font-family: inherit;
+    flex-shrink: 0;
+}
+.mnav-close:hover { background: var(--mnp); color: #fff; border-color: var(--mnp); transform: rotate(90deg); }
+
+/* items */
+.mnav-items {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 12px 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+.mnav-items::-webkit-scrollbar { width: 5px; }
+.mnav-items::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--mnp) 35%, transparent); border-radius: 99px; }
+
+.mnav-item {
+    --i: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 16px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--mn-text);
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: .1px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: background .2s ease, border-color .2s ease, color .2s ease, transform .34s cubic-bezier(.22, 1, .36, 1), opacity .3s ease;
+}
+body.mnav-open .mnav-item {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: calc(var(--i) * 34ms + 40ms);
+}
+.mnav-item:hover,
+.mnav-item:focus-visible {
+    background: var(--mn-soft);
+    border-color: color-mix(in srgb, var(--mnp) 16%, transparent);
+    color: var(--mnp);
+    outline: none;
+}
+.mnav-item .mnav-ico {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mn-soft);
+    color: var(--mnp);
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: background .2s ease, color .2s ease, transform .25s ease;
+}
+.mnav-item:hover .mnav-ico,
+.mnav-item:focus-visible .mnav-ico {
+    background: var(--mnp);
+    color: #fff;
+    transform: scale(1.04);
+}
+.mnav-item .mnav-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mnav-item .mnav-arrow {
+    font-size: 10px;
+    color: var(--mn-dim);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: all .22s ease;
+}
+.mnav-item:hover .mnav-arrow { opacity: 1; transform: translateX(0); }
+
+.mnav-item.is-active {
+    background: color-mix(in srgb, var(--mnp) 12%, var(--mn-card));
+    border-color: color-mix(in srgb, var(--mnp) 26%, transparent);
+    color: var(--mnp);
+    font-weight: 800;
+}
+.mnav-item.is-active .mnav-ico {
+    background: linear-gradient(135deg, var(--mnp) 0%, var(--mnp2) 100%);
+    color: #fff;
+    box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--mnp) 90%, transparent);
+}
+
+.mnav-item.is-danger {
+    margin-top: 8px;
+    color: #dc2626;
+    background: color-mix(in srgb, #ef4444 6%, transparent);
+    border-color: color-mix(in srgb, #ef4444 14%, transparent);
+}
+.mnav-item.is-danger .mnav-ico { background: #fee2e2; color: #dc2626; }
+.mnav-item.is-danger:hover { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+.mnav-item.is-danger:hover .mnav-ico { background: #dc2626; color: #fff; }
+
+.mnav-sep {
+    height: 1px;
+    margin: 8px 10px;
+    background: linear-gradient(90deg, transparent, var(--mn-border), transparent);
+    flex-shrink: 0;
+}
+
+/* footer */
+.mnav-foot {
+    flex-shrink: 0;
+    padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--mn-border);
+    background: color-mix(in srgb, var(--mnp) 4%, var(--mn-card));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: var(--mn-dim);
+}
+.mnav-foot .mnav-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, .16);
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+body.mnav-lock { overflow: hidden; }
+
+/* keep the mobile bell reachable while the drawer is open */
+body.mnav-on.mnav-open .navbar { z-index: 1410; }
+
+@media (max-width: 768px) {
+    /* the original inline list is only a data source once the drawer exists */
+    body.mnav-on .navbar .nav-links { display: none !important; }
+}
+
+@media (max-width: 380px) {
+    .mnav-drawer { width: calc(100vw - 20px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mnav-drawer,
+    .mnav-item,
+    .mnav-burger i,
+    .mnav-backdrop { transition-duration: .01ms !important; }
+}

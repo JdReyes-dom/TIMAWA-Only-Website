@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ═══ PWA: installable app + activity notifications ═══ -->
+    <meta name="theme-color" content="#1089d3" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="TIMAWA" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="stylesheet" href="pwa.css" />
     <title>TIMAWA - Calendar</title>
 
     <!--
@@ -1902,6 +1912,8 @@
         ::-webkit-scrollbar-track { background: var(--theme-border-soft); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: var(--theme-gradient); border-radius: 10px; }
     </style>
+    <link rel="stylesheet" href="mobile-nav.css?v=1.1.0" />
+    <link rel="stylesheet" href="tita-panel.css?v=2.0.0" />
 </head>
 <body>
     <!-- ===== LOADING OVERLAY ===== -->
@@ -1945,8 +1957,9 @@
             <li><a href="index.html#things-to-do">Activities</a></li>
             <li><a href="index.html#members-section">Members</a></li>
             <li><a href="calendar.html" class="active"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
-            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="dashboard.html"><i class="fas fa-house"></i> Dashboard</a></li>
             <li><a href="profile.html"><i class="fas fa-user"></i> Profile</a></li>
+            <li><a href="squad-wheel.html"><i class="fas fa-dharmachakra"></i> Spin &amp; Poll</a></li>
             <li class="announcement-li">
                 <div class="announcement-wrapper">
                     <button class="announcement-bell" id="announcementBell" onclick="toggleAnnouncementPopup(event, 'desktop')" aria-label="Announcements">
@@ -2317,7 +2330,8 @@
         <span class="tita-badge" id="titaBadge"></span>
     </button>
 
-    <div id="titaPanel" class="tita-panel" role="dialog" aria-labelledby="titaTitle">
+        <div id="titaPanel" class="tita-panel" role="dialog" aria-modal="true" aria-labelledby="titaTitle">
+        <div class="tita-grab" id="titaGrab" aria-hidden="true"><span></span></div>
         <div class="tita-header">
             <div class="tita-avatar"><i class="fas fa-robot"></i></div>
             <div class="tita-header-info">
@@ -2326,38 +2340,31 @@
             </div>
             <button class="tita-close" onclick="closeTitaPanel()" aria-label="Close"><i class="fas fa-times"></i></button>
         </div>
+
         <div class="tita-body">
-                    <div class="tita-body">
             <div class="tita-greeting" id="titaGreeting">
-                Kumusta, <strong id="titaGreetName">ka-TIMAWA</strong>! Gusto mo ba mag-update ng status? Fill out lang dito, save agad. 😊
+                Kumusta, <strong id="titaGreetName">ka-TIMAWA</strong>! Note, status at location lang ang kaya kong i-update. 😊
             </div>
 
             <div class="tita-field">
-                <label>
-                    <i class="fas fa-comment-dots"></i> Quick Note
-                    <span style="color:var(--theme-text-dim);font-weight:500;text-transform:none;letter-spacing:0;font-size:11px;">(60 chars · expires in 24h)</span>
-                </label>
-                <input type="text" id="titaNote" placeholder="Coffee later? ☕" maxlength="60" />
-                <div style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;text-align:right;">
-                    <span id="titaNoteCount">0</span>/60
+                <div class="tita-label-row">
+                    <label for="titaNote"><i class="fas fa-comment-dots"></i> Quick Note</label>
+                    <span class="tita-counter"><span id="titaNoteCount">0</span>/60</span>
                 </div>
+                <input type="text" id="titaNote" placeholder="Coffee later? ☕" maxlength="60" autocomplete="off" />
                 <div id="titaNoteMusicRow"></div>
                 <div id="titaNoteReplaceRow"></div>
-                <div id="titaNoteStatus" style="font-size:11px;color:var(--theme-text-dim);margin-top:4px;display:none;">
+                <div class="tita-note-meta" id="titaNoteStatus" style="display:none;">
                     <i class="fas fa-clock"></i> <span></span>
                 </div>
-                <div style="font-size:10px;color:#dc2626;margin-top:6px;">
-                    <i class="fas fa-exclamation-triangle"></i> Changing the note text or song will delete all existing replies.
-                </div>
+                <p class="tita-warning">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>Changing the note text or song deletes its existing replies.</span>
+                </p>
             </div>
 
             <div class="tita-field">
-                <label><i class="fas fa-user"></i> Username</label>
-                <input type="text" id="titaUsername" placeholder="Your display name" />
-            </div>
-
-            <div class="tita-field">
-                <label><i class="fas fa-circle"></i> Status</label>
+                <label for="titaStatus"><i class="fas fa-circle"></i> Status</label>
                 <select id="titaStatus">
                     <option value="available">🟢 Available</option>
                     <option value="busy">🔴 Busy</option>
@@ -2366,18 +2373,8 @@
                 </select>
             </div>
 
-            <div class="tita-field">
-                <label><i class="fas fa-heart-broken"></i> Love Life</label>
-                <select id="titaLoveLife">
-                    <option value="">— Not set —</option>
-                    <option value="Single">💔 Single</option>
-                    <option value="MU">💞 MU (Mutual Understanding)</option>
-                    <option value="Married">💍 Married</option>
-                </select>
-            </div>
-
             <div class="tita-field" id="titaLocationField">
-                <label><i class="fas fa-map-marker-alt"></i> Location</label>
+                <label for="titaLocationSelect"><i class="fas fa-map-marker-alt"></i> Location</label>
                 <select id="titaLocationSelect" onchange="titaToggleCustomLocation()">
                     <option value="">Select your location</option>
                     <option value="Alabat, Quezon">📍 Alabat, Quezon</option>
@@ -2389,27 +2386,23 @@
                     <option value="Santa Cruz, Laguna">📍 Santa Cruz, Laguna</option>
                     <option value="custom">✏️ Others (Customize)</option>
                 </select>
-                <input type="text" id="titaCustomLocation" placeholder="Enter your location..." style="display:none; margin-top:6px;" />
+                <input type="text" id="titaCustomLocation" class="tita-custom-loc" placeholder="Enter your location..." autocomplete="off" />
             </div>
 
-            <div class="tita-field">
-                <label><i class="fas fa-info-circle"></i> Bio</label>
-                <textarea id="titaBio" placeholder="Short bio / about me..."></textarea>
-            </div>
+            <a class="tita-profile-link" href="profile.html">
+                <i class="fas fa-user-pen"></i>
+                <span>Name, bio, love life &amp; socials — edit in your profile</span>
+                <i class="fas fa-arrow-right"></i>
+            </a>
 
-            <div class="tita-field">
-                <label><i class="fas fa-heart"></i> Interests</label>
-                <input type="text" id="titaInterests" placeholder="e.g., Coffee, Gaming, Travel" />
-            </div>
+            <div class="tita-status-msg" id="titaStatusMsg" role="status"></div>
+        </div>
 
-            <div class="tita-actions">
-                <button class="tita-save" id="titaSaveBtn" onclick="titaSaveProfile()">
-                    <i class="fas fa-save"></i> Save Changes
-                </button>
-                <button class="tita-cancel" onclick="closeTitaPanel()">Close</button>
-            </div>
-
-            <div class="tita-status-msg" id="titaStatusMsg"></div>
+        <div class="tita-footer">
+            <button class="tita-save" id="titaSaveBtn" onclick="titaSaveProfile()">
+                <i class="fas fa-check"></i> Save changes
+            </button>
+            <button class="tita-cancel" onclick="closeTitaPanel()">Close</button>
         </div>
     </div>
 
@@ -4268,32 +4261,38 @@
                 return;
             }
             const panel = document.getElementById('titaPanel');
-            panel.classList.add('open');
+            if (!panel) return;
             populateTitaFields();
-            document.getElementById('titaBadge').classList.remove('show');
-            // Do NOT auto-focus any input — prevents mobile keyboard from popping up
+            panel.classList.add('open');
+            panel.setAttribute('aria-hidden', 'false');
+            try { document.getElementById('titaGrab').style.transform = ''; } catch (e) { /* ignore */ }
+            const badge = document.getElementById('titaBadge');
+            if (badge) badge.classList.remove('show');
+            // no auto-focus: keeps the mobile keyboard closed until the user taps a field
         }
 
         function closeTitaPanel() {
             const panel = document.getElementById('titaPanel');
-            if (panel) panel.classList.remove('open');
+            if (!panel) return;
+            panel.classList.remove('open');
+            panel.setAttribute('aria-hidden', 'true');
+            try { document.getElementById('titaGrab').style.transform = ''; } catch (e) { /* ignore */ }
         }
 
         function populateTitaFields() {
-            if (!titaUserData) return;
+            if (!titaUserData || !titaCurrentUser) return;
+
             const name = titaUserData.displayName || titaCurrentUser.displayName || titaCurrentUser.email || '';
             const status = titaUserData.status || 'available';
-            const loveLife = titaUserData.loveLife || '';
             const location = titaUserData.location || '';
-            const bio = titaUserData.bio || '';
-            const interests = titaUserData.interests || '';
 
-            document.getElementById('titaGreetName').textContent = name.split(' ')[0] || 'ka-TIMAWA';
-            document.getElementById('titaUsername').value = name;
-            document.getElementById('titaStatus').value = status;
-            document.getElementById('titaLoveLife').value = loveLife;
-            document.getElementById('titaBio').value = bio;
-            document.getElementById('titaInterests').value = interests;
+            const greetEl = document.getElementById('titaGreetName');
+            if (greetEl) greetEl.textContent = String(name).split(' ')[0] || 'ka-TIMAWA';
+
+            const statusEl = document.getElementById('titaStatus');
+            if (statusEl) {
+                statusEl.value = ['available', 'busy', 'away', 'dnd'].indexOf(status) >= 0 ? status : 'available';
+            }
 
             const presetLocations = [
                 'Alabat, Quezon', 'Perez, Quezon', 'Atimonan, Quezon',
@@ -4302,12 +4301,20 @@
             const selectEl = document.getElementById('titaLocationSelect');
             const customEl = document.getElementById('titaCustomLocation');
 
-            if (!location) {
-                selectEl.value = ''; customEl.value = ''; customEl.style.display = 'none';
-            } else if (presetLocations.includes(location)) {
-                selectEl.value = location; customEl.value = ''; customEl.style.display = 'none';
-            } else {
-                selectEl.value = 'custom'; customEl.value = location; customEl.style.display = 'block';
+            if (selectEl && customEl) {
+                if (!location) {
+                    selectEl.value = '';
+                    customEl.value = '';
+                    customEl.classList.remove('show');
+                } else if (presetLocations.indexOf(location) >= 0) {
+                    selectEl.value = location;
+                    customEl.value = '';
+                    customEl.classList.remove('show');
+                } else {
+                    selectEl.value = 'custom';
+                    customEl.value = location;
+                    customEl.classList.add('show');
+                }
             }
 
             const note = notesCache[titaCurrentUser.uid];
@@ -4315,26 +4322,37 @@
             const noteCount = document.getElementById('titaNoteCount');
             const noteStatus = document.getElementById('titaNoteStatus');
 
-            NoteMusic.setDraft(note ? note.music : null);
-            NoteMusic.setReplaceNote(note);
-            if (note && NoteMusic.hasContent(note)) {
-                noteInput.value = note.text || '';
-                noteCount.textContent = (note.text || '').length;
+            if (window.NoteMusic) {
+                NoteMusic.setDraft(note ? note.music : null);
+                NoteMusic.setReplaceNote(note);
+            }
+
+            if (note && window.NoteMusic && NoteMusic.hasContent(note)) {
+                if (noteInput) noteInput.value = note.text || '';
+                if (noteCount) noteCount.textContent = (note.text || '').length;
+
                 const expireAt = note.expireAt
                     ? (note.expireAt.seconds ? new Date(note.expireAt.seconds * 1000) : new Date(note.expireAt))
                     : null;
-                if (expireAt) {
+                if (expireAt && noteStatus) {
                     const hoursLeft = Math.max(0, Math.ceil((expireAt - new Date()) / (1000 * 60 * 60)));
-                    noteStatus.style.display = 'block';
+                    noteStatus.style.display = 'flex';
                     noteStatus.querySelector('span').textContent = `Current note expires in ${hoursLeft}h`;
-                } else noteStatus.style.display = 'none';
+                } else if (noteStatus) {
+                    noteStatus.style.display = 'none';
+                }
             } else {
-                noteInput.value = ''; noteCount.textContent = '0'; noteStatus.style.display = 'none';
+                if (noteInput) noteInput.value = '';
+                if (noteCount) noteCount.textContent = '0';
+                if (noteStatus) noteStatus.style.display = 'none';
             }
 
             const msg = document.getElementById('titaStatusMsg');
-            msg.classList.remove('show');
-            msg.textContent = '';
+            if (msg) {
+                msg.classList.remove('show');
+                msg.textContent = '';
+                msg.className = 'tita-status-msg';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -4349,8 +4367,16 @@
         function titaToggleCustomLocation() {
             const select = document.getElementById('titaLocationSelect');
             const custom = document.getElementById('titaCustomLocation');
-            if (select.value === 'custom') { custom.style.display = 'block'; custom.focus(); }
-            else { custom.style.display = 'none'; custom.value = ''; }
+            if (!select || !custom) return;
+            if (select.value === 'custom') {
+                custom.style.display = '';
+                custom.classList.add('show');
+                custom.focus();
+            } else {
+                custom.classList.remove('show');
+                custom.style.display = '';
+                custom.value = '';
+            }
         }
 
         function titaShowStatus(text, type) {
@@ -4368,52 +4394,44 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
             try {
-                const displayName = document.getElementById('titaUsername').value.trim();
-                const status = document.getElementById('titaStatus').value;
-                const loveLife = document.getElementById('titaLoveLife').value;
-                const locationSelect = document.getElementById('titaLocationSelect').value;
-                const customLocation = document.getElementById('titaCustomLocation').value.trim();
-                const bio = document.getElementById('titaBio').value.trim();
-                const interests = document.getElementById('titaInterests').value.trim();
+                // ---- the only three things Tita Tima may change ----
+                const statusEl = document.getElementById('titaStatus');
+                const status = statusEl ? statusEl.value : 'available';
 
-                let location = '';
-                if (locationSelect === 'custom') {
-                    location = customLocation;
-                } else {
-                    location = locationSelect;
-                }
+                const locationSelectEl = document.getElementById('titaLocationSelect');
+                const customLocationEl = document.getElementById('titaCustomLocation');
+                const locationSelect = locationSelectEl ? locationSelectEl.value : '';
+                const customLocation = customLocationEl ? customLocationEl.value.trim() : '';
+                const location = locationSelect === 'custom' ? customLocation : locationSelect;
 
-                if (!displayName) {
+                if (locationSelect === 'custom' && !customLocation) {
                     showTitaSaveConfirmModal({
-                        title: 'Missing Username',
-                        message: 'Username cannot be empty. Please enter a display name.',
+                        title: 'Location needed',
+                        message: 'Type your location first, or pick one from the list.',
                         type: 'warn'
                     });
-                    btn.disabled = false;
-                    btn.innerHTML = originalHtml;
                     return;
                 }
 
-                titaShowStatus('📝 Saving changes...', 'info');
+                const displayName = titaUserData.displayName || titaCurrentUser.displayName || titaCurrentUser.email || '';
+
+                titaShowStatus('Saving your update…', 'info');
 
                 const updateData = {
-                    displayName,
                     status,
-                    loveLife,
                     location,
-                    bio,
-                    interests,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                // ★ NOTE: We deliberately do NOT write theme here.
-                // Only profile.html is allowed to change the theme.
+                // ★ Only status + location are written here (merge keeps everything else intact).
+                //   Name, bio, love life, interests and socials live in profile.html.
                 await db.collection('users').doc(titaCurrentUser.uid).set(updateData, { merge: true });
 
                 // ============================================================
-                // ★ NOTE HANDLING — only touch the note doc if the TEXT or SONG changed
+                // ★ NOTE — only touched when the note text or song changed
                 // ============================================================
-                const noteText = document.getElementById('titaNote').value.trim().slice(0, 60);
+                const noteInputEl = document.getElementById('titaNote');
+                const noteText = (noteInputEl ? noteInputEl.value.trim() : '').slice(0, 60);
                 const noteRef = db.collection('notes').doc(titaCurrentUser.uid);
                 const existingNote = notesCache[titaCurrentUser.uid];
                 const oldText = existingNote?.text || '';
@@ -4424,8 +4442,6 @@
                 const willHaveNote = !!noteText || !!noteMusic;
 
                 if (textChanged) {
-                    // Only purge comments when the note TEXT actually changed.
-                    // calendar.html doesn't define purgeCommentsForNote(), so we inline it.
                     if (hadNote) {
                         try {
                             const snap = await db.collection('noteComments')
@@ -4442,12 +4458,11 @@
                     }
 
                     if (willHaveNote) {
-                        // ★ Always reset the 24h countdown when the note text changes.
-                        // Editing other profile fields (without touching the note) never
-                        // reaches this block, so their remaining time is preserved.
-                        // Replace (or no live note) = brand-new note with a full 24h; a plain edit keeps the current expiry
+                        // A brand-new / replaced note gets a fresh 24h; a plain edit keeps its expiry.
                         const freshNote = replacing || !NoteMusic.isActive(existingNote);
-                        const expireTs = freshNote ? firebase.firestore.Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000)) : existingNote.expireAt;
+                        const expireTs = freshNote
+                            ? firebase.firestore.Timestamp.fromDate(new Date(Date.now() + 24 * 60 * 60 * 1000))
+                            : existingNote.expireAt;
 
                         await noteRef.set({
                             uid: titaCurrentUser.uid,
@@ -4461,17 +4476,16 @@
                             expireAt: expireTs,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        NoteMusic.setReplaceNote({ text: noteText, music: noteMusic, expireAt: expireTs });     // ends Replace, shows the button for the new note
+                        NoteMusic.setReplaceNote({ text: noteText, music: noteMusic, expireAt: expireTs });
                     } else {
-                        // Note text was cleared — remove the note doc
                         try { await noteRef.delete(); } catch (e) { /* ignore */ }
                         NoteMusic.setReplaceNote(null);
                     }
                 }
-                // If textChanged === false, do nothing to the note doc at all.
-                // The note keeps its original createdAt/expireAt and comments stay intact.
+                // Not changed: the note keeps its createdAt / expireAt and its replies.
 
                 titaUserData = { ...titaUserData, ...updateData };
+                // calendar has no member grid to refresh
 
                 try {
                     sessionStorage.setItem('timawa_me_' + titaCurrentUser.uid, JSON.stringify({
@@ -4481,22 +4495,17 @@
                     }));
                 } catch (e) { /* ignore */ }
 
-                if (displayName !== titaCurrentUser.displayName) {
-                    try {
-                        await titaCurrentUser.updateProfile({ displayName });
-                    } catch (authErr) {
-                        console.warn('Could not update auth display name:', authErr);
-                    }
-                }
+                titaShowStatus('Saved! ✨', 'success');
 
                 showTitaSaveConfirmModal({
                     title: 'Saved!',
-                    message: 'Anong susunod, \'nak? Your profile has been updated.',
+                    message: 'Status, location at note updated na. Anong susunod, \'nak?',
                     type: 'success'
                 });
 
             } catch (err) {
                 console.error('Tita save error:', err);
+                titaShowStatus('Could not save. Please try again.', 'error');
                 showTitaSaveConfirmModal({
                     title: 'Save Failed',
                     message: err.message || 'Something went wrong while saving. Please try again.',
@@ -4507,6 +4516,51 @@
                 btn.innerHTML = originalHtml;
             }
         }
+
+        // ★ Mobile bottom sheet: drag the grab handle down to dismiss.
+        (function initTitaSheet() {
+            function boot() {
+                const grab = document.getElementById('titaGrab');
+                const panel = document.getElementById('titaPanel');
+                if (!grab || !panel) return;
+
+                let startY = 0;
+                let delta = 0;
+                let dragging = false;
+
+                grab.addEventListener('touchstart', function (e) {
+                    if (!panel.classList.contains('open')) return;
+                    dragging = true;
+                    startY = e.touches[0].clientY;
+                    delta = 0;
+                    panel.style.transition = 'none';
+                    grab.style.cursor = 'grabbing';
+                }, { passive: true });
+
+                grab.addEventListener('touchmove', function (e) {
+                    if (!dragging) return;
+                    delta = Math.max(0, e.touches[0].clientY - startY);
+                    panel.style.transform = 'translateY(' + delta + 'px)';
+                }, { passive: true });
+
+                function endDrag() {
+                    if (!dragging) return;
+                    dragging = false;
+                    panel.style.transition = '';
+                    grab.style.cursor = '';
+                    panel.style.transform = '';
+                    if (delta > 96) closeTitaPanel();
+                }
+                grab.addEventListener('touchend', endDrag);
+                grab.addEventListener('touchcancel', endDrag);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', boot);
+            } else {
+                boot();
+            }
+        })();
 
         window.addEventListener('resize', function() {
             const popup = document.getElementById('announcementPopup');
@@ -4525,5 +4579,10 @@
     <script src="idle-logout.js"></script>
     <script src="visit-tracker.js"></script>
     <script src="public-profile.js?v=1.2.0"></script>
+    <script src="mobile-nav.js?v=1.1.0"></script>
+
+    <!-- ═══ PWA runtime (service worker, install prompt, push) ═══ -->
+    <script src="push-config.js"></script>
+    <script src="pwa.js" defer></script>
 </body>
 </html>

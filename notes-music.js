@@ -57,15 +57,14 @@
         .nm-replacing button{border:0;border-radius:10px;padding:7px 12px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;background:var(--theme-bg-soft,#f3f4f6);color:var(--theme-text,#1a1a2e);flex:0 0 auto}
         .nm-replace:focus-visible,.nm-replacing button:focus-visible{outline:2px solid var(--theme-primary,#1089d3);outline-offset:2px}
         /* member note bubble with a song: title (pans when too long) / artist / text */
-        .member-card .note-bubble.has-music,.member-card .member-note-bubble.has-music{align-items:center;justify-content:center;gap:8px;border-radius:16px;padding:7px 12px;white-space:normal;text-overflow:clip;text-align:center}
+        .member-card .note-bubble.has-music,.member-card .member-note-bubble.has-music{align-items:center;gap:8px;border-radius:16px;padding:7px 12px;white-space:normal;text-overflow:clip}
         .member-card .has-music .nm-bi{font-size:13px;flex:0 0 auto}
-        .member-card .has-music .nm-bub{display:flex;flex-direction:column;align-items:center;min-width:0;width:max-content;max-width:min(170px,100%);line-height:1.25;text-align:center;overflow:hidden}
-        .member-card .has-music .nm-bt{display:block;width:100%;overflow:hidden;white-space:nowrap;font-weight:800;font-size:12.5px;text-overflow:clip;text-align:center}
+        .member-card .has-music .nm-bub{display:flex;flex-direction:column;align-items:flex-start;min-width:0;width:max-content;max-width:min(170px,100%);line-height:1.25;text-align:left;overflow:hidden}
+        .member-card .has-music .nm-bt{display:block;width:100%;overflow:hidden;white-space:nowrap;font-weight:800;font-size:12.5px;text-overflow:clip}
         .member-card .has-music .nm-marq{display:inline-block;white-space:nowrap;overflow:visible;text-overflow:clip}
-        .member-card .has-music .nm-bt.pan{text-align:left}
         .member-card .has-music .nm-bt.pan .nm-marq{animation:nmPan var(--pan-t,6s) ease-in-out infinite alternate;will-change:transform}
-        .member-card .has-music .nm-ba{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;opacity:.8;text-align:center}
-        .member-card .has-music .nm-bx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;font-size:12px;font-weight:600;margin-top:2px;word-break:break-word;text-overflow:clip;text-align:center}
+        .member-card .has-music .nm-ba{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:600;opacity:.8}
+        .member-card .has-music .nm-bx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;font-size:12px;font-weight:600;margin-top:2px;word-break:break-word;text-overflow:clip}
         @keyframes nmPan{0%,14%{transform:translateX(0)}86%,100%{transform:translateX(calc(var(--pan,0) * -1px))}}
         /* picker panel */
         .nm-ov{position:fixed;inset:0;z-index:10120;display:flex;align-items:center;justify-content:center;padding:16px;font-family:inherit}

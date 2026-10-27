@@ -20,7 +20,7 @@
         sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
         texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar',
         mpos: { x: 0.5, y: 0.54, scale: 1, rot: 0 },
-        mt: { scale: 1, x: 0, y: 0 }, pan: null, shCollapsed: false, muteVideo: false, autoMuted: false,
+        mt: { scale: 1, x: 0, y: 0 }, pan: null, shCollapsed: false,
         mSel: false, dragS: null,
         query: '', spq: '', changing: false,
         hist: [], preview: false, xhr: null, busy: false, results: [], msg: '', searching: false, playing: '', drag: null, lastTap: null, tl: null
@@ -141,7 +141,7 @@
             sheet: null, items: [], video: null, layout: '', fit: 'fill', dur: MIN_DUR,
             texts: [], sel: null, caption: '', track: null, spotify: null, mstyle: 'bar',
             mpos: { x: 0.5, y: 0.54, scale: 1, rot: 0 },
-            mt: { scale: 1, x: 0, y: 0 }, pan: null, shCollapsed: false, muteVideo: false, autoMuted: false,
+            mt: { scale: 1, x: 0, y: 0 }, pan: null, shCollapsed: false,
             mSel: false, dragS: null,
             query: '', spq: '', changing: false,
             hist: [], preview: false, busy: false, results: [], msg: '', searching: false, playing: '', tl: null
@@ -215,10 +215,8 @@
         const n = M.items.length;
         q.mw.className = 'st-media-wrap' + (n > 1 ? ' collage' : (M.fit === 'fit' ? ' fit' : ''));
         if (M.video) {
-            const v = document.createElement('video'); v.src = M.video.url; v.muted = videoSilent(); v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', '');
-            q.mw.appendChild(v);
-            // the preview plays WITH the video's sound; if the browser refuses autoplay with sound, fall back to muted and let the sound button turn it on
-            v.play().catch(() => { if (!v.muted) { v.muted = true; M.autoMuted = true; renderTools(); v.play().catch(() => {}); } });
+            const v = document.createElement('video'); v.src = M.video.url; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', '');
+            q.mw.appendChild(v); v.play().catch(() => {});
             if (M.fit === 'fit') q.mw.classList.add('fit');
         } else if (n > 1) {
             q.mw.innerHTML = S.collageHtml(M.items, M.layout, true);
@@ -274,30 +272,15 @@
         renderTexts(); renderPv(); renderSheet();
     }
 
-    // The video's own sound: on by default, user can switch it off; always off while a song is attached.
-    const videoSilent = () => !!M.video && (M.muteVideo || !!M.track || M.autoMuted);
-    function applyVideoSound() {
-        const v = q.mw && q.mw.querySelector('video'); if (!v) { renderTools(); return; }
-        const silent = videoSilent();
-        v.muted = silent;
-        if (!silent) v.play().catch(() => { v.muted = true; M.autoMuted = true; renderTools(); });
-        renderTools();
-    }
-    function toggleSound() {
-        if (!M.video) return;
-        if (M.track) return C.toast('The video’s sound is off while a song is attached. Remove the song to use it.', 'info');
-        if (videoSilent()) { M.muteVideo = false; M.autoMuted = false; } else M.muteVideo = true;
-        applyVideoSound();
-    }
     function renderTools() {
         const n = M.items.length, tools = [
             ['text', 'Aa', 'Text', M.texts.length > 0],
             ['music', '<i class="fas fa-music"></i>', 'Music', !!(M.track || M.spotify)],
             n >= 2 ? ['layout', '<i class="fas fa-table-cells-large"></i>', 'Layout', false] : ['layout', '<i class="fas fa-expand"></i>', 'Framing', M.fit === 'fit'],
-            ...(!M.video ? [['time', '<i class="far fa-clock"></i>', 'Timing', false]] : [['sound', '<i class="fas fa-volume-' + (videoSilent() ? 'xmark' : 'high') + '"></i>', M.track ? 'Muted by song' : (videoSilent() ? 'Sound off' : 'Sound on'), false]]),
+            ...(!M.video ? [['time', '<i class="far fa-clock"></i>', 'Timing', false]] : []),
             ['caption', '<i class="far fa-message"></i>', 'Caption', !!M.caption]
         ];
-        q.tools.innerHTML = tools.map(([k, ic, lab, dot]) => `<button type="button" class="st-tool ${M.sheet === k ? 'on' : ''}${k === 'sound' && videoSilent() ? ' off' : ''}" data-k="tool" data-v="${k}" aria-label="${lab}" aria-pressed="${k === 'sound' ? videoSilent() : M.sheet === k}"${k === 'sound' && M.track ? ' aria-disabled="true"' : ''}>${ic}${dot ? '<span class="dot"></span>' : ''}<span class="st-tool-lab">${lab}</span></button>`).join('');
+        q.tools.innerHTML = tools.map(([k, ic, lab, dot]) => `<button type="button" class="st-tool ${M.sheet === k ? 'on' : ''}" data-k="tool" data-v="${k}" aria-label="${lab}" aria-pressed="${M.sheet === k}">${ic}${dot ? '<span class="dot"></span>' : ''}<span class="st-tool-lab">${lab}</span></button>`).join('');
     }
 
     const SHEET_TITLES = { text: 'Text', music: 'Music', layout: '', time: 'Story length', caption: 'Caption' };
@@ -787,7 +770,7 @@
             case 'close': tryClose(); break;
             case 'done': closeSheet(); break;
             case 'collapse': M.shCollapsed = !M.shCollapsed; renderSheet(); break;
-            case 'tool': if (v === 'sound') { toggleSound(); break; } M.sheet === v ? closeSheet() : openSheet(v); break;
+            case 'tool': M.sheet === v ? closeSheet() : openSheet(v); break;
             case 'preview': setPreview(!M.preview); break;
             case 'layout': M.layout = v; renderStage(); renderSheet(); break;
             case 'resetMedia': M.mt = { scale: 1, x: 0, y: 0 }; applyMT(); renderSheet(); break;
@@ -820,14 +803,14 @@
                 M.track = Object.assign({}, r, { startSec: 0, clipSec: clip });
                 M.spotify = null; M.results = []; M.msg = ''; M.changing = false;
                 M.mSel = true;
-                renderSticker(); renderSheet(); playClip(); renderSheet(); applyVideoSound();
+                renderSticker(); renderSheet(); playClip(); renderSheet();
                 break;
             }
             case 'clipLen': if (M.track) { const P = M.track.previewSec || 30; M.track.clipSec = Math.min(Number(v), P); setStart(M.track.startSec); renderSheet(); renderPv(); if (M.playing === 'clip') playClip(); } break;
             case 'playClip': toggleClip(); break;
             case 'changeSong': stopAudio(); M.changing = true; M.results = []; M.msg = ''; renderSheet(); break;
             case 'keepSong': stopAudio(); M.changing = false; renderSheet(); break;
-            case 'rmTrack': stopAudio(); M.track = null; M.mSel = false; M.changing = false; renderSticker(); renderSheet(); applyVideoSound(); break;
+            case 'rmTrack': stopAudio(); M.track = null; M.mSel = false; M.changing = false; renderSticker(); renderSheet(); break;
             case 'spotifyGo': spotifyGo(); break;
             case 'rmSpotify': M.spotify = null; renderSheet(); renderPv(); break;
             case 'resetSticker': M.mpos = { x: 0.5, y: 0.54, scale: 1, rot: 0 }; M.mSel = true; renderSticker(); renderSheet(); break;
@@ -865,7 +848,7 @@
         } catch (e) {}
         stopAudio(); M.track = null; M.changing = false; M.spq = '';
         M.spotify = { trackId: id, url, title, artist: '', thumbnail }; M.msg = '';
-        renderSheet(); renderPv(); applyVideoSound();
+        renderSheet(); renderPv();
     }
 
     const ymd = ms => { const d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -937,7 +920,7 @@
                         rot: Math.round(M.mpos.rot)
                     }
                 } : null,
-                muteVideo: !!(isV && (M.track || M.muteVideo)),      // music or the user's choice silences the video's own sound
+                muteVideo: !!(isV && M.track),
                 mediaPublicIds: ups.map(u => u.public_id || '').filter(Boolean),
                 status: 'active',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
