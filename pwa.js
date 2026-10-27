@@ -472,6 +472,11 @@
         const current = await pushState();
         state.pushState = current;
 
+        // Only offer the self-test once this device is actually subscribed — it
+        // proves the phone half (permission + service worker) without a sender.
+        const testBtn = document.getElementById('pwaNotifTest');
+        if (testBtn) testBtn.style.display = current === 'enabled' ? '' : 'none';
+
         if (current === 'needs-install') {
             // iPhone/iPad: push only exists inside the home-screen app, so the
             // action offers the install steps instead of a dead switch.
@@ -543,6 +548,19 @@
                 button.disabled = false;
             }
         });
+
+        const testBtn = document.getElementById('pwaNotifTest');
+        if (testBtn) {
+            testBtn.addEventListener('click', async () => {
+                testBtn.disabled = true;
+                const shown = await testNotification();
+                testBtn.disabled = false;
+                toast(shown
+                    ? 'Notification sent — check your notification shade.'
+                    : 'The device did not confirm the notification. Check the app’s notification permission.',
+                    shown ? 'success' : 'error');
+            });
+        }
 
         renderNotificationCard();
     }
