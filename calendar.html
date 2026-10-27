@@ -1,5 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ═══ TIMAWA page header ═══ -->
+<!--
+  TIMAWA — Squad calendar & activities
+  ============================================================================
+    <style>      calendar chrome, event list, date popup, mini event window
+    <body>
+      nav         navbar + burger drawer
+      calendar    month grid + upcoming list (tabs: events / birthdays)
+      modals      create-event form, date popup, mini event window (RSVP)
+    <script>     Firebase init -> auth guard
+                 -> events collection (create, edit, RSVP, realtime)
+                 -> birthdays derived from users/{uid}.birthday
+                 -> Spin & Poll results are plotted here too
+
+  Events are the source for push notifications: tools/send_activity_push.py
+  sends `New activity: ...` for a new event and `--upcoming` reminders for
+  events starting soon.
+
+  Shared by every page
+    theme.css / theme.js   theme system (26 presets) — loads before first paint
+    mobile-nav.*           slide-in burger drawer for screens <= 768px
+    pwa.js / pwa.css       service worker, install banner, push subscriptions
+    idle-logout.js         signs the member out after inactivity
+    visit-tracker.js       one Firestore write per session (lastVisit)
+
+  Firebase: compat v9, project `timawa2`, default app (auth + firestore).
+-->
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -2897,6 +2925,12 @@
             const isOpen = popup.classList.toggle('open');
             if (bell) bell.classList.toggle('active', isOpen);
 
+            // Opening the bell means the member has seen whatever it carried —
+            // close those OS notifications (in-app read state stays untouched).
+            if (isOpen && window.TIMAWA_PWA && typeof window.TIMAWA_PWA.clearNotifications === 'function') {
+                window.TIMAWA_PWA.clearNotifications('ann:');
+            }
+
             if (isOpen) positionAnnouncementPopup(bell);
             else {
                 if (desktopBell) desktopBell.classList.remove('active');
@@ -2992,6 +3026,31 @@
                     ? `${unreadCount} unread announcement${unreadCount !== 1 ? 's' : ''}`
                     : 'You\'re all caught up ✨';
             }
+        }
+
+        // ================================================================
+        // ===== NOTIFICATION <-> SCREEN BINDING ===========================
+        // Reaching the calendar resolves event notifications: the OS
+        // notification is closed and unread event announcements are marked
+        // read — the same outcome as tapping the notification first.
+        // ================================================================
+        async function resolveEventNotifications() {
+            if (window.TIMAWA_PWA && typeof window.TIMAWA_PWA.clearNotifications === 'function') {
+                window.TIMAWA_PWA.clearNotifications('event:');
+            }
+            if (!announcementUser || !currentUser) return;
+            try {
+                const snap = await db.collection('announcements')
+                    .where('type', '==', 'event')
+                    .limit(50)
+                    .get();
+                snap.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.targetUid && data.targetUid !== currentUser.uid) return;
+                    if (Array.isArray(data.readBy) && data.readBy.includes(currentUser.uid)) return;
+                    markAnnouncementRead(doc.id);
+                });
+            } catch (err) { /* announcements are best-effort here */ }
         }
 
         async function markAnnouncementRead(id) {
@@ -3449,6 +3508,9 @@
 
                 loadAnnouncements(user);
                 runAutoGeneration(user, data);
+                // Give the announcement listener a beat to fetch, then resolve
+                // any event notifications this visit just superseded.
+                setTimeout(resolveEventNotifications, 1200);
 
                 if (data?.createdAt) {
                     try {

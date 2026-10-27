@@ -97,7 +97,11 @@ body.mnav-open .navbar .mobile-toggle {
        drawer's own header is never covered (--mnav-top is set by the JS) */
     top: var(--mnav-top, 78px);
     right: 10px;
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    /* iOS home-screen app: keep the drawer clear of the notch and the home
+       indicator. Both resolve to 0 on screens without them. */
     bottom: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     z-index: 1400;
     width: min(86vw, 340px);
     display: flex;

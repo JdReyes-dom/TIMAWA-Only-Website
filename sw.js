@@ -8,7 +8,7 @@
    Bump CACHE_VERSION whenever the shell files change.
    ========================================================================== */
 
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.0.3';
 const SHELL_CACHE = `timawa-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `timawa-runtime-${CACHE_VERSION}`;
 const MAX_RUNTIME_ENTRIES = 60;
@@ -149,6 +149,19 @@ self.addEventListener('fetch', (event) => {
 /* Web Push                                                                    */
 /* -------------------------------------------------------------------------- */
 
+/* Safari/WebKit (iOS, iPadOS, macOS) ignores or rejects several notification
+   options Android relies on, and Apple's push service caps the payload at 4 KB.
+   Keep the shared payload intact and trim only at display time. */
+const SW_UA = (self.navigator && self.navigator.userAgent) || '';
+const IS_APPLE_WEBKIT = /iphone|ipad|ipod/i.test(SW_UA) ||
+    (/macintosh/i.test(SW_UA) && /safari/i.test(SW_UA) &&
+     !/chrome|chromium|edg|firefox/i.test(SW_UA));
+
+function clamp(value, max) {
+    const text = typeof value === 'string' ? value : '';
+    return text.length > max ? text.slice(0, max - 1) + '…' : text;
+}
+
 function normalizeTarget(raw) {
     const fallback = './dashboard.html';
     if (!raw) return fallback;
@@ -163,21 +176,32 @@ function normalizeTarget(raw) {
 
 async function renderNotification(payload) {
     const data = payload && typeof payload === 'object' ? payload : {};
-    const title = data.title || 'TIMAWA';
+    const title = clamp(data.title || 'TIMAWA', 120);
     const options = {
-        body: data.body || 'New activity from the squad.',
+        body: clamp(data.body || 'New activity from the squad.', 400),
         icon: data.icon || './icons/icon-192.png',
-        badge: data.badge || './icons/badge-72.png',
         tag: data.tag || `timawa-${Date.now()}`,
-        data: Object.assign({ url: normalizeTarget(data.url) }, data.meta || {}),
-        timestamp: data.timestamp ? (Date.parse(data.timestamp) || Date.now()) : Date.now(),
-        vibrate: [90, 50, 90],
-        actions: [
+        // `context` binds the notification to the screen that owns it
+        // (chat:<uid>, event:<id>, ann:<type>) so the page can close it as
+        // soon as the member arrives there, even without tapping.
+        data: Object.assign({
+            url: normalizeTarget(data.url),
+            context: data.context || (data.meta && data.meta.context) || ''
+        }, data.meta || {})
+    };
+    // Actions, vibrate, badge, image and timestamp are Android/Chrome extras.
+    // Safari on iOS renders only title, body, tag, data and the app icon, so
+    // passing them there is pointless at best.
+    if (!IS_APPLE_WEBKIT) {
+        options.badge = data.badge || './icons/badge-72.png';
+        options.timestamp = data.timestamp ? (Date.parse(data.timestamp) || Date.now()) : Date.now();
+        options.vibrate = [90, 50, 90];
+        options.actions = [
             { action: 'open', title: 'View' },
             { action: 'close', title: 'Dismiss' }
-        ]
-    };
-    if (data.image) options.image = data.image;
+        ];
+        if (data.image) options.image = data.image;
+    }
     return self.registration.showNotification(title, options);
 }
 
@@ -209,17 +233,40 @@ self.addEventListener('notificationclick', (event) => {
     const target = normalizeTarget(notification.data && notification.data.url);
 
     event.waitUntil((async () => {
-        const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        let windows = [];
+        try {
+            windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        } catch (_) {
+            // Older WebKit ignores (or rejects) the options object.
+            windows = [];
+        }
         for (const client of windows) {
             if (new URL(client.url).origin !== self.location.origin) continue;
+
+            // iOS standalone apps have exactly one window, and WebKit rejects
+            // client.navigate() in some versions. Focus first, then try the
+            // route change, and let the page finish it if the worker cannot.
+            try { await client.focus(); } catch (_) { /* keep going */ }
+
+            let navigated = false;
+            if ('navigate' in client) {
+                try {
+                    await client.navigate(target);
+                    navigated = true;
+                } catch (_) { navigated = false; }
+            }
             try {
-                if ('navigate' in client) await client.navigate(target);
-                await client.focus();
-                client.postMessage({ type: 'PUSH_NAVIGATED', url: target });
-                return;
-            } catch (_) { /* fall through to opening a new window */ }
+                client.postMessage({ type: navigated ? 'PUSH_NAVIGATED' : 'PUSH_OPEN_URL', url: target });
+            } catch (_) { /* window went away */ }
+            return;
         }
-        await self.clients.openWindow(target);
+        try {
+            if (self.clients && typeof self.clients.openWindow === 'function') {
+                await self.clients.openWindow(target);
+            }
+        } catch (err) {
+            console.warn('[sw] could not open the notification target', err);
+        }
     })());
 });
 

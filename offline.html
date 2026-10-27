@@ -1,11 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ═══ TIMAWA page header ═══ -->
+<!--
+  TIMAWA — offline fallback
+  ============================================================================
+  Shown by sw.js when a member opens a page that was never cached while the
+  device is offline. Deliberately dependency-free: inline CSS, one precached
+  icon, no external requests — it has to render with no network at all.
+
+  Shared by every page
+    theme.css / theme.js   theme system (26 presets) — loads before first paint
+    mobile-nav.*           slide-in burger drawer for screens <= 768px
+    pwa.js / pwa.css       service worker, install banner, push subscriptions
+    idle-logout.js         signs the member out after inactivity
+    visit-tracker.js       one Firestore write per session (lastVisit)
+
+  Firebase: compat v9, project `timawa2`, default app (auth + firestore).
+-->
+
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1089d3" />
     <title>TIMAWA — Offline</title>
     <link rel="manifest" href="manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="TIMAWA" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
     <style>
@@ -38,7 +60,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 24px;   /* fallback for browsers without env() */
+            padding: calc(24px + env(safe-area-inset-top, 0px))
+                     calc(24px + env(safe-area-inset-right, 0px))
+                     calc(24px + env(safe-area-inset-bottom, 0px))
+                     calc(24px + env(safe-area-inset-left, 0px));
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background:
                 radial-gradient(700px 380px at 12% -10%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 70%),

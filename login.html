@@ -1,5 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ═══ TIMAWA page header ═══ -->
+<!--
+  TIMAWA — Sign in / Sign up
+  ============================================================================
+    <style>      split-screen auth layout on desktop, single card <= 900px
+    <body>
+      nav        Home + Sign In only (mobile), full menu on desktop
+      auth shell sign-in card (email + password, show/hide, forgot-password
+                 link) beside the brand column
+      signup     5-step wizard, each panel validated in order:
+                   1 profile picture   (compress -> Cloudinary)
+                   2 personal details  (name, bio, birthday, interests, ...)
+                   3 socials           (Facebook / Instagram / TikTok / X)
+                   4 theme picker      (26 presets + fullscreen preview)
+                   5 verification      (squad code AWAMIT) + review
+    <script>     Firebase init -> signInWithEmailAndPassword -> redirect;
+                 wizard state machine; Cloudinary upload; theme apply
+
+  On success it lands on dashboard.html; admins are routed to admin.html.
+  idle-logout.js does not apply here (no session to protect yet).
+
+  Shared by every page
+    theme.css / theme.js   theme system (26 presets) — loads before first paint
+    mobile-nav.*           slide-in burger drawer for screens <= 768px
+    pwa.js / pwa.css       service worker, install banner, push subscriptions
+    idle-logout.js         signs the member out after inactivity
+    visit-tracker.js       one Firestore write per session (lastVisit)
+
+  Firebase: compat v9, project `timawa2`, default app (auth + firestore).
+-->
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1488,11 +1519,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
             </a>
             <ul class="nav-links">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="stories.html">Highlights</a></li>
-                <li><a href="squad-wheel.html">Coffee</a></li>
-                <li><a href="places.html">Places</a></li>
-                <li><a href="calendar.html">Activities</a></li>
-                <li><a href="members.html">Members</a></li>
+                <li><a href="index.html#highlights">Highlights</a></li>
+                <li><a href="index.html#coffee-shops">Coffee</a></li>
+                <li><a href="index.html#favorite-places">Places</a></li>
+                <li><a href="index.html#things-to-do">Activities</a></li>
+                <li><a href="index.html#members-section">Members</a></li>
                 <li><a class="sign-in-cta current" href="login.html">Sign In</a></li>
             </ul>
         </div>

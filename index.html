@@ -1,5 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ═══ TIMAWA page header ═══ -->
+<!--
+  TIMAWA — Friend Hub (public landing page)
+  ============================================================================
+  What a visitor sees before signing in. Every section below reads public
+  collections only; nothing here writes unless a member is signed in.
+
+    <style>      page styles on top of theme.css tokens
+    <body>
+      nav        navbar + Sign In CTA (drawer built by mobile-nav.js)
+      hero       squad intro + CTA
+      sections   Squad highlights / Favorite coffee shops / Favorite places /
+                 Things to do / Meet the squad  — all read-only for visitors
+      footer
+    <script>     Firebase init -> public reads -> render -> auth-aware swaps
+                 (a signed-in member is redirected to dashboard.html)
+
+  Firestore reads here are covered by the "read: if true" rules in
+  firestore.rules for highlights, coffeeShops, favoritePlaces, thingsToDo,
+  notes and publicProfiles.
+
+  Shared by every page
+    theme.css / theme.js   theme system (26 presets) — loads before first paint
+    mobile-nav.*           slide-in burger drawer for screens <= 768px
+    pwa.js / pwa.css       service worker, install banner, push subscriptions
+    idle-logout.js         signs the member out after inactivity
+    visit-tracker.js       one Firestore write per session (lastVisit)
+
+  Firebase: compat v9, project `timawa2`, default app (auth + firestore).
+-->
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -3889,6 +3920,9 @@
         // ================================================================
         // ===== COMMENT AUTO-CLEANUP =====
         // ================================================================
+        // Deletes comments whose expireAt has passed, in batches of
+        // COMMENT_CLEANUP_BATCH_LIMIT and re-scheduling itself while a batch
+        // comes back full (keeps one pass cheap on large threads).
         async function cleanupExpiredComments() {
             try {
                 const now = new Date();
@@ -3917,6 +3951,9 @@
             }
         }
 
+        // Deletes highlight comments whose expireAt has passed (they use the
+        // same COMMENT_CLEANUP_BATCH_LIMIT paging as regular comments, and
+        // re-schedules itself while the batch is full so large backlogs drain).
         async function cleanupExpiredHighlightComments() {
             try {
                 const now = new Date();
@@ -3945,6 +3982,8 @@
             }
         }
 
+        // Deletes expired notes together with their noteComments (child docs
+        // first, so no orphaned comments are left behind), 100 notes per pass.
         async function cleanupExpiredNotes() {
             try {
                 const now = new Date();
@@ -3986,6 +4025,9 @@
             }
         }
 
+        // Keeps the two comment cleanups alive: one immediate run shortly after
+        // sign-in, then every COMMENT_CLEANUP_INTERVAL_MS (10 min, highlighted
+        // comments offset by 1.5 s so the two passes do not collide).
         function startCommentAutoCleanup() {
             if (commentCleanupTimer) clearInterval(commentCleanupTimer);
             if (highlightCommentCleanupTimer) clearInterval(highlightCommentCleanupTimer);
@@ -4004,6 +4046,7 @@
             console.log('🧹 Comment auto-cleanup started (every 10 min).');
         }
 
+        // Called when the member signs out so no interval outlives the session.
         function stopCommentAutoCleanup() {
             if (commentCleanupTimer) {
                 clearInterval(commentCleanupTimer);

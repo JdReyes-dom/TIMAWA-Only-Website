@@ -1,5 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ═══ TIMAWA page header ═══ -->
+<!--
+  TIMAWA — My Profile (member settings)
+  ============================================================================
+    <style>      editor layout + appearance/notification cards
+    <body>
+      nav         navbar + burger drawer
+      editor      profile photo (compress -> Cloudinary), personal details,
+                  socials (Facebook / Instagram / TikTok / X)
+      appearance  current theme + Change Theme (same picker as signup)
+      PWA cards   Activity notifications -> pwa.js push toggle
+                  Get the app            -> install / "How to install" on iOS
+      actions     Save Profile / Reset
+    <script>     Firebase init -> auth guard -> load users/{uid} -> save
+                 -> public-profile.js mirrors the public card
+
+  Saving writes users/{uid} AND publicProfiles/{uid} (visitor-visible card).
+
+  Shared by every page
+    theme.css / theme.js   theme system (26 presets) — loads before first paint
+    mobile-nav.*           slide-in burger drawer for screens <= 768px
+    pwa.js / pwa.css       service worker, install banner, push subscriptions
+    idle-logout.js         signs the member out after inactivity
+    visit-tracker.js       one Firestore write per session (lastVisit)
+
+  Firebase: compat v9, project `timawa2`, default app (auth + firestore).
+-->
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -2127,6 +2155,31 @@
                     </p>
                 </div>
 
+                <div class="appearance-section" id="installAppSection">
+                    <div class="appearance-header">
+                        <div class="icon-wrap"><i class="fas fa-mobile-screen-button"></i></div>
+                        <div class="title-block">
+                            <h3>Get the app</h3>
+                            <p>Install TIMAWA to your home screen — full screen, offline, notifications.</p>
+                        </div>
+                    </div>
+
+                    <div class="pwa-notif-body">
+                        <div class="pwa-notif-state">
+                            <span class="pwa-dot" id="pwaInstallDot" data-tone="off"></span>
+                            <span id="pwaInstallStatus">Checking…</span>
+                        </div>
+                        <button type="button" class="theme-change-btn" id="pwaInstallBtn" data-mode="install">
+                            <i class="fas fa-download"></i> <span id="pwaInstallLabel">Install TIMAWA</span>
+                        </button>
+                    </div>
+
+                    <p class="appearance-hint" id="pwaInstallHint">
+                        <i class="fas fa-circle-info"></i>
+                        On iPhone: Share → Add to Home Screen. On Android: tap Install.
+                    </p>
+                </div>
+
                 <div class="form-actions">
                     <button type="submit" class="btn-primary" id="saveBtn">
                         <i class="fas fa-save"></i> Save Profile
@@ -2670,12 +2723,23 @@
                 });
         }
 
+        // ================================================================
+        // ===== AUTO-GENERATED ANNOUNCEMENTS (birthday / event / highlight)
+        // Every job below runs at most once per device per day: it writes the
+        // announcement only when no `announcements` doc carries that date+id
+        // referenceId yet, then records itself in localStorage (keyed by uid)
+        // so it does not repeat on every page load. They are LOCAL jobs — other
+        // members generate their own copies when they open their own profile.
+        // ================================================================
         function needsAnyAutogen(uid) {
             return !hasAutogenRunToday(uid, 'birthdays_all') ||
                    !hasAutogenRunToday(uid, 'events') ||
                    !hasAutogenRunToday(uid, 'highlights');
         }
 
+        // One "🎂 happy birthday" announcement for every member whose birthday
+        // (users/{uid}.birthday, 'YYYY-MM-DD') matches today's month+day.
+        // Dedup key: referenceId = `${today}_${uid}`; announcements expire in 2 days.
         async function autoGenerateBirthdayAnnouncementsForEveryone(currentUser) {
             if (hasAutogenRunToday(currentUser.uid, 'birthdays_all')) return;
             try {
@@ -2755,6 +2819,9 @@
             markAutogenRunToday(currentUser.uid, 'birthdays_all');
         }
 
+        // "Event tomorrow" reminders: scans `events` starting tomorrow local
+        // time (max 5) and announces each once, deduped by type == 'event'
+        // plus the event's referenceId before writing in a batch.
         async function autoGenerateEventReminders(user) {
             if (hasAutogenRunToday(user.uid, 'events')) return;
             try {

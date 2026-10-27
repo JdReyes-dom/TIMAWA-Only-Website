@@ -1,5 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ═══ TIMAWA page header ═══ -->
+<!--
+  TIMAWA — Spin & Poll (the squad wheel)
+  ============================================================================
+    <style>      wheel, poll cards, results
+    <body>
+      nav         navbar + burger drawer
+      wheel       member's saved options + spin animation + history
+      polls       food / place / date polls with live vote counts
+    <script>     Firebase init -> auth guard
+                 -> squadWheel/{uid}  (this member's own options)
+                 -> squadPolls/{food|place|date} (shared, realtime)
+                 -> winners can be pushed into the calendar (events)
+
+  Rules: a member may only write their own squadWheel/{uid} document; the
+  three poll documents are shared and create-only by id.
+
+  Shared by every page
+    theme.css / theme.js   theme system (26 presets) — loads before first paint
+    mobile-nav.*           slide-in burger drawer for screens <= 768px
+    pwa.js / pwa.css       service worker, install banner, push subscriptions
+    idle-logout.js         signs the member out after inactivity
+    visit-tracker.js       one Firestore write per session (lastVisit)
+
+  Firebase: compat v9, project `timawa2`, default app (auth + firestore).
+-->
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />

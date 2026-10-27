@@ -1,5 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ═══ TIMAWA page header ═══ -->
+<!--
+  TIMAWA — Admin Profile
+  ============================================================================
+  Same editor flow as profile.html, scoped to an admin account: photo upload,
+personal details, socials, appearance/theme picker, then Save / Reset.
+
+    <script>     Firebase init -> auth guard -> load users/{uid} -> save
+                 -> public-profile.js mirrors the public card
+
+  Kept as a separate file because admins get extra panels that members do not
+  see; member-facing settings live in profile.html.
+
+  Shared by every page
+    theme.css / theme.js   theme system (26 presets) — loads before first paint
+    mobile-nav.*           slide-in burger drawer for screens <= 768px
+    pwa.js / pwa.css       service worker, install banner, push subscriptions
+    idle-logout.js         signs the member out after inactivity
+    visit-tracker.js       one Firestore write per session (lastVisit)
+
+  Firebase: compat v9, project `timawa2`, default app (auth + firestore).
+-->
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

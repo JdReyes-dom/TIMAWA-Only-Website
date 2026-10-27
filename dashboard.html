@@ -1,5 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ═══ TIMAWA page header ═══ -->
+<!--
+  TIMAWA — Dashboard (the member hub)
+  ============================================================================
+  The heaviest page in the project; the `=====` banners inside the <script>
+  are the map — search for "=====" to jump between features.
+
+    <style>      page styles incl. chat, modals, feed
+    <body>
+      loading overlay / toast stack / confirm dialogs / Tita Tima popup
+      nav         navbar + burger drawer
+      stories     row of active stories (stories.js, viewer + composer)
+      feed        highlights: post, react, comment (highlights/highlightComments)
+      announcements, chat sidebar (chatMessages, realtime), footer
+    <script>     Firebase init -> auth guard (signed out => index.html)
+                 -> realtime listeners -> feed / chat / stories / modals
+
+  Sub-pages: admin.html (admins), profile.html (own account),
+  calendar.html (events), squad-wheel.html (Spin & Poll).
+
+  Shared by every page
+    theme.css / theme.js   theme system (26 presets) — loads before first paint
+    mobile-nav.*           slide-in burger drawer for screens <= 768px
+    pwa.js / pwa.css       service worker, install banner, push subscriptions
+    idle-logout.js         signs the member out after inactivity
+    visit-tracker.js       one Firestore write per session (lastVisit)
+
+  Firebase: compat v9, project `timawa2`, default app (auth + firestore).
+-->
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -9240,6 +9270,89 @@
             return `${messages.length}|${first}|${last}|${reactionHash}`;
         }
 
+        // ================================================================
+        // ===== NOTIFICATION <-> SCREEN BINDING ===========================
+        // A notification belongs to the screen it came from. Opening that
+        // screen resolves it — the OS notification is closed and the matching
+        // in-app announcement is marked read — whether or not the member ever
+        // tapped the notification itself.
+        // ================================================================
+        async function resolveChatNotifications(otherUid) {
+            if (!currentUser || !otherUid) return;
+
+            if (window.TIMAWA_PWA && typeof window.TIMAWA_PWA.clearNotifications === 'function') {
+                window.TIMAWA_PWA.clearNotifications(`chat:${otherUid}`);
+            }
+
+            try {
+                const snap = await db.collection('announcements')
+                    .where('type', '==', 'chat')
+                    .where('targetUid', '==', currentUser.uid)
+                    .where('referenceId', '==', `dm_${otherUid}`)
+                    .limit(1)
+                    .get();
+                snap.forEach((doc) => {
+                    const data = doc.data();
+                    if (Array.isArray(data.readBy) && data.readBy.includes(currentUser.uid)) return;
+                    markAnnouncementRead(doc.id);
+                });
+            } catch (err) { /* announcements are best-effort here */ }
+
+            // Group chat: unread mention announcements resolve the same way.
+            if (otherUid === 'group') {
+                try {
+                    const mentions = await db.collection('announcements')
+                        .where('type', '==', 'mention')
+                        .where('targetUid', '==', currentUser.uid)
+                        .limit(20)
+                        .get();
+                    mentions.forEach((doc) => {
+                        const data = doc.data();
+                        const ref = data.referenceId || '';
+                        if (!ref.startsWith('group_') && !ref.startsWith('squad_')) return;
+                        if (Array.isArray(data.readBy) && data.readBy.includes(currentUser.uid)) return;
+                        markAnnouncementRead(doc.id);
+                    });
+                } catch (err) { /* ignore */ }
+            }
+        }
+
+        // `dashboard.html#chat_<uid>` (and #chat_group) is where a tapped chat
+        // notification lands. Also runs on hashchange so an in-app announcement
+        // link that only changes the hash still opens the conversation.
+        function handleChatDeepLink() {
+            try {
+                const hash = window.location.hash || '';
+                if (hash.indexOf('#chat_') !== 0) return false;
+                if (!currentUser || !chatFeatureEnabled) return false;
+
+                const target = hash.slice('#chat_'.length);
+                if (!target || target === currentUser.uid) return false;
+
+                if (target === 'group') openGroupChat();
+                else openChatWith(target);
+
+                try {
+                    // Consume the link: the same URL can then be used again and
+                    // a plain reload does not silently reopen the conversation.
+                    window.history.replaceState(null, '',
+                        window.location.pathname + window.location.search);
+                } catch (err) { /* ignore */ }
+                return true;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        // The chat feature flag and listeners arrive a beat after sign-in, so
+        // retry a few times instead of failing on the first attempt.
+        function scheduleChatDeepLink(attempt) {
+            const tries = attempt || 0;
+            if (handleChatDeepLink()) return;
+            if (tries >= 12) return;
+            setTimeout(() => scheduleChatDeepLink(tries + 1), 700);
+        }
+
         function openChatWith(uid) {
             if (!chatFeatureEnabled) return;
             if (!uid || !currentUser) return;
@@ -9263,6 +9376,7 @@
             renderChatMessages();
 
             markChatReadFrom(uid);
+            resolveChatNotifications(uid);
 
             if (isMobile()) {
                 hideChatSidebar();
@@ -9292,6 +9406,7 @@
 
             markAllChatUnreadRead();
             markGroupMessagesRead();
+            resolveChatNotifications('group');
 
             if (isMobile()) {
                 hideChatSidebar();
@@ -10350,35 +10465,62 @@
                     .limit(1)
                     .get();
 
-                const snippet = (text || '').slice(0, 80) + ((text || '').length > 80 ? '...' : '');
-                const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+            const snippet = (text || '').slice(0, 80) + ((text || '').length > 80 ? '...' : '');
+            const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
 
-                if (!existingSnap.empty) {
-                    const docRef = existingSnap.docs[0].ref;
-                    await docRef.update({
-                        message: `"${snippet}"`,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        expiresAt: expiresAt,
-                        readBy: []
-                    });
-                } else {
-                    await db.collection('announcements').add({
-                        type: 'chat',
-                        title: `💬 ${senderName} has a new message for you`,
-                        message: `"${snippet}"`,
-                        icon: '💬',
-                        priority: 'info',
-                        link: 'dashboard.html',
-                        linkLabel: 'Open Chat',
-                        targetUid: receiverUid,
-                        referenceId: `dm_${senderUid}`,
-                        readBy: [],
-                        createdBy: 'system',
-                        createdByName: 'System',
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        expiresAt
-                    });
-                }
+            // ============================================================
+            // Push rule (see PWA-PUSH-SETUP.md)
+            //   1 message sent  -> receiver gets a notification
+            //   2 still unread  -> NO new push (they already have a live one)
+            //   3 read by them  -> the NEXT message arms a fresh push
+            // The flag is consumed by tools/push_dispatcher.py, which also
+            // re-checks readBy right before sending to close the race.
+            // ============================================================
+            const previous = existingSnap.empty ? null : existingSnap.docs[0].data();
+            const wasReadByReceiver = !previous ||
+                !Array.isArray(previous.readBy) ||
+                previous.readBy.includes(receiverUid);
+            const pushUrl = `dashboard.html#chat_${senderUid}`;
+            const pushContext = `chat:${senderUid}`;
+
+            if (!existingSnap.empty) {
+                const docRef = existingSnap.docs[0].ref;
+                const update = {
+                    message: `"${snippet}"`,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    expiresAt: expiresAt,
+                    readBy: [],
+                    link: pushUrl,
+                    pushUrl: pushUrl,
+                    pushContext: pushContext
+                };
+                // Arm a push only when the previous message was already read.
+                // While it is unread we leave pushPending untouched, so a push
+                // that has not gone out yet still delivers exactly once instead
+                // of being cancelled or duplicated by this message.
+                if (wasReadByReceiver) update.pushPending = true;
+                await docRef.update(update);
+            } else {
+                await db.collection('announcements').add({
+                    type: 'chat',
+                    title: `💬 ${senderName} has a new message for you`,
+                    message: `"${snippet}"`,
+                    icon: '💬',
+                    priority: 'info',
+                    link: pushUrl,
+                    pushUrl: pushUrl,
+                    pushContext: pushContext,
+                    pushPending: wasReadByReceiver,
+                    linkLabel: 'Open Chat',
+                    targetUid: receiverUid,
+                    referenceId: `dm_${senderUid}`,
+                    readBy: [],
+                    createdBy: 'system',
+                    createdByName: 'System',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    expiresAt
+                });
+            }
             } catch (err) {
                 console.warn('createDirectMessageNotification error:', err);
             }
@@ -13226,6 +13368,12 @@ function startReplyTo(commentId, authorName) {
             const isOpen = popup.classList.toggle('open');
             if (bell) bell.classList.toggle('active', isOpen);
 
+            // Opening the bell means the member has seen whatever it carried —
+            // close those OS notifications (in-app read state stays untouched).
+            if (isOpen && window.TIMAWA_PWA && typeof window.TIMAWA_PWA.clearNotifications === 'function') {
+                window.TIMAWA_PWA.clearNotifications('ann:');
+            }
+
             if (isOpen) positionAnnouncementPopup(bell);
             else {
                 if (desktopBell) desktopBell.classList.remove('active');
@@ -13896,6 +14044,8 @@ function startReplyTo(commentId, authorName) {
 
                 loadAnnouncements(user);
                 runAutoGeneration(user);
+                scheduleChatDeepLink();
+                window.addEventListener('hashchange', handleChatDeepLink);
 
                 await updateLastVisitThrottled(user);
             } catch (error) {

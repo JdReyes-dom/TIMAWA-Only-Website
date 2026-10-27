@@ -7,11 +7,20 @@
    Public API:
      window.TIMAWA_PWA.enablePush()   -> { ok, reason }
      window.TIMAWA_PWA.disablePush()  -> { ok, reason }
-     window.TIMAWA_PWA.pushState()    -> 'unsupported' | 'unconfigured' |
-                                        'signed-out' | 'denied' | 'enabled' |
-                                        'off'
+     window.TIMAWA_PWA.pushState()    -> 'needs-install' | 'unsupported' |
+                                        'unconfigured' | 'signed-out' |
+                                        'denied' | 'enabled' | 'off'
      window.TIMAWA_PWA.promptInstall()
      window.TIMAWA_PWA.testNotification()
+
+   iOS notes (Safari/WebKit):
+   • Web Push exists only inside a web app added to the Home Screen (iOS 16.4+).
+     In a normal Safari tab `window.Notification` is not even defined, so the
+     runtime reports 'needs-install' instead of "unsupported"/"blocked".
+   • The install prompt never fires on iOS; the banner and the profile card show
+     the manual Share → Add to Home Screen instructions instead.
+   • Safari does not reliably fire `pushsubscriptionchange`, so the subscription
+     is re-saved on every launch and whenever the app returns from the background.
    ========================================================================== */
 
 (function () {
@@ -28,9 +37,26 @@
     const SW_URL = 'sw.js';
     const SCOPED = new URL('./', window.location.href).href;
 
-    const IS_STANDALONE = window.matchMedia('(display-mode: standalone)').matches ||
-        window.navigator.standalone === true;
-    const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    function detectStandalone() {
+        try {
+            if (window.matchMedia &&
+                (window.matchMedia('(display-mode: standalone)').matches ||
+                 window.matchMedia('(display-mode: fullscreen)').matches)) {
+                return true;
+            }
+        } catch (_) { /* very old browser */ }
+        // iOS Safari's own flag — the reliable signal before iOS 16.4.
+        return window.navigator.standalone === true;
+    }
+
+    const IS_STANDALONE = detectStandalone();
+    // iPadOS 13+ reports a desktop (Macintosh) user agent, so the touch count
+    // has to be part of the check or iPads would be treated as desktops.
+    const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
+    // iOS Safari hides the Notification/PushManager APIs in a normal tab; they
+    // only appear once the site runs as a home-screen web app.
+    const IS_IOS_TAB = IS_IOS && !IS_STANDALONE;
 
     let registration = null;
     let installPromptEvent = null;
@@ -95,6 +121,14 @@
         return out;
     }
 
+    /* Safari (iOS and macOS) rejects a BufferSource that is a view into a
+       larger buffer, and older WebKit only accepts ArrayBuffer. Hand over a
+       clean, exactly-sized ArrayBuffer — Chrome and Firefox accept it too. */
+    function applicationServerKeyBuffer() {
+        const bytes = urlBase64ToUint8Array(CONFIG.vapidPublicKey);
+        return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    }
+
     async function sha256Hex(value) {
         if (window.crypto && crypto.subtle && window.TextEncoder) {
             const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
@@ -143,7 +177,12 @@
                 });
             });
 
-            await navigator.serviceWorker.ready;
+            // Don't let a slow (or stuck) first install block the PWA cards:
+            // iOS can take several seconds to activate the worker.
+            await Promise.race([
+                navigator.serviceWorker.ready,
+                new Promise((resolve) => setTimeout(resolve, 4000))
+            ]);
             return reg;
         } catch (err) {
             warn('service worker registration failed', err);
@@ -162,6 +201,16 @@
             }
             if (data.type === 'PUSH_NAVIGATED') {
                 log('opened from notification:', data.url);
+            }
+            if (data.type === 'PUSH_OPEN_URL' && data.url) {
+                // iOS WebKit cannot always run client.navigate() from the worker,
+                // so the page finishes the deep link itself.
+                try {
+                    const target = new URL(data.url, location.href);
+                    if (target.origin === location.origin && target.href !== location.href) {
+                        location.assign(target.href);
+                    }
+                } catch (err) { warn('deep link failed', err); }
             }
         });
     }
@@ -226,9 +275,10 @@
         };
 
         try {
+            // No read-first check: a first-time subscription has no document yet,
+            // and the security rule can only authorise a read once it exists.
+            // `merge` keeps one row per device and works for create and update.
             const ref = store.collection(CONFIG.collection).doc(docId);
-            const existing = await ref.get();
-            if (!existing.exists) payload.createdAt = serverTimestamp();
             await ref.set(payload, { merge: true });
             state.lastError = '';
             log('subscription saved', docId.slice(0, 12));
@@ -257,6 +307,12 @@
     /* ------------------------------------------------------------------ */
 
     async function enablePush() {
+        if (IS_IOS_TAB) {
+            // There is no API to enable here — the member has to install first.
+            showInstallBanner(true);
+            toast('On iPhone, add TIMAWA to your Home Screen first — notifications only work from the installed app.', 'info');
+            return { ok: false, reason: 'needs-install' };
+        }
         if (!pushSupported()) {
             return { ok: false, reason: 'unsupported' };
         }
@@ -279,7 +335,9 @@
         if (permission !== 'granted') {
             renderNotificationCard();
             toast(permission === 'denied'
-                ? 'Notifications are blocked for this site in your browser settings.'
+                ? (IS_IOS
+                    ? 'Notifications are turned off for TIMAWA. Open Settings → Notifications → TIMAWA and allow them.'
+                    : 'Notifications are blocked for this site in your browser settings.')
                 : 'Notifications were not allowed.', 'warn');
             return { ok: false, reason: permission };
         }
@@ -295,13 +353,16 @@
             if (!subscription) {
                 subscription = await reg.pushManager.subscribe({
                     userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(CONFIG.vapidPublicKey)
+                    applicationServerKey: applicationServerKeyBuffer()
                 });
             }
         } catch (err) {
             warn('subscribe failed', err);
             renderNotificationCard();
-            toast('Could not turn on notifications: ' + (err && err.message || err), 'error');
+            const message = err && err.name === 'NotSupportedError' && IS_IOS
+                ? 'Notifications on iPhone only work after TIMAWA is added to your Home Screen.'
+                : 'Could not turn on notifications: ' + (err && err.message || err);
+            toast(message, 'error');
             return { ok: false, reason: 'subscribe-failed' };
         }
 
@@ -328,6 +389,9 @@
     }
 
     async function pushState() {
+        // Checked before pushSupported(): on iPhone Safari has no push API in a
+        // tab, and reporting that as "unsupported" would hide the real fix.
+        if (IS_IOS_TAB) return 'needs-install';
         if (!pushSupported()) return 'unsupported';
         if (!configured()) return 'unconfigured';
         if (!currentUser()) return 'signed-out';
@@ -339,14 +403,27 @@
         return 'off';
     }
 
-    /* Runs on every page load: keeps the stored subscription in sync without
-       asking for permission again. */
-    async function syncSilently() {
+    /* Keeps the stored subscription in sync without asking for permission again.
+       This is what covers iOS: Safari does not reliably fire
+       `pushsubscriptionchange`, so the endpoint is re-saved whenever the app is
+       opened or resumed from the background. */
+    let lastSyncAt = 0;
+    const SYNC_INTERVAL_MS = 5 * 60 * 1000;
+
+    async function syncSilently(force) {
+        if (IS_IOS_TAB) return;                       // no push API in a Safari tab
         if (!pushSupported() || !configured() || !currentUser()) return;
         if (Notification.permission !== 'granted') return;
         let optedOut = false;
         try { optedOut = localStorage.getItem(CONFIG.optOutKey) === '1'; } catch (_) { /* ignore */ }
         if (optedOut) return;
+        if (!force && Date.now() - lastSyncAt < SYNC_INTERVAL_MS) {
+            // A missing subscription is always worth fixing, even inside the
+            // throttle window — iOS can drop one while the app is suspended.
+            const current = await getSubscription();
+            if (current) return;
+        }
+        lastSyncAt = Date.now();
 
         const reg = registration || await registerServiceWorker();
         if (!reg || !reg.pushManager) return;
@@ -356,7 +433,7 @@
             try {
                 subscription = await reg.pushManager.subscribe({
                     userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(CONFIG.vapidPublicKey)
+                    applicationServerKey: applicationServerKeyBuffer()
                 });
             } catch (err) {
                 warn('silent re-subscribe failed', err);
@@ -395,9 +472,19 @@
         const current = await pushState();
         state.pushState = current;
 
+        if (current === 'needs-install') {
+            // iPhone/iPad: push only exists inside the home-screen app, so the
+            // action offers the install steps instead of a dead switch.
+            set('Available in the installed app.',
+                '<i class="fas fa-circle-info"></i> iPhone and iPad only deliver TIMAWA notifications when it is added to the Home Screen from <b>Safari</b>. Tap <b>How to install</b>.',
+                'off', { label: 'How to install', icon: 'fa-mobile-screen-button', mode: 'install-help' });
+            return;
+        }
         if (current === 'unsupported') {
             set('Not supported in this browser.',
-                '<i class="fas fa-circle-info"></i> On iPhone, install TIMAWA to your home screen first.',
+                IS_IOS
+                    ? '<i class="fas fa-circle-info"></i> Notifications need iOS 16.4 or later, opened from the TIMAWA icon on your Home Screen.'
+                    : '<i class="fas fa-circle-info"></i> This browser does not support web push. Try Chrome, Edge or Firefox.',
                 'off', { label: 'Unavailable', icon: 'fa-ban', disabled: true, mode: 'none' });
             return;
         }
@@ -414,9 +501,11 @@
             return;
         }
         if (current === 'denied') {
-            set('Blocked by the browser.',
-                '<i class="fas fa-circle-info"></i> Open your browser site settings for TIMAWA and allow notifications, then reload.',
-                'off', { label: 'Blocked', icon: 'fa-bell-slash', disabled: true, mode: 'none' });
+            set(IS_IOS ? 'Turned off in iOS Settings.' : 'Blocked by the browser.',
+                IS_IOS
+                    ? '<i class="fas fa-circle-info"></i> Open <b>Settings → Notifications → TIMAWA</b>, allow notifications, then reopen the app.'
+                    : '<i class="fas fa-circle-info"></i> Open your browser site settings for TIMAWA and allow notifications, then reload.',
+                'off', { label: IS_IOS ? 'Off' : 'Blocked', icon: 'fa-bell-slash', disabled: true, mode: 'none' });
             return;
         }
         if (current === 'enabled') {
@@ -437,6 +526,11 @@
         if (!button) return;
 
         button.addEventListener('click', async () => {
+            if (button.dataset.mode === 'install-help') {
+                showInstallBanner(true);
+                toast('In Safari, tap Share, then “Add to Home Screen”.', 'info');
+                return;
+            }
             if (button.dataset.mode === 'on') {
                 button.disabled = true;
                 await enablePush();
@@ -467,13 +561,42 @@
         return days < 30;
     }
 
-    function dismissBanner(node) {
-        try { localStorage.setItem(CONFIG.installDismissKey, String(Date.now())); } catch (_) { /* ignore */ }
+    /* The X only hides the banner for this page load — reloading brings it back,
+       so an accidental tap is never permanent. Passing permanent=true writes the
+       30-day opt-out, which we do only once the app has actually been installed. */
+    function dismissBanner(node, permanent) {
+        if (permanent) {
+            try { localStorage.setItem(CONFIG.installDismissKey, String(Date.now())); } catch (_) { /* ignore */ }
+        }
         if (node && node.parentNode) {
             node.dataset.hidden = 'true';
             setTimeout(() => node.remove(), 260);
         }
     }
+
+    async function runInstallPrompt() {
+        const evt = installPromptEvent;
+        if (!evt) return false;
+        installPromptEvent = null;
+        try {
+            evt.prompt();
+            // Chrome resolves userChoice when the native dialog is answered, but
+            // some browsers never resolve it (or resolve only on dismissal),
+            // which would leave the button stuck. Race it against a timeout.
+            const choice = await Promise.race([
+                evt.userChoice,
+                new Promise((resolve) => setTimeout(
+                    () => resolve({ outcome: 'dismissed', reason: 'timeout' }), 12000))
+            ]);
+            return !!(choice && choice.outcome === 'accepted');
+        } catch (err) {
+            warn('install failed', err);
+            return false;
+        }
+    }
+
+    const INSTALL_COPY = 'Add it to your home screen — opens full screen, works offline.';
+    const IOS_COPY = 'In Safari, tap Share → “Add to Home Screen”. Open TIMAWA from the new icon for notifications.';
 
     function buildBanner(text, actionLabel, onAction) {
         if (document.getElementById('pwaInstallBanner')) return null;
@@ -495,54 +618,64 @@
         const action = banner.querySelector('.pwa-banner__action');
         action.textContent = actionLabel;
         action.addEventListener('click', onAction);
-        banner.querySelector('.pwa-banner__close').addEventListener('click', () => dismissBanner(banner));
+        banner.querySelector('.pwa-banner__close').addEventListener('click', () => dismissBanner(banner, false));
         document.body.appendChild(banner);
         requestAnimationFrame(() => { banner.dataset.visible = 'true'; });
         return banner;
     }
 
+    /* Bring the banner back on demand (also the public re-show helper).
+       force=true ignores a dismissed banner — used by the "How to install"
+       button, where the member is explicitly asking for the steps. */
+    function showInstallBanner(force) {
+        if (IS_STANDALONE) return false;
+        if (!force && bannerDismissed()) return false;
+        const existing = document.getElementById('pwaInstallBanner');
+        if (existing) {
+            if (!force) return true;   // already on screen
+            existing.remove();         // restart the animation on a forced re-show
+        }
+        clearTimeout(bannerTimer);
+        const node = buildBanner(IS_IOS ? IOS_COPY : INSTALL_COPY,
+            IS_IOS || installPromptEvent ? (IS_IOS ? 'Got it' : 'Install') : 'Got it',
+            async () => {
+                const banner = document.getElementById('pwaInstallBanner');
+                if (IS_IOS) { dismissBanner(banner, false); return; }
+                const accepted = await runInstallPrompt();
+                dismissBanner(banner, accepted);
+            });
+        if (node) log('install banner shown');
+        return !!node;
+    }
+
     function setupInstallBanner() {
+        // Older builds wrote a 30-day "don't show again" flag when X was tapped,
+        // which is why a refresh never brought the banner back. The X now only
+        // hides it for this visit, so clear any leftover flag — unless the app
+        // is already installed, where suppressing it still makes sense.
+        if (!IS_STANDALONE) {
+            try { localStorage.removeItem(CONFIG.installDismissKey); } catch (_) { /* ignore */ }
+        }
         if (IS_STANDALONE || bannerDismissed()) return;
 
         window.addEventListener('beforeinstallprompt', (event) => {
             event.preventDefault();
             installPromptEvent = event;
+            renderInstallCard();
             if (IS_STANDALONE || bannerDismissed()) return;
             clearTimeout(bannerTimer);
-            bannerTimer = setTimeout(() => {
-                const banner = buildBanner(
-                    'Add it to your home screen — opens full screen, works offline.',
-                    'Install',
-                    async () => {
-                        const evt = installPromptEvent;
-                        if (!evt) return;
-                        installPromptEvent = null;
-                        try { evt.prompt(); await evt.userChoice; } catch (err) { warn('install failed', err); }
-                        dismissBanner(banner);
-                    }
-                );
-                if (banner) log('install banner shown');
-            }, 4000);
+            bannerTimer = setTimeout(() => showInstallBanner(), 4000);
         });
 
         window.addEventListener('appinstalled', () => {
             installPromptEvent = null;
-            const banner = document.getElementById('pwaInstallBanner');
-            if (banner) dismissBanner(banner);
+            dismissBanner(document.getElementById('pwaInstallBanner'), true);
+            renderInstallCard();
         });
 
         // iOS never fires beforeinstallprompt — show the manual instructions once.
         if (IS_IOS) {
-            bannerTimer = setTimeout(() => {
-                buildBanner(
-                    'Tap Share, then “Add to Home Screen” to install and enable notifications.',
-                    'Got it',
-                    () => {
-                        const banner = document.getElementById('pwaInstallBanner');
-                        if (banner) dismissBanner(banner);
-                    }
-                );
-            }, 6000);
+            bannerTimer = setTimeout(() => showInstallBanner(), 6000);
         }
     }
 
@@ -559,6 +692,136 @@
     /* The address-bar colour is already owned by theme.js (it tracks the page
        background, including dark mode), so this file deliberately does not
        touch <meta name="theme-color"> — two writers would just fight. */
+
+    /* ------------------------------------------------------------------ */
+    /* Install card (profile.html, #pwaInstallBtn)                         */
+    /* ------------------------------------------------------------------ */
+
+    function installCardState() {
+        if (IS_STANDALONE) return 'installed';
+        if (IS_IOS) return 'ios';
+        if (installPromptEvent) return 'ready';
+        return 'hint';
+    }
+
+    function renderInstallCard() {
+        const button = document.getElementById('pwaInstallBtn');
+        if (!button) return;
+
+        const statusEl = document.getElementById('pwaInstallStatus');
+        const dot = document.getElementById('pwaInstallDot');
+        const labelEl = document.getElementById('pwaInstallLabel');
+        const hintEl = document.getElementById('pwaInstallHint');
+
+        const paint = (status, tone, label, icon, mode) => {
+            if (statusEl) statusEl.textContent = status;
+            if (labelEl) labelEl.textContent = label;
+            if (dot) dot.dataset.tone = tone;
+            const iconEl = button.querySelector('i');
+            if (iconEl) iconEl.className = 'fas ' + icon;
+            button.dataset.mode = mode;
+        };
+
+        const state = installCardState();
+
+        if (state === 'installed') {
+            paint('Installed on this device.', 'on', 'Already installed', 'fa-circle-check', 'installed');
+            button.disabled = true;
+            if (hintEl) {
+                hintEl.innerHTML =
+                    '<i class="fas fa-circle-info"></i> Open it from your home screen for the fastest way in.';
+            }
+            return;
+        }
+
+        button.disabled = false;
+        if (state === 'ios') {
+            paint('Not installed yet.', 'off', 'How to install', 'fa-mobile-screen-button', 'ios');
+            if (hintEl) {
+                hintEl.innerHTML =
+                    '<i class="fas fa-circle-info"></i> Open TIMAWA in <b>Safari</b>, tap <b>Share</b> → '
+                    + '<b>Add to Home Screen</b>, then open it from the new icon. Notifications need iOS 16.4 or later.';
+            }
+        } else if (state === 'ready') {
+            paint('Ready to install.', 'off', 'Install TIMAWA', 'fa-download', 'install');
+            if (hintEl) {
+                hintEl.innerHTML =
+                    '<i class="fas fa-circle-info"></i> Your browser will ask you to confirm the install.';
+            }
+        } else {
+            paint('Not installed yet.', 'off', 'Install TIMAWA', 'fa-download', 'install');
+            if (hintEl) {
+                hintEl.innerHTML =
+                    '<i class="fas fa-circle-info"></i> If nothing happens on tap, open your browser menu → <b>Install app</b>.';
+            }
+        }
+    }
+
+    async function wireInstallCard() {
+        const button = document.getElementById('pwaInstallBtn');
+        if (!button) return;
+
+        button.addEventListener('click', async () => {
+            const mode = button.dataset.mode;
+            if (mode === 'installed') return;
+
+            if (mode === 'ios') {
+                showInstallBanner(true);
+                toast('In Safari, tap Share, then “Add to Home Screen”.', 'info');
+                return;
+            }
+
+            button.disabled = true;
+            const accepted = await runInstallPrompt();
+            button.disabled = false;
+
+            if (accepted || IS_STANDALONE) {
+                renderInstallCard();
+                return;
+            }
+
+            // No deferred prompt (yet, or blocked): fall back to instructions.
+            showInstallBanner();
+            toast('If nothing happened, open your browser menu → Install app.', 'info');
+            renderInstallCard();
+        });
+
+        renderInstallCard();
+    }
+
+    /* Close OS notifications whose context matches a prefix. Used so that
+       opening the screen a notification belongs to (chat, calendar, bell)
+       resolves it — even when the member never tapped the notification.
+
+       Contexts written by the sender:
+         chat:<uid>   chat:<group>   event:<eventId>   ann:<type>
+
+       Returns the number of notifications closed. */
+    async function clearNotifications(contextPrefix) {
+        if (!contextPrefix || !('serviceWorker' in navigator) || !('Notification' in window)) return 0;
+        if (Notification.permission !== 'granted') return 0;
+        try {
+            const reg = registration || await navigator.serviceWorker.ready;
+            // Safari only gained getNotifications() recently; never let its
+            // absence break the page that is trying to resolve a notification.
+            if (!reg || typeof reg.getNotifications !== 'function') return 0;
+            const list = await reg.getNotifications();
+            let closed = 0;
+            list.forEach((notification) => {
+                const data = notification.data || {};
+                const context = data.context || '';
+                if (context === contextPrefix || context.indexOf(contextPrefix) === 0) {
+                    notification.close();
+                    closed += 1;
+                }
+            });
+            if (closed) log('cleared', closed, 'notification(s) for', contextPrefix);
+            return closed;
+        } catch (err) {
+            warn('clearNotifications failed', err);
+            return 0;
+        }
+    }
 
     /* ------------------------------------------------------------------ */
     /* Debug helper                                                        */
@@ -596,6 +859,24 @@
 
         await registerServiceWorker();
         wireNotificationCard();
+        wireInstallCard();
+
+        // iOS suspends home-screen apps instead of closing them: permission can
+        // change in Settings, and a subscription can be dropped while away.
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            renderNotificationCard();
+            renderInstallCard();
+            syncSilently();
+        });
+        // Restored from the back/forward cache — same refresh, plus the banner
+        // and cards may predate a change made in another tab.
+        window.addEventListener('pageshow', (event) => {
+            if (!event.persisted) return;
+            renderNotificationCard();
+            renderInstallCard();
+            syncSilently();
+        });
 
         try {
             if (typeof auth !== 'undefined' && auth && auth.onAuthStateChanged) {
@@ -615,10 +896,16 @@
         disablePush,
         pushState,
         promptInstall,
+        showInstallBanner,
+        clearNotifications,
         testNotification,
         syncSilently,
         refreshNotificationCard: renderNotificationCard,
-        get registration() { return registration; }
+        refreshInstallCard: renderInstallCard,
+        get registration() { return registration; },
+        /* iOS debug helpers — used by the docs' verification steps. */
+        get isIOS() { return IS_IOS; },
+        get isStandalone() { return IS_STANDALONE; }
     };
 
     if (document.readyState === 'loading') {
