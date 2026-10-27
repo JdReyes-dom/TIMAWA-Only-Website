@@ -34,10 +34,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Verify required files are in the repo
+        run: |
+          for f in tools/requirements.txt tools/push_dispatcher.py tools/send_activity_push.py; do
+            if [ ! -f "$f" ]; then
+              echo "::error::Missing $f — upload the tools/ folder to the repository root (do NOT upload service-account.json, .vapid-private.pem or .venv)"
+              exit 1
+            fi
+          done
+          echo "All sender files present."
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
