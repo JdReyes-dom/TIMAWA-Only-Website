@@ -1,0 +1,68 @@
+name: Push dispatcher
+
+# Turns Firestore announcements flagged pushPending:true into real web push.
+# Every run calls push_dispatcher.py --once: it drains whatever queued up since
+# the previous run, then exits. Nothing secret lives in this file — the VAPID
+# private key and the Firebase service account come from repository secrets:
+#   Settings -> Secrets and variables -> Actions
+#
+# Cadence (pick one in `schedule` below):
+#   */5 * * * *   public repo  — unlimited free minutes, up to ~5 min latency
+#   */30 * * * *  private repo — free plan 2,000 min/month, ~1,440 used
+#
+# NOTE: GitHub pauses scheduled workflows after 60 days without repo activity.
+# Re-enable from the Actions tab if that happens.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # manual "Run workflow" button, for testing
+
+permissions:
+  contents: read
+
+# Never let a slow run overlap the next scheduled one.
+concurrency:
+  group: push-dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Dispatch pending notifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/requirements.txt
+
+      - name: Install sender dependencies
+        run: pip install -r tools/requirements.txt
+
+      - name: Write credentials from secrets
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+        run: |
+          printf '%s\n' "$VAPID_PRIVATE_KEY" > "$RUNNER_TEMP/vapid-private.pem"
+          printf '%s' "$SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/service-account.json"
+          test -s "$RUNNER_TEMP/vapid-private.pem" || { echo "::error::VAPID_PRIVATE_KEY secret is empty or missing"; exit 1; }
+          test -s "$RUNNER_TEMP/service-account.json" || { echo "::error::SERVICE_ACCOUNT_JSON secret is empty or missing"; exit 1; }
+          grep -q "PRIVATE KEY" "$RUNNER_TEMP/vapid-private.pem" || { echo "::error::VAPID_PRIVATE_KEY does not look like a PEM private key"; exit 1; }
+          grep -q "service_account" "$RUNNER_TEMP/service-account.json" || { echo "::error::SERVICE_ACCOUNT_JSON does not look like a Firebase key"; exit 1; }
+
+      - name: Send pending notifications
+        env:
+          # Apple's push service requires a real contact here (no example.com).
+          VAPID_SUBJECT: https://reyesjherwin15-debug.github.io
+        run: |
+          python tools/push_dispatcher.py --once \
+            --vapid-private "$RUNNER_TEMP/vapid-private.pem" \
+            --service-account "$RUNNER_TEMP/service-account.json"
