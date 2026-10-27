@@ -18,7 +18,10 @@
     <script>     Firebase init -> signInWithEmailAndPassword -> redirect;
                  wizard state machine; Cloudinary upload; theme apply
 
-  On success it lands on dashboard.html; admins are routed to admin.html.
+  On success it lands on index.html; admins (users/{uid}.isAdmin == true) are
+  routed to admin.html. The flag is re-read from the server here and copied
+  into the sessionStorage profile cache, so admin.html's own guard sees the
+  same value instead of a stale copy.
   idle-logout.js does not apply here (no session to protect yet).
 
   Shared by every page
@@ -2674,8 +2677,31 @@ button, input, select, textarea { font: inherit; color: inherit; }
         auth.onAuthStateChanged(async (user) => {
             if (!user) return;
             try {
-                const doc = await db.collection('users').doc(user.uid).get();
-                const data = doc.data();
+                // Always ask the server: the admin flag lives in Firestore and a
+                // cached copy (index/dashboard keep one in sessionStorage for
+                // 5 minutes) can still say "not an admin" right after the flag
+                // was granted. That stale read is what dropped admins on the
+                // member dashboard instead of the admin panel.
+                let data = null;
+                try {
+                    const doc = await db.collection('users').doc(user.uid).get({ source: 'server' });
+                    data = doc.exists ? doc.data() : null;
+                } catch (serverErr) {
+                    console.warn('Server profile read failed, using cache:', serverErr && serverErr.message);
+                    const cached = await db.collection('users').doc(user.uid).get({ source: 'cache' });
+                    data = cached.exists ? cached.data() : null;
+                }
+
+                // Hand the page we are about to open a fresh copy so its own
+                // guard does not bounce us straight back to the dashboard.
+                if (data) {
+                    try {
+                        sessionStorage.setItem('timawa_me_' + user.uid, JSON.stringify({
+                            uid: user.uid, t: Date.now(), data: data
+                        }));
+                    } catch (e) {}
+                }
+
                 if (data && data.theme && THEMES[data.theme.preset]) {
                     const firestoreTheme = {
                         preset: data.theme.preset,
@@ -2684,14 +2710,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
                     applyTheme(firestoreTheme);
                     try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(firestoreTheme)); } catch (e) {}
                 }
-                const isAdmin = data?.isAdmin === true;
+                const isAdmin = data?.isAdmin === true || data?.isAdmin === 'true';
                 setTimeout(() => {
-                    if (isAdmin) window.location.href = 'admin.html';
-                    else window.location.href = 'index.html';
+                    // replace() so the back button cannot return to the login form
+                    if (isAdmin) window.location.replace('admin.html');
+                    else window.location.replace('index.html');
                 }, 150);
             } catch (error) {
                 console.error('Error checking user profile:', error);
-                window.location.href = 'index.html';
+                window.location.replace('index.html');
             }
         });
 
