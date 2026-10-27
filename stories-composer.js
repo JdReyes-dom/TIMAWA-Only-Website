@@ -418,7 +418,7 @@
             <p class="st-hint">How long viewers see this story (15 s – 1 min).</p>`;
     }
     function captionSheet() {
-        return `<input class="st-input" data-in="caption" maxlength="${MAX_CAPTION}" placeholder="Say something about this moment…" value="${S.esc(M.caption)}" aria-label="Caption"><p class="st-hint">Shown at the bottom of your story. Up to ${MAX_CAPTION} characters.</p>`;
+        return `<input class="st-input" data-in="caption" maxlength="${MAX_CAPTION}" placeholder="Say something about this moment… (@name to mention)" value="${S.esc(M.caption)}" aria-label="Caption"><p class="st-hint">Shown at the bottom of your story. Up to ${MAX_CAPTION} characters.</p>`;
     }
 
     const snap = () => JSON.stringify(M.texts);
@@ -852,6 +852,73 @@
     }
 
     const ymd = ms => { const d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+    /* ------------------------------------------------------------------ */
+    /* @Mentions in the caption                                            */
+    /* Typing "@Name" in a story caption notifies that member in-app and   */
+    /* by push, the same way note and chat mentions do.                    */
+    /* ------------------------------------------------------------------ */
+    let mentionDirectory = null;
+    let mentionDirectoryAt = 0;
+
+    async function resolveStoryMentions(text) {
+        const caption = String(text || '');
+        if (caption.indexOf('@') === -1) return [];
+        try {
+            if (!mentionDirectory || Date.now() - mentionDirectoryAt > 5 * 60 * 1000) {
+                const snap = await C.db.collection('users').get();
+                mentionDirectory = snap.docs
+                    .map(d => ({ uid: d.id, name: ((d.data() || {}).displayName || '').trim() }))
+                    .filter(u => u.name)
+                    .sort((a, b) => b.name.length - a.name.length);
+                mentionDirectoryAt = Date.now();
+            }
+        } catch (err) {
+            return [];
+        }
+        const found = new Set();
+        mentionDirectory.forEach(u => {
+            const pattern = '@' + u.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const rx = new RegExp(pattern + '(?=\\s|[.,!?;:]|$)', 'i');
+            if (rx.test(caption)) found.add(u.uid);
+        });
+        found.delete(C.me.uid);
+        return Array.from(found);
+    }
+
+    async function notifyStoryMentions(caption, storyId) {
+        const uids = await resolveStoryMentions(caption);
+        if (!uids.length) return;
+        try {
+            const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+            const snippet = String(caption || '').slice(0, 80);
+            const batch = C.db.batch();
+            uids.forEach(uid => {
+                const ref = C.db.collection('announcements').doc();
+                batch.set(ref, {
+                    type: 'mention',
+                    pushPending: true,
+                    pushContext: 'mention',
+                    title: `📣 ${C.me.name} mentioned you in their story`,
+                    message: `"${snippet}"`,
+                    icon: '📣',
+                    priority: 'info',
+                    link: 'index.html',
+                    linkLabel: 'View Story',
+                    targetUid: uid,
+                    referenceId: `story_${storyId}`,
+                    readBy: [],
+                    createdBy: 'system',
+                    createdByName: 'System',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    expiresAt
+                });
+            });
+            await batch.commit();
+        } catch (err) {
+            console.warn('notifyStoryMentions error:', err);
+        }
+    }
+
     function upload(file, onProg) {
         return new Promise((res, rej) => {
             const fd = new FormData();
@@ -930,6 +997,9 @@
             q.barI.style.width = '96%';
             try { await ref.set(doc); }
             catch (we) { await discardUploads(ups); throw we; }
+            // Mention notifications run after the story exists, and never block
+            // the publish (they swallow their own errors).
+            notifyStoryMentions(doc.caption, ref.id);
             try { const s = await ref.get({ source: 'server' }); const c = s.data().createdAt; if (c && c.toMillis) C.onPublished(c.toMillis() - Date.now()); } catch (e) {}
             q.barI.style.width = '100%';
             C.toast('Story shared! It will disappear in 24 hours.', 'success');
