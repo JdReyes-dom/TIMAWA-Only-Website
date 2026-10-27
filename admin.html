@@ -5812,6 +5812,8 @@
 
                 await db.collection('announcements').add({
                     type: 'highlight',
+                    pushPending: true,
+                    pushContext: 'highlight',
                     title: titleText,
                     message: photoCount === 1 ? `${author} just shared a new moment with the squad.` : `Fresh moments from the squad — check them out!`,
                     icon: '📸', priority: 'info',
@@ -6029,6 +6031,11 @@
                     });
                     showToast('Announcement updated!', 'success');
                 } else {
+                    // Publishing arms a push (everyone, or the one member picked
+                    // as the target). Editing an existing one stays silent.
+                    data.pushPending = true;
+                    data.pushContext = 'ann:' + (type || 'ann');
+                    data.pushUrl = link || 'index.html';
                     data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                     await db.collection('announcements').add(data);
                     showToast('Announcement published!', 'success');

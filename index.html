@@ -3825,6 +3825,8 @@
 
                 await db.collection('announcements').add({
                     type: 'reaction',
+                    pushPending: true,
+                    pushContext: 'reaction_' + referenceId,
                     title: `${emoji} ${reactorName} reacted to your highlight`,
                     message: messageText,
                     icon: emoji,
@@ -4436,6 +4438,51 @@
             mentionAnchorStart = -1;
         }
 
+        // ================================================================
+        // ===== NOTE @MENTIONS (the note itself, not its replies) =====
+        // Typing @Name in a note notifies that member in-app and by push.
+        // ================================================================
+        async function notifyNoteMentions(noteText, noteOwnerName) {
+            if (!noteText || !titaCurrentUser) return;
+            let uids = [];
+            try {
+                uids = resolveMentions(noteText).filter(uid => uid && uid !== titaCurrentUser.uid);
+            } catch (e) {
+                return;
+            }
+            if (!uids.length) return;
+
+            try {
+                const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+                const snippet = noteText.slice(0, 80) + (noteText.length > 80 ? '...' : '');
+                const batch = db.batch();
+                uids.forEach(uid => {
+                    const ref = db.collection('announcements').doc();
+                    batch.set(ref, {
+                        type: 'mention',
+                        title: `📣 ${noteOwnerName} mentioned you in their note`,
+                        message: `"${snippet}"`,
+                        icon: '📣',
+                        priority: 'info',
+                        link: 'index.html#members-section',
+                        linkLabel: 'View Note',
+                        targetUid: uid,
+                        referenceId: `note_${titaCurrentUser.uid}`,
+                        readBy: [],
+                        createdBy: 'system',
+                        createdByName: 'System',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        expiresAt,
+                        pushPending: true,
+                        pushContext: 'mention'
+                    });
+                });
+                await batch.commit();
+            } catch (err) {
+                console.warn('notifyNoteMentions error:', err);
+            }
+        }
+
         function resolveMentions(text, mentionMap) {
             const found = new Set();
             const map = mentionMap || pendingMentions;
@@ -4791,6 +4838,8 @@ function startReplyTo(commentId, authorName) {
                         queued.add(uid);
                         notifications.push({
                             type: 'mention',
+                            pushPending: true,
+                            pushContext: 'mention',
                             title: `@ ${replierName} mentioned you`,
                             message: `In ${noteOwnerName}'s note: "${noteSnippet}"\n\n"${replySnippet}"`,
                             icon: '📣', priority: 'info',
@@ -5542,6 +5591,8 @@ function startHighlightReply(commentId, authorName) {
 
                         notifications.push({
                             type: 'mention',
+                            pushPending: true,
+                            pushContext: 'mention',
                             title: `📣 ${commenterName} mentioned you`,
                             message: captionSnippet
                                 ? `On ${highlightOwnerName}'s highlight: "${captionSnippet}"\n\n"${commentSnippet}"`
@@ -6183,6 +6234,8 @@ function startHighlightReply(commentId, authorName) {
 
                 await db.collection('announcements').add({
                     type: 'highlight',
+                    pushPending: true,
+                    pushContext: 'highlight',
                     title: titleText,
                     message: photoCount === 1
                         ? `${author} just shared a new moment with the squad.`
@@ -8068,6 +8121,7 @@ function startHighlightReply(commentId, authorName) {
                             expireAt: expireTs,
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
+                        await notifyNoteMentions(noteText, displayName);
                         NoteMusic.setReplaceNote({ text: noteText, music: noteMusic, expireAt: expireTs });
                     } else {
                         try { await noteRef.delete(); } catch (e) { /* ignore */ }

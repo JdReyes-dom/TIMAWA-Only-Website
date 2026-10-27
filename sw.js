@@ -8,7 +8,7 @@
    Bump CACHE_VERSION whenever the shell files change.
    ========================================================================== */
 
-const CACHE_VERSION = 'v1.0.4';
+const CACHE_VERSION = 'v1.0.5';
 const SHELL_CACHE = `timawa-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `timawa-runtime-${CACHE_VERSION}`;
 const MAX_RUNTIME_ENTRIES = 60;
@@ -193,6 +193,9 @@ async function renderNotification(payload) {
     // Safari on iOS renders only title, body, tag, data and the app icon, so
     // passing them there is pointless at best.
     if (!IS_APPLE_WEBKIT) {
+        // Threaded notifications: with a tag + renotify, Android alerts again
+        // when a later message replaces the card instead of staying silent.
+        options.renotify = true;
         options.badge = data.badge || './icons/badge-72.png';
         options.timestamp = data.timestamp ? (Date.parse(data.timestamp) || Date.now()) : Date.now();
         options.vibrate = [90, 50, 90];

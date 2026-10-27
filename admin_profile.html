@@ -2084,6 +2084,8 @@ personal details, socials, appearance/theme picker, then Save / Reset.
 
                 await db.collection('announcements').add({
                     type: 'highlight',
+                    pushPending: true,
+                    pushContext: 'highlight',
                     title: titleText,
                     message: photoCount === 1
                         ? `${author} just shared a new moment with the squad.`
