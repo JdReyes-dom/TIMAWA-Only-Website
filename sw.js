@@ -8,7 +8,7 @@
    Bump CACHE_VERSION whenever the shell files change.
    ========================================================================== */
 
-const CACHE_VERSION = 'v1.0.5';
+const CACHE_VERSION = 'v1.0.6';
 const SHELL_CACHE = `timawa-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `timawa-runtime-${CACHE_VERSION}`;
 const MAX_RUNTIME_ENTRIES = 60;
@@ -162,11 +162,21 @@ function clamp(value, max) {
     return text.length > max ? text.slice(0, max - 1) + '…' : text;
 }
 
+function appBase() {
+    // A project site lives under /<repo>/, not at the domain root. Resolving
+    // against `location.origin` sent taps to https://<user>.github.io/calendar.html
+    // — outside the app, which is why they landed on a 404 in the browser
+    // instead of opening TIMAWA. The worker's scope is the app root.
+    const scope = self.registration && self.registration.scope;
+    return scope || self.location.href;
+}
+
 function normalizeTarget(raw) {
-    const fallback = './dashboard.html';
+    const base = appBase();
+    const fallback = new URL('dashboard.html', base).href;
     if (!raw) return fallback;
     try {
-        const url = new URL(raw, self.location.origin);
+        const url = new URL(raw, base);
         if (url.origin !== self.location.origin) return fallback;
         return url.href;
     } catch (_) {
@@ -243,8 +253,11 @@ self.addEventListener('notificationclick', (event) => {
             // Older WebKit ignores (or rejects) the options object.
             windows = [];
         }
+        const scopePath = new URL(appBase()).pathname;
         for (const client of windows) {
-            if (new URL(client.url).origin !== self.location.origin) continue;
+            const clientUrl = new URL(client.url);
+            if (clientUrl.origin !== self.location.origin) continue;
+            if (!clientUrl.pathname.startsWith(scopePath)) continue;
 
             // iOS standalone apps have exactly one window, and WebKit rejects
             // client.navigate() in some versions. Focus first, then try the

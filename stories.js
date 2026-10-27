@@ -822,15 +822,18 @@
             opts = opts || {};
             const me = st.me, who = String(me.name || 'Someone').slice(0, 60);
             const id = `story_${kind}_${s.id}_${me.uid}`;
+            // pushPending arms the web push; pushContext becomes the device tag,
+            // so reactions to one story thread together and replies thread with
+            // that member's other messages.
             const base = { priority: 'info', targetUid: s.ownerUid, referenceId: id, readBy: [], createdBy: 'system', createdByName: 'System',
-                           createdAt: firebase.firestore.FieldValue.serverTimestamp(), expiresAt: new Date(Date.now() + 24 * 3600 * 1000) };
+                           pushPending: true, createdAt: firebase.firestore.FieldValue.serverTimestamp(), expiresAt: new Date(Date.now() + 24 * 3600 * 1000) };
             let data;
             if (kind === 'reaction') {
                 const e = opts.emoji || '❤️';
-                data = { type: 'reaction', title: `${e} ${who} reacted to your story`, message: `${who} reacted ${e} to your story.`, icon: e, link: `index.html?story=${encodeURIComponent(s.id)}`, linkLabel: 'View Story' };
+                data = { type: 'reaction', pushContext: `reaction_story_${s.id}`, title: `${e} ${who} reacted to your story`, message: `${who} reacted ${e} to your story.`, icon: e, link: `index.html?story=${encodeURIComponent(s.id)}`, linkLabel: 'View Story' };
             } else {
                 const t = String(opts.text || '').slice(0, 80) + (String(opts.text || '').length > 80 ? '...' : '');
-                data = { type: 'chat', title: `💬 ${who} replied to your story`, message: `"${t}"`, icon: '💬', link: 'dashboard.html', linkLabel: 'Open Chat' };
+                data = { type: 'chat', pushContext: `chat:${me.uid}`, title: `💬 ${who} replied to your story`, message: `"${t}"`, icon: '💬', link: 'dashboard.html', linkLabel: 'Open Chat' };
             }
             await db.collection('announcements').doc(id).set(Object.assign(base, data));
         } catch (err) { console.warn('story notification not sent:', err.code || err.message); }
